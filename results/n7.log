@@ -1,0 +1,27 @@
+510 graphs
+0 graphs 1 types 1s
+25 graphs 1 types 28s
+50 graphs 2 types 143s
+75 graphs 2 types 195s
+100 graphs 2 types 243s
+125 graphs 2 types 314s
+150 graphs 2 types 426s
+175 graphs 2 types 518s
+200 graphs 3 types 556s
+225 graphs 3 types 670s
+250 graphs 3 types 718s
+275 graphs 3 types 812s
+300 graphs 4 types 966s
+325 graphs 4 types 1053s
+350 graphs 4 types 1130s
+375 graphs 4 types 1184s
+400 graphs 4 types 1213s
+425 graphs 4 types 1295s
+450 graphs 4 types 1375s
+475 graphs 4 types 1474s
+500 graphs 4 types 1591s
+types 4 time 1616s
+  r=1.691320847 k=12 coidx=0 nzero=0 kern=0 rattlers=0 sym=6 labeled=1680 hits=4
+  r=1.665320032 k=11 coidx=1 nzero=0 kern=1 rattlers=0 sym=4 labeled=2520 hits=5
+  r=1.323193789 k=9 coidx=3 nzero=0 kern=3 rattlers=0 sym=6 labeled=1680 hits=5
+  r=0.766421615 k=7 coidx=4 nzero=0 kern=5 rattlers=0 sym=28 labeled=360 hits=11

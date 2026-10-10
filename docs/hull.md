@@ -38,6 +38,11 @@ T_k is the k-th triangulation in `data/triangulations_n12.json`, which is in BFS
 - At least eight more types reach 60° exactly, but apparently not more.
 - Every other type evaluated so far is below 60°. The survey over all 7595 types is in progress.
 
+## Two more pieces of evidence for (a)
+
+- **Flip walk** (`scripts/hull12/flipwalk.py`). Start from the optimal realizations of T0, T1, T5 and T7. Flip each hull edge in turn and re-optimize θ* for the flipped triangulation, seeded at the parent. Keep anything above 60° and repeat. The walk closes on {T0, T1, T5, T7}: no flip leads to a fifth type above 60°.
+- **Sampling** (`scripts/hull12/sample_hulls.py`). Of 150 random starts ascended until the minimum angle passed 60.0005° (overshooting to r ≤ 1.002), 144 had icosahedral hulls, 3 had T1, and 3 did not reach the level. Generic configurations above 60° are icosahedral; the other three types occupy thin regions near the critical configurations.
+
 ## The corrected statement
 
 **Conjecture.** If 12 points on S² have all pairwise angles > 60°, then:

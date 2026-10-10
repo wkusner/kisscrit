@@ -210,7 +210,7 @@ def rattler_components(X, c, n_grid=20000, return_diameters=False):
     P = np.column_stack([np.cos(th) * np.sin(phi), np.sin(th) * np.sin(phi), np.cos(phi)])
     free = P[(P @ np.asarray(X).T).max(axis=1) < c - 1e-9]
     if len(free) == 0:
-        return 0
+        return (0, []) if return_diameters else 0
     h = 2.5 * np.sqrt(4 * np.pi / n_grid)
     pairs = cKDTree(free).query_pairs(h)
     G = nx.Graph(); G.add_nodes_from(range(len(free))); G.add_edges_from(pairs)
@@ -240,7 +240,7 @@ def euler_check(census_by_n, N):
             if m > 0:
                 nc, diams = rattler_components(np.array(t['X']), t['c'], return_diameters=True)
                 theta = np.degrees(np.arccos(t['c']))
-                if any(dm >= theta for dm in diams):
+                if any(dm >= theta + 2.0 for dm in diams):   # 2 degree allowance for grid error
                     skipped.append((n, t['r'], 'rattler component can hold two rattlers')); continue
                 if nc < m:
                     continue

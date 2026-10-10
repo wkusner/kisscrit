@@ -1,0 +1,8 @@
+62 graphs
+0 graphs 1 types 2s
+25 graphs 1 types 104s
+50 graphs 2 types 172s
+types 3 time 219s
+  r=2.414213562 k=12 coidx=0 nzero=0 kern=0 rattlers=0 sym=48 labeled=30 hits=3
+  r=1.895643924 k=9 coidx=1 nzero=0 kern=1 rattlers=0 sym=12 labeled=120 hits=7
+  r=1.000000000 k=6 coidx=3 nzero=0 kern=4 rattlers=0 sym=24 labeled=60 hits=17
