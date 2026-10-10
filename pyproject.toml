@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kisscrit"
+version = "0.1.0"
+description = "Critical configurations of the min-distance (kissing/Tammes) function on spheres"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [{name = "Wöden Kusner"}]
+dependencies = ["numpy", "scipy>=1.9", "networkx>=2.8", "mpmath"]
+
+[project.optional-dependencies]
+exact = ["python-flint", "sympy"]
+test = ["pytest"]
+
+[tool.setuptools]
+packages = ["kisscrit"]
