@@ -1,0 +1,141 @@
+{
+ "ball_2": {
+  "signed": 0,
+  "target": null,
+  "skipped": [
+   [
+    "n",
+    0.5,
+    "labeled?"
+   ]
+  ],
+  "types": 1
+ },
+ "ball_3": {
+  "signed": 1,
+  "target": null,
+  "skipped": [
+   [
+    "n",
+    0.33333333,
+    "labeled?"
+   ]
+  ],
+  "types": 2
+ },
+ "cube_2": {
+  "signed": 2,
+  "target": 2,
+  "skipped": [],
+  "types": 3
+ },
+ "cube_3": {
+  "signed": -18,
+  "target": 6,
+  "skipped": [
+   [
+    "n-1",
+    0.25,
+    "family dim > 1"
+   ]
+  ],
+  "types": 6
+ },
+ "disk_2": {
+  "signed": 1,
+  "target": 1,
+  "skipped": [],
+  "types": 1
+ },
+ "disk_3": {
+  "signed": -1,
+  "target": -1,
+  "skipped": [],
+  "types": 2
+ },
+ "disk_4": {
+  "signed": 18,
+  "target": 2,
+  "skipped": [
+   [
+    "n",
+    0.33333333,
+    "nzero",
+    2
+   ]
+  ],
+  "types": 3
+ },
+ "hex_2": {
+  "signed": -1,
+  "target": -1,
+  "skipped": [],
+  "types": 2
+ },
+ "hex_3": {
+  "signed": 2,
+  "target": 2,
+  "skipped": [],
+  "types": 3
+ },
+ "hex_4": {
+  "signed": -6,
+  "target": -6,
+  "skipped": [],
+  "types": 8
+ },
+ "sq_2": {
+  "signed": 0,
+  "target": 0,
+  "skipped": [],
+  "types": 2
+ },
+ "sq_3": {
+  "signed": 0,
+  "target": 0,
+  "skipped": [],
+  "types": 3
+ },
+ "sq_4": {
+  "signed": 0,
+  "target": 0,
+  "skipped": [],
+  "types": 8
+ },
+ "sq_5": {
+  "signed": 1320,
+  "target": 0,
+  "skipped": [],
+  "types": 7
+ },
+ "tor_2": {
+  "signed": -1,
+  "target": -1,
+  "skipped": [],
+  "types": 2
+ },
+ "tor_3": {
+  "signed": 2,
+  "target": 2,
+  "skipped": [],
+  "types": 6
+ },
+ "tor_4": {
+  "signed": 37,
+  "target": -6,
+  "skipped": [],
+  "types": 9
+ },
+ "tor3_2": {
+  "signed": 1,
+  "target": 1,
+  "skipped": [],
+  "types": 3
+ },
+ "tor3_3": {
+  "signed": 2,
+  "target": 2,
+  "skipped": [],
+  "types": 13
+ }
+}

@@ -48,8 +48,9 @@ def record(Xs, extra=None, with_symmetry=True):
     if with_symmetry and a['rattlers'] == 0:
         try:
             g, gp = group_orders(Xs)
-            # labeled copies in BConf(N) = Conf(N)/SO(d): N!/|G ∩ SO(d)| (mirror images included)
-            rec.update(sym=g, sym_proper=gp, labeled=math.factorial(len(Xs)) // gp)
+            # labeled copies in BConf(N) = Conf(N)/SO(d): the orbit of X under S_N x O(d) mod SO(d) has
+            # 2 N!/|G| elements (= N!/|G ∩ SO(d)| if X has an improper symmetry; twice that if X is chiral)
+            rec.update(sym=g, sym_proper=gp, labeled=2 * math.factorial(len(Xs)) // g)
         except ValueError:
             pass
     if extra:

@@ -30,9 +30,9 @@ def symmetries(X, tol=1e-6):
             if np.abs(R @ R.T - np.eye(d)).max() > 1e-5:
                 return
             Y = X @ R.T
-            D = Y @ X.T
-            p = np.argmax(D, axis=1)
-            if np.all(D[np.arange(N), p] > 1 - tol) and len(set(p.tolist())) == N:
+            D = np.linalg.norm(Y[:, None, :] - X[None, :, :], axis=2)
+            p = np.argmin(D, axis=1)
+            if np.all(D[np.arange(N), p] < tol) and len(set(p.tolist())) == N:
                 out.append((int(round(np.linalg.det(R))), p.tolist()))
             return
         for j in range(N):

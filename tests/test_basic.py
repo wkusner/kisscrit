@@ -73,3 +73,45 @@ def test_minpoly_tetrahedron():
     from kisscrit.exact import minpoly
     mp.mp.dps = 60
     assert minpoly(mp.mpf(-1) / 3, maxdeg=4) in ([1, 3], [-1, -3])
+
+
+def test_certify_saddle_and_negative_control():
+    import mpmath as mp
+    from kisscrit.exact import refine_kkt
+    from kisscrit.certify import certify
+    D = json.load(open(os.path.join(HERE, '..', 'data', 'n12_above1.json')))
+    t = [t for t in D['types'] if abs(t['r'] - 1.0008452029) < 1e-8][0]
+    A = [tuple(p) for p in t['pairs']]
+    Xs, c, s, nf = kc.solve_kkt(np.array(t['X']), A)
+    x, cc, sig, _ = refine_kkt(Xs, A, s, dps=90)
+    mp.mp.dps = 90
+    mu = [sum(sig[e] * sum(x[i][q] * x[(b if i == a else a)][q] for q in range(3))
+              for e, (a, b) in enumerate(A) if i in (a, b)) for i in range(12)]
+    R = certify(x, cc, sig, mu, A, dps=80)
+    assert R['coindex'] == 1
+    # negative control: claim one more contact than there is -> must not certify
+    Aset = set(A); extra = next((i, j) for i in range(12) for j in range(i + 1, 12) if (i, j) not in Aset)
+    try:
+        certify(x, cc, list(sig) + [mp.mpf(0)], mu, A + [extra], dps=80)
+        ok = True
+    except (AssertionError, ZeroDivisionError):
+        ok = False
+    assert not ok
+
+
+def test_packing_square_two_disks_euler():
+    from kisscrit.packing import Cube, explore, euler_with_rattlers, euler_target, PCensus
+    cont = Cube(2); rng = np.random.default_rng(2)
+    C = explore(cont, 2, rng, ascents=15, kkt_starts=300)
+    T = C.sorted()
+    assert abs(T[0]['rho'] - (2 - 2 ** 0.5) / 2) < 1e-9 and T[0]['coindex'] == 0
+    C1 = PCensus(cont, 1); C1.add(np.array([[0.5, 0.5]]))
+    assert euler_with_rattlers({1: C1, 2: C}, 2)[0] == euler_target(cont, 2) == 0
+
+
+def test_packing_disk_three():
+    from kisscrit.packing import Ball, explore
+    C = explore(Ball(2), 3, np.random.default_rng(3), ascents=15, kkt_starts=300)
+    T = C.sorted()
+    assert abs(T[0]['rho'] - (2 * 3 ** 0.5 - 3)) < 1e-9 and T[0]['labeled'] == 2
+    assert sum((-1) ** t['coindex'] * t['labeled'] for t in T) == -1

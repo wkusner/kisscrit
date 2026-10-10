@@ -35,8 +35,10 @@ T_k is the k-th triangulation in `data/triangulations_n12.json`, which is in BFS
 - T1: ≥ 60.0633°. Random starts gave only 59.57°; seeding from a critical configuration was necessary.
 - T5: ≥ 60.0398°. With every convexity slack forced ≥ 10⁻³, it is still 60.0392°, so the realization is strictly convex.
 - T7: ≥ 60.0101°.
-- At least eight more types reach 60° exactly, but apparently not more.
-- Every other type evaluated so far is below 60°. The survey over all 7595 types is in progress.
+- Survey complete (all 7595 types). Of the other 7591 types:
+  - 8 reach 60° but no more, to optimizer accuracy;
+  - 2871 stay below 60°, the largest at 57.52°;
+  - for 4712 the local method found no convex inscribed realization at all (a failure of the method, not a proof that none exists).
 
 ## Two more pieces of evidence for (a)
 
@@ -52,3 +54,14 @@ T_k is the k-th triangulation in `data/triangulations_n12.json`, which is in BFS
 (b) their contact graph is a subgraph of the icosahedral graph.
 
 Given (a), part (b) is a finite check on three triangulations. Proving (a) needs certified upper bounds θ*(T) ≤ 60° for 7591 triangulations. A degree or area argument (Fejes Tóth) should dispose of most of them. The rest can be done by interval branch-and-bound on a small polynomial program.
+
+## Candidate graphs (if the conjecture holds)
+
+These are subgraphs of the icosahedral graph, counted up to its 120 symmetries by a Burnside count (`scripts/hull12/burn.c`):
+
+- 30392 with minimum degree ≥ 3 (18 to 30 edges);
+- 1229174 if degree 2 is allowed.
+
+## Rigorous lemma
+
+Hull faces have empty circumcaps of radius < π/3, by the kissing number 12. A grid computation puts the face angles in [35.8°, 140.6°], which excludes degree 11.

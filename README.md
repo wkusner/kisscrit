@@ -27,7 +27,9 @@ with σ > 0 and every non-contact cosine strictly below c. The system has N·d +
 | `search` | `Census` of types; random ascent; contact-graph surgery; enumeration over all graphs on n ≤ 7 vertices (`graphs_on`, `solve_graph`); rattler strata; Euler-characteristic check against M_{0,N} |
 | `symmetry` | the symmetry group in O(d) and the labeled count N!/\|G ∩ SO(d)\| |
 | `exact` | arbitrary-precision Newton on the KKT system (`refine_kkt`); LLL minimal polynomials with a height test (`minpoly`); conversion from c to r |
+| `certify` | interval (Krawczyk) certification of a nondegenerate critical configuration on S²: existence and uniqueness in a box, exact contact graph, positive stress, co-index via the bordered Hessian |
 | `hull` | (d = 3) enumeration of the triangulations of S² on n vertices by flips; θ*(T), the largest minimum angle of an inscribed convex realization of T (local optimization, so a lower bound) |
+| `packing` | the same toolkit for equal balls in containers (unit square/cube, flat tori, disk/ball): ascent, square KKT systems with gauge, co-index, Morse–Bott family and rattler-stratum counting, Euler checks, high-precision refinement |
 
 ## Quick start
 
@@ -54,6 +56,8 @@ for t in C.sorted():
 
 - **N = 3 … 6, d = 3.** Every graph with minimum degree ≥ 2 was solved from random starts. Counted with rattler strata, the signed counts give χ(M_{0,N}) for N = 4 and 6. N = 5 has a degenerate two-dimensional maximum set at r = 1 + √2: twenty triangles glued at thirty square pyramids, with χ = −10. With it, N = 5 checks as well. See `docs/small-n.md`.
 - **N = 12, d = 3, above r = 1.** There are twelve critical types. Contact graphs and data are in `data/`. The local maximum M at r = 1.0010121… is certified exactly elsewhere (paper, §6).
+- **N = 12 certification.** `scripts/certify_n12.py` certifies the ten saddles above r = 1 in about 10 s each (results/certified_n12.json).
+- **Containers.** `scripts/pack_explore.py`, `scripts/pack_maxima.py`, `scripts/pack_euler.py`; see `docs/packing.md`.
 - **Hull triangulations for N = 12.** All 7595 types were enumerated. The critical configurations above r = 1 have hulls T0 (DOD only), T1, T5 and T7. See `docs/hull.md`.
 
 ## Caveats

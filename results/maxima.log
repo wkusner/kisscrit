@@ -1,0 +1,25 @@
+sq n= 7 best rho=0.174457630187  k=14 ratt=[3] nzero=0  distinct maxima=7  hits(best)=25  poly(deg 2)=[1, -8, 13]  104s
+sq n= 8 best rho=0.170540688701  k=20 ratt=[] nzero=0  distinct maxima=8  hits(best)=2  poly(deg 4)=[-1, 8, -8, -32, 32]  136s
+sq n= 9 best rho=0.166666666667  k=24 ratt=[] nzero=0  distinct maxima=6  hits(best)=35  poly(deg 1)=[-1, 6]  112s
+sq n=10 best rho=0.148204322565  k=21 ratt=[] nzero=0  distinct maxima=13  hits(best)=19  poly(deg -)=None  146s
+disk n= 2 best rho=0.500000000000  k=3 ratt=[] nzero=0  distinct maxima=1  hits(best)=60  poly(deg 1)=[-1, 2]  42s
+disk n= 3 best rho=0.464101615138  k=6 ratt=[] nzero=0  distinct maxima=1  hits(best)=60  poly(deg 2)=[-3, 6, 1]  48s
+disk n= 4 best rho=0.414213562373  k=8 ratt=[] nzero=0  distinct maxima=1  hits(best)=58  poly(deg 2)=[-1, 2, 1]  84s
+disk n= 5 best rho=0.370191908159  k=10 ratt=[] nzero=0  distinct maxima=1  hits(best)=52  poly(deg 4)=[5, -20, 10, 20, 1]  140s
+disk n= 6 best rho=0.333333333333  k=10 ratt=[] nzero=4  distinct maxima=2  hits(best)=6  poly(deg 1)=[-1, 3]  400s
+disk n= 7 best rho=0.333333333333  k=18 ratt=[] nzero=0  distinct maxima=1  hits(best)=57  poly(deg 1)=[-1, 3]  148s
+disk n= 8 best rho=0.302593388349  k=14 ratt=[6] nzero=0  distinct maxima=1  hits(best)=59  poly(deg 6)=[-7, 42, -49, -84, 119, 42, 1]  86s
+disk n= 9 best rho=0.276768653914  k=16 ratt=[2] nzero=0  distinct maxima=5  hits(best)=4  poly(deg 4)=[1, -4, -2, 12, 1]  109s
+disk n=10 best rho=0.262258924190  k=20 ratt=[] nzero=0  distinct maxima=8  hits(best)=11  poly(deg -)=None  128s
+tor n= 2 best rho=0.353553390593  k=4 ratt=[] nzero=0  distinct maxima=1  hits(best)=60  poly(deg 2)=[-1, 0, 8]  29s
+tor n= 3 best rho=0.258819045102  k=5 ratt=[] nzero=0  distinct maxima=1  hits(best)=60  poly(deg 4)=[1, 0, -16, 0, 16]  32s
+tor n= 4 best rho=0.258819045102  k=10 ratt=[] nzero=0  distinct maxima=1  hits(best)=60  poly(deg 4)=[1, 0, -16, 0, 16]  45s
+tor n= 5 best rho=0.223606797750  k=10 ratt=[] nzero=0  distinct maxima=1  hits(best)=60  poly(deg 2)=[-1, 0, 20]  53s
+tor n= 6 best rho=0.200202774303  k=12 ratt=[] nzero=0  distinct maxima=3  hits(best)=37  poly(deg 4)=[1, -2, -14, -12, 36]  70s
+tor n= 7 best rho=0.183012701892  k=14 ratt=[] nzero=0  distinct maxima=3  hits(best)=26  poly(deg 2)=[-1, 4, 8]  94s
+tor n= 8 best rho=0.183012701892  k=20 ratt=[] nzero=0  distinct maxima=3  hits(best)=32  poly(deg 2)=[-1, 4, 8]  118s
+hex n= 2 best rho=0.288675134595  k=3 ratt=[] nzero=0  distinct maxima=1  hits(best)=60  poly(deg 1)=[-20282409603651668661276482295865, 70260327866895252301758861410304]  22s
+hex n= 3 best rho=0.288675134595  k=9 ratt=[] nzero=0  distinct maxima=1  hits(best)=60  poly(deg -)=None  41s
+hex n= 4 best rho=0.250000000000  k=12 ratt=[] nzero=0  distinct maxima=1  hits(best)=60  poly(deg -)=None  50s
+hex n= 5 best rho=0.198071747848  k=9 ratt=[] nzero=0  distinct maxima=1  hits(best)=60  poly(deg -)=None  53s
+hex n= 6 best rho=0.188982236505  k=15 ratt=[] nzero=0  distinct maxima=1  hits(best)=60  poly(deg -)=None  68s

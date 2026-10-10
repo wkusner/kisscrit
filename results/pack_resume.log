@@ -1,0 +1,117 @@
+hex n= 2 best rho=0.288675134595  k=3 ratt=[] nzero=0  distinct maxima=1  hits(best)=40  poly(deg 2)=[-1, 0, 12]  60s
+hex n= 3 best rho=0.288675134595  k=9 ratt=[] nzero=0  distinct maxima=1  hits(best)=40  poly(deg 2)=[-1, 0, 12]  98s
+hex n= 4 best rho=0.250000000000  k=12 ratt=[] nzero=0  distinct maxima=1  hits(best)=40  poly(deg 1)=[-1, 4]  117s
+hex n= 5 best rho=0.198071747848  k=9 ratt=[] nzero=0  distinct maxima=1  hits(best)=40  poly(deg 4)=[1, 0, -28, 0, 64]  140s
+hex n= 6 best rho=0.188982236505  k=15 ratt=[] nzero=0  distinct maxima=1  hits(best)=40  poly(deg 2)=[-1, 0, 28]  169s
+hex n= 7 best rho=0.188982236505  k=21 ratt=[] nzero=0  distinct maxima=1  hits(best)=40  poly(deg 2)=[-1, 0, 28]  219s
+hex n= 8 best rho=0.166666666667  k=21 ratt=[] nzero=0  distinct maxima=2  hits(best)=31  poly(deg 1)=[-1, 6]  212s
+cube n= 2 best rho=0.316987298108  k=7 ratt=[] nzero=0  distinct maxima=1  hits(best)=30  poly(deg 2)=[3, -12, 8]  44s
+cube n= 3 best rho=0.292893218813  k=12 ratt=[] nzero=0  distinct maxima=1  hits(best)=30  poly(deg 2)=[1, -4, 2]  81s
+cube n= 4 best rho=0.292893218813  k=18 ratt=[] nzero=0  distinct maxima=3  hits(best)=18  poly(deg 2)=[1, -4, 2]  71s
+cube n= 5 best rho=0.263932022500  k=18 ratt=[] nzero=0  distinct maxima=6  hits(best)=10  poly(deg 2)=[5, -20, 4]  100s
+cube n= 6 best rho=0.257359312881  k=24 ratt=[] nzero=0  distinct maxima=10  hits(best)=4  poly(deg 2)=[9, -36, 4]  182s
+cube n= 7 best rho=0.250125100526  k=23 ratt=[] nzero=0  distinct maxima=10  hits(best)=1  poly(deg -)=None  301s
+cube n= 8 best rho=0.250000000000  k=36 ratt=[] nzero=0  distinct maxima=7  hits(best)=13  poly(deg 1)=[-1, 4]  154s
+ball n= 2 best rho=0.500000000000  k=3 ratt=[] nzero=0  distinct maxima=1  hits(best)=30  poly(deg 1)=[-1, 2]  36s
+ball n= 3 best rho=0.464101615138  k=6 ratt=[] nzero=0  distinct maxima=1  hits(best)=30  poly(deg 2)=[-3, 6, 1]  50s
+ball n= 4 best rho=0.449489742783  k=10 ratt=[] nzero=0  distinct maxima=1  hits(best)=30  poly(deg 2)=[-2, 4, 1]  47s
+ball n= 5 best rho=0.414213562373  k=11 ratt=[] nzero=2  distinct maxima=1  hits(best)=5  poly(deg 2)=[-1, 2, 1]  305s
+ball n= 6 best rho=0.414213562373  k=18 ratt=[] nzero=0  distinct maxima=1  hits(best)=24  poly(deg 2)=[-1, 2, 1]  176s
+ball n= 7 best rho=0.385913557399  k=19 ratt=[] nzero=0  distinct maxima=1  hits(best)=30  poly(deg 6)=[1, -6, 12, -8, -3, 6, 1]  102s
+ball n= 8 best rho=0.378024844801  k=24 ratt=[] nzero=0  distinct maxima=1  hits(best)=28  poly(deg 4)=[2, -8, 4, 8, 1]  149s
+tor3 n= 2 best rho=0.433012701892  k=8 ratt=[] nzero=0  distinct maxima=1  hits(best)=30  poly(deg 2)=[-3, 0, 16]  30s
+refine failed matrix is numerically singular
+tor3 n= 3 best rho=0.353553390593  k=12 ratt=[] nzero=0  distinct maxima=1  hits(best)=30  poly(deg -)=None  44s
+Traceback (most recent call last):
+  File "/home/claude/kisscrit-repo/scripts/pack_maxima.py", line 19, in <module>
+    X, r = ascend(cont, cont.random(n, rng))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/kisscrit-repo/scripts/../kisscrit/packing.py", line 189, in ascend
+    tau = res.x[-1]; v = res.x[:-1].reshape(n, d)
+          ~~~~~^^^^
+TypeError: 'NoneType' object is not subscriptable
+cube n 2 types 3 signed (2, []) target 2 125s
+  rho=0.3169872981 k=7 coidx=0 nzero=0 ratt=[] labeled=8 family=None hits=163
+  rho=0.2928932188 k=5 coidx=1 nzero=1 ratt=[] labeled=24 family=12 hits=22
+  rho=0.2500000000 k=3 coidx=2 nzero=2 ratt=[] labeled=48 family=6 hits=9
+cube n 3 types 6 signed (-18, []) target 6 173s
+  rho=0.2928932188 k=12 coidx=0 nzero=0 ratt=[] labeled=48 family=None hits=40
+  rho=0.2752551286 k=9 coidx=1 nzero=0 ratt=[] labeled=48 family=None hits=4
+  rho=0.2752551286 k=9 coidx=1 nzero=0 ratt=[] labeled=72 family=None hits=1
+  rho=0.2543330950 k=7 coidx=2 nzero=1 ratt=[] labeled=72 family=72 hits=5
+  rho=0.2071067812 k=6 coidx=3 nzero=1 ratt=[] labeled=72 family=36 hits=2
+  rho=0.1666666667 k=4 coidx=4 nzero=2 ratt=[] labeled=144 family=18 hits=6
+tor3 n 2 types 3 signed (1, []) target 1 147s
+  rho=0.4330127019 k=8 coidx=0 nzero=0 ratt=[] labeled=1 family=None hits=40
+  rho=0.3535533906 k=4 coidx=1 nzero=0 ratt=[] labeled=3 family=None hits=11
+  rho=0.2500000000 k=2 coidx=2 nzero=0 ratt=[] labeled=3 family=None hits=268
+tor3 n 3 types 13 signed (38, [(0.25, 2, 1, 0)]) target 2 215s
+  rho=0.3535533906 k=12 coidx=0 nzero=0 ratt=[] labeled=6 family=None hits=40
+  rho=0.3180278227 k=6 coidx=1 nzero=0 ratt=[] labeled=72 family=None hits=55
+  rho=0.3170685380 k=5 coidx=2 nzero=0 ratt=[] labeled=36 family=None hits=9
+  rho=0.3061862178 k=6 coidx=1 nzero=0 ratt=[] labeled=48 family=None hits=41
+  rho=0.3039964595 k=5 coidx=2 nzero=0 ratt=[] labeled=144 family=None hits=96
+  rho=0.2989644171 k=4 coidx=3 nzero=0 ratt=[] labeled=72 family=None hits=69
+  rho=0.2886751346 k=3 coidx=4 nzero=0 ratt=[] labeled=8 family=None hits=11
+  rho=0.2588190451 k=5 coidx=2 nzero=0 ratt=[] labeled=72 family=None hits=98
+  rho=0.2557260192 k=4 coidx=3 nzero=0 ratt=[] labeled=72 family=None hits=109
+  rho=0.2500000000 k=2 coidx=2 nzero=0 ratt=[1] labeled=None family=None hits=20
+  rho=0.2500000000 k=4 coidx=4 nzero=0 ratt=[] labeled=18 family=None hits=25
+  rho=0.2357022604 k=3 coidx=4 nzero=0 ratt=[] labeled=12 family=None hits=47
+  rho=0.1666666667 k=3 coidx=4 nzero=0 ratt=[] labeled=6 family=None hits=50
+ball n 2 types 1 signed (0, [(0.5, 0, 0, 0)]) target None 118s
+  rho=0.5000000000 k=3 coidx=0 nzero=0 ratt=[] labeled=None family=None hits=768
+ball n 3 types 2 signed (1, [(0.33333333, 2, 0, 0)]) target None 161s
+  rho=0.4641016151 k=6 coidx=0 nzero=0 ratt=[] labeled=1 family=None hits=318
+  rho=0.3333333333 k=4 coidx=2 nzero=0 ratt=[] labeled=None family=None hits=89
+sq n 4 types 8 signed (-96, [(0.16666667, 2, 1, 1)]) target 0 516s
+  rho=0.2500000000 k=12 coidx=0 nzero=0 ratt=[] labeled=24 family=None hits=60
+  rho=0.2071067812 k=8 coidx=1 nzero=0 ratt=[] labeled=24 family=None hits=23
+  rho=0.1923076923 k=8 coidx=1 nzero=0 ratt=[] labeled=96 family=None hits=14
+  rho=0.1870534608 k=8 coidx=1 nzero=0 ratt=[] labeled=96 family=None hits=19
+  rho=0.1846990313 k=7 coidx=2 nzero=0 ratt=[] labeled=96 family=None hits=12
+  rho=0.1666666667 k=4 coidx=2 nzero=1 ratt=[3] labeled=None family=None hits=5
+  rho=0.1601886205 k=7 coidx=2 nzero=0 ratt=[] labeled=48 family=None hits=1
+  rho=0.1250000000 k=5 coidx=3 nzero=1 ratt=[] labeled=96 family=48 hits=14
+tor n 4 types 9 signed (37, [(0.25, 1, 2, 0), (0.16666667, 2, 1, 0)]) target -6 600s
+  rho=0.2588190451 k=10 coidx=0 nzero=0 ratt=[] labeled=24 family=None hits=60
+  rho=0.2500000000 k=4 coidx=2 nzero=2 ratt=[] labeled=24 family=7 hits=16
+  rho=0.2500000000 k=6 coidx=1 nzero=0 ratt=[0, 3] labeled=None family=None hits=1
+  rho=0.2500000000 k=8 coidx=2 nzero=0 ratt=[] labeled=6 family=None hits=1
+  rho=0.2071067812 k=6 coidx=1 nzero=0 ratt=[] labeled=24 family=None hits=37
+  rho=0.1939536520 k=5 coidx=2 nzero=0 ratt=[] labeled=48 family=None hits=92
+  rho=0.1767766953 k=4 coidx=3 nzero=0 ratt=[] labeled=12 family=None hits=52
+  rho=0.1666666667 k=3 coidx=2 nzero=0 ratt=[1] labeled=None family=None hits=45
+  rho=0.1250000000 k=4 coidx=3 nzero=0 ratt=[] labeled=12 family=None hits=93
+hex n 4 types 8 signed (-6, [(0.16666667, 2, 1, 0)]) target -6 622s
+  rho=0.2500000000 k=12 coidx=0 nzero=0 ratt=[] labeled=6 family=None hits=60
+  rho=0.2177102723 k=6 coidx=1 nzero=0 ratt=[] labeled=72 family=None hits=180
+  rho=0.2171292730 k=5 coidx=2 nzero=0 ratt=[] labeled=72 family=None hits=67
+  rho=0.2165063509 k=4 coidx=3 nzero=0 ratt=[] labeled=18 family=None hits=11
+  rho=0.1830127019 k=6 coidx=1 nzero=0 ratt=[] labeled=48 family=None hits=163
+  rho=0.1784110449 k=5 coidx=2 nzero=0 ratt=[] labeled=72 family=None hits=139
+  rho=0.1666666667 k=3 coidx=2 nzero=0 ratt=[0] labeled=None family=None hits=67
+  rho=0.1250000000 k=4 coidx=3 nzero=0 ratt=[] labeled=18 family=None hits=115
+disk n 4 types 3 signed (18, [(0.33333333, 0, 0, 2)]) target 2 622s
+  rho=0.4142135624 k=8 coidx=0 nzero=0 ratt=[] labeled=6 family=None hits=398
+  rho=0.3333333333 k=6 coidx=0 nzero=2 ratt=[] labeled=48 family=None hits=9
+  rho=0.2500000000 k=5 coidx=2 nzero=0 ratt=[] labeled=12 family=None hits=67
+ball  n=2  types= 1  signed=     0  target=  None  --  skipped=[('n', 0.5, 'labeled?')]
+ball  n=3  types= 2  signed=     1  target=  None  --  skipped=[('n', 0.33333333, 'labeled?')]
+cube  n=2  types= 3  signed=    -4  target=     2  --  skipped=[('n', 0.25, 'nzero', 2)]
+cube  n=3  types= 6  signed=   -36  target=     6  --  skipped=[('n', 0.16666667, 'nzero', 2), ('n-1', 0.25, 'family dim > 1')]
+disk  n=2  types= 1  signed=     1  target=     1  OK  skipped=[]
+disk  n=3  types= 2  signed=    -1  target=    -1  OK  skipped=[]
+disk  n=4  types= 3  signed=    18  target=     2  --  skipped=[('n', 0.33333333, 'nzero', 2)]
+hex   n=2  types= 2  signed=    -1  target=    -1  OK  skipped=[]
+hex   n=3  types= 3  signed=     2  target=     2  OK  skipped=[]
+hex   n=4  types= 8  signed=    90  target=    -6  --  skipped=[]
+sq    n=2  types= 2  signed=     0  target=     0  OK  skipped=[]
+sq    n=3  types= 3  signed=     0  target=     0  OK  skipped=[]
+sq    n=4  types= 8  signed=     0  target=     0  OK  skipped=[]
+sq    n=5  types= 7  signed=  1320  target=     0  --  skipped=[]
+tor   n=2  types= 2  signed=    -1  target=    -1  OK  skipped=[]
+tor   n=3  types= 6  signed=     2  target=     2  OK  skipped=[]
+tor   n=4  types= 9  signed=    46  target=    -6  --  skipped=[('n', 0.25, 'nzero', 2)]
+tor3  n=2  types= 3  signed=     1  target=     1  OK  skipped=[]
+tor3  n=3  types=13  signed=    47  target=     2  --  skipped=[]
