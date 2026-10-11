@@ -1,0 +1,17 @@
+{
+ "1.0003062867": {
+  "type": "DOD-DOD",
+  "parity": "even",
+  "same": false
+ },
+ "1.0002374095": {
+  "type": "DOD-DOD",
+  "parity": "even",
+  "same": false
+ },
+ "groups": {
+  "H_top": 60,
+  "H_both_M_saddles": 239500800,
+  "H_all": 239500800
+ }
+}
