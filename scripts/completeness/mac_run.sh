@@ -97,6 +97,13 @@ if [ ! -d "$SRC/.git" ]; then
   if gh repo view "$USER_LOGIN/$REPO" >/dev/null 2>&1; then
     say "Cloning $USER_LOGIN/$REPO"
     gh repo clone "$USER_LOGIN/$REPO" "$SRC"
+  elif [ ! -f "$BUNDLE" ] && grep -q '^__BUNDLE_BASE64__$' "$0"; then
+    # self-contained copy of this script: unpack the embedded bundle
+    BUNDLE="$WORK/kisscrit-update.bundle"
+    sed -n '/^__BUNDLE_BASE64__$/,$p' "$0" | tail -n +2 \
+      | python -c "import sys, base64; sys.stdout.buffer.write(base64.b64decode(sys.stdin.read()))" > "$BUNDLE"
+  fi
+  if gh repo view "$USER_LOGIN/$REPO" >/dev/null 2>&1; then :
   elif [ -f "$BUNDLE" ]; then
     say "Creating private repository $USER_LOGIN/$REPO from $BUNDLE"
     git clone -q "$BUNDLE" "$SRC"
