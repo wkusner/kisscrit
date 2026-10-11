@@ -1,5 +1,5 @@
 """Python front end for the compiled branch and bound (fast.py): one Structure, all pentagon regions."""
-import itertools, time
+import itertools, time, zlib, base64
 import numpy as np
 from . import fast
 from .model import Model
@@ -58,22 +58,47 @@ def charts_of(S):
         yield dict(zip(pents, combo))
 
 
+CERT_VERSION = 1
+
+
+def _pack(arr):
+    return base64.b64encode(zlib.compress(np.ascontiguousarray(arr).astype(arr.dtype.newbyteorder('<')).tobytes(), 9)).decode()
+
+
 def run(S, th_lo, th_hi, tol=1e-6, max_boxes=10 ** 8, w_lp=10.0, w_gordan=0.2, rounds=3, use_bounds=True,
-        charts=None, time_limit=None):
+        charts=None, time_limit=None, certificate=False):
+    """Branch and bound over all pentagon regions of S.  Returns (terminal, stats), and with certificate=True
+    also the certificate (a JSON-ready dict, format in docs/certificate-format.md)."""
     if charts is None: S = oriented(S)
     t0 = time.time(); tot = np.zeros(8, np.int64); terminal = []; aborted = False
-    for ch in (charts if charts is not None else charts_of(S)):
+    cert = dict(version=CERT_VERSION, theta=[float(th_lo), float(th_hi)], tol=float(tol),
+                faces=[list(map(int, f)) for f in S.faces], charts=[])
+    chart_list = list(charts if charts is not None else charts_of(S))
+    for ci, ch in enumerate(chart_list):
         A = arrays(S, ch)
         lo0, hi0 = Model(S, ch).initial_box(th_lo, th_hi)
         for fi, mode in ch.items():          # straight corners at degree-2 vertices are fixed at pi
             if len(S.rot[S.faces[fi][4]]) == 2:
                 k = S.pidx[fi][1] if mode == 'b' else S.pidx[fi][0]
                 lo0[k] = hi0[k] = np.pi
-        st, TL, TH, ab = fast.run_chart(*A, lo0, hi0, tol, max_boxes, w_lp, w_gordan, rounds, use_bounds)
+        st, TL, TH, ab, ev, qs = fast.run_chart(*A, lo0, hi0, tol, max(max_boxes - int(tot[0]), 1), w_lp, w_gordan,
+                                                rounds, use_bounds)
         tot += st; terminal += [(ch, l, h) for l, h in zip(TL, TH)]
-        if ab: aborted = True; break
-        if time_limit and time.time() - t0 > time_limit: aborted = True; break
+        if certificate:
+            cert['charts'].append(dict(modes={str(k): v for k, v in sorted(ch.items())},
+                                       lo0=[float(x) for x in lo0], hi0=[float(x) for x in hi0],
+                                       events=_pack(ev), q=_pack(qs), n_events=int(len(ev)), complete=not ab))
+        if ab or (time_limit and time.time() - t0 > time_limit):
+            aborted = True
+            if certificate:
+                for ch2 in chart_list[ci + 1:]:
+                    cert['charts'].append(dict(modes={str(k): v for k, v in sorted(ch2.items())}, complete=False,
+                                               not_run=True))
+            break
     names = ['boxes', 'invalid', 'vsum', 'linear', 'gordan_inherit', 'gordan', 'terminal', 'gordan_lp']
     stats = dict(zip(names, map(int, tot))); stats['time'] = time.time() - t0; stats['aborted'] = aborted
     stats['faces'] = [list(map(int, f)) for f in S.faces]
+    if certificate:
+        cert['complete'] = not aborted
+        return terminal, stats, cert
     return terminal, stats

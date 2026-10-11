@@ -534,14 +534,52 @@ def eval_all(fsize, fp0, fp1, fmode, vstart, vface, vpos, lo, hi, blo, bhi):
     return ok, vok, C[:, :, 0].copy(), C[:, :, 1].copy(), FL, FH, JL, JH
 
 
+# Contracted bounds are rounded outward to a grid of 2^16 steps across the box the contraction started from, so
+# that a certificate records each changed bound in two bytes.  The grid value is computed exactly this way by
+# the checker:  q == 0 -> lo0;  q == QMAX -> hi0;  otherwise lo0 + (hi0 - lo0) * (q / QMAX).
+QMAX = 65536
+
+
+@njit(cache=True)
+def grid_value(lo0, hi0, q):
+    if q <= 0: return lo0
+    if q >= QMAX: return hi0
+    return lo0 + (hi0 - lo0) * (q / 65536.0)
+
+
+@njit(cache=True)
+def grid_down(lo0, hi0, x):
+    """Largest grid index q with grid_value(q) <= x (x in [lo0, hi0])."""
+    if hi0 <= lo0: return 0
+    q = int(math.floor((x - lo0) / (hi0 - lo0) * QMAX))
+    q = min(max(q, 0), QMAX)
+    while q > 0 and grid_value(lo0, hi0, q) > x: q -= 1
+    while q < QMAX and grid_value(lo0, hi0, q + 1) <= x: q += 1
+    return q
+
+
+@njit(cache=True)
+def grid_up(lo0, hi0, x):
+    """Smallest grid index q with grid_value(q) >= x."""
+    if hi0 <= lo0: return QMAX
+    q = int(math.ceil((x - lo0) / (hi0 - lo0) * QMAX))
+    q = min(max(q, 0), QMAX)
+    while q < QMAX and grid_value(lo0, hi0, q) < x: q += 1
+    while q > 0 and grid_value(lo0, hi0, q - 1) >= x: q -= 1
+    return q
+
+
 @njit(cache=True)
 def contract(fsize, fp0, fp1, fmode, vstart, vface, vpos, lo, hi, rounds, use_bounds):
-    """Returns (status, lo, hi, CL, CH): status 0 alive, 1 invalid, 2 vsum, 3 linear exclusion."""
+    """Returns (status, lo, hi, CL, CH, qlo, qhi): status 0 alive, 1 invalid, 2 vsum, 3 linear exclusion.
+    The returned box is the grid box [grid_value(qlo), grid_value(qhi)] relative to the input box."""
     n = lo.shape[0]; V = vstart.shape[0] - 1
+    lo0 = lo.copy(); hi0 = hi.copy()
+    qlo = np.zeros(n, np.int64); qhi = np.full(n, QMAX, np.int64)
     lo = lo.copy(); hi = hi.copy()
     ok, vok, CL, CH, FL, FH, JL, JH = eval_all(fsize, fp0, fp1, fmode, vstart, vface, vpos, lo, hi, lo, hi)
-    if not ok: return 1, lo, hi, CL, CH
-    if not vok: return 2, lo, hi, CL, CH
+    if not ok: return 1, lo, hi, CL, CH, qlo, qhi
+    if not vok: return 2, lo, hi, CL, CH, qlo, qhi
     for rnd in range(rounds):
         m = 0.5 * (lo + hi)
         okm, _, _, _, FmL, FmH, _, _ = eval_all(fsize, fp0, fp1, fmode, vstart, vface, vpos, m, m, lo, hi)
@@ -578,7 +616,7 @@ def contract(fsize, fp0, fp1, fmode, vstart, vface, vpos, lo, hi, rounds, use_bo
             mu = lp_multipliers(T, V, n)
             for v in range(V):
                 if not mask[v]: mu[v] = 0.0
-            if excluded_by(mu, FL2, FH2, JL2, JH2, ylo, yhi): return 3, lo, hi, CL, CH
+            if excluded_by(mu, FL2, FH2, JL2, JH2, ylo, yhi): return 3, lo, hi, CL, CH, qlo, qhi
             break
         if not use_bounds: break
         w0 = hi - lo
@@ -592,20 +630,27 @@ def contract(fsize, fp0, fp1, fmode, vstart, vface, vpos, lo, hi, rounds, use_bo
                 for v in range(V):
                     if not mask[v]: mu[v] = 0.0
                 nl, nh, emp = gs_update(mu, k, FL2, FH2, JL2, JH2, ylo, yhi)
-                if emp: return 3, lo, hi, CL, CH
+                if emp: return 3, lo, hi, CL, CH, qlo, qhi
                 ylo[k] = nl; yhi[k] = nh
         newlo = np.empty(n); newhi = np.empty(n)
         for j in range(n):
-            newlo[j] = max(lo[j], dn(m[j] + ylo[j])); newhi[j] = min(hi[j], up(m[j] + yhi[j]))
+            a = max(lo[j], dn(m[j] + ylo[j])); b = min(hi[j], up(m[j] + yhi[j]))
+            if hi0[j] > lo0[j]:
+                qlo[j] = max(qlo[j], grid_down(lo0[j], hi0[j], a))
+                qhi[j] = min(qhi[j], grid_up(lo0[j], hi0[j], b))
+                # keep both indices encodable in 16 bits: qlo <= QMAX - 1, qhi >= qlo + 1 (outward, sound)
+                qlo[j] = min(qlo[j], QMAX - 1)
+                if qhi[j] < qlo[j] + 1: qhi[j] = qlo[j] + 1
+            newlo[j] = grid_value(lo0[j], hi0[j], qlo[j]); newhi[j] = grid_value(lo0[j], hi0[j], qhi[j])
         lo = newlo; hi = newhi
         ok, vok, CL, CH, FL, FH, JL, JH = eval_all(fsize, fp0, fp1, fmode, vstart, vface, vpos, lo, hi, lo, hi)
-        if not ok: return 1, lo, hi, CL, CH
-        if not vok: return 2, lo, hi, CL, CH
+        if not ok: return 1, lo, hi, CL, CH, qlo, qhi
+        if not vok: return 2, lo, hi, CL, CH, qlo, qhi
         shrink = 0.0
         for j in range(n):
             if w0[j] > 0: shrink = max(shrink, (w0[j] - (hi[j] - lo[j])) / w0[j])
         if shrink < 0.2: break
-    return 0, lo, hi, CL, CH
+    return 0, lo, hi, CL, CH, qlo, qhi
 
 
 # ============================================================================ Gordan
@@ -735,33 +780,70 @@ def motzkin_check(vstart, vface, vpos, eu, eus, ew, ews, CL, CH, y):
 
 
 # ============================================================================ driver
+# Certificate events (see docs/certificate-format.md), one byte each, in depth-first preorder:
+#   1 invalid  2 vertex-sum  3 linear  4 gordan (inherited vector)  5 gordan  6 motzkin  7 terminal  8 open
+#   16 + k     bisect coordinate k at the midpoint; the UPPER child's subtree follows, then the LOWER child's
+#   64 + k     contract coordinate k to grid indices (qlo, QMAX - qhi), two uint16 in the q stream
+EV_SPLIT = 16
+EV_CONTRACT = 64
+
+
+@njit(cache=True)
+def _push_ev(ev, nev, code):
+    if nev == ev.shape[0]:
+        e2 = np.empty(2 * nev, np.uint8); e2[:nev] = ev; ev = e2
+    ev[nev] = code
+    return ev, nev + 1
+
+
+@njit(cache=True)
+def _push_q(qs, nq, a, b):
+    if nq + 2 > qs.shape[0]:
+        q2 = np.empty(2 * qs.shape[0] + 2, np.uint16); q2[:nq] = qs[:nq]; qs = q2
+    qs[nq] = a; qs[nq + 1] = b
+    return qs, nq + 2
+
+
 @njit(cache=True)
 def run_chart(fsize, fp0, fp1, fmode, vstart, vface, vpos, eu, eus, ew, ews, lo0, hi0, tol, max_boxes,
               w_lp, w_gordan, rounds, use_bounds):
-    """Depth-first branch and bound over one chart.  Returns (stats, terminal_lo, terminal_hi, aborted)."""
+    """Depth-first branch and bound over one chart.
+    Returns (stats, terminal_lo, terminal_hi, aborted, events, qstream)."""
     n = lo0.shape[0]; V = vstart.shape[0] - 1
     cap = 1024
     SL = np.empty((cap, n)); SH = np.empty((cap, n)); SY = np.zeros((cap, 2 * V)); SHY = np.zeros(cap, np.bool_)
     SL[0] = lo0; SH[0] = hi0; top = 1
     TL = np.empty((64, n)); TH = np.empty((64, n)); nt = 0
+    ev = np.empty(4096, np.uint8); nev = 0
+    qs = np.empty(4096, np.uint16); nq = 0
     stats = np.zeros(8, np.int64)   # boxes, invalid, vsum, linear, gordan_inherit, gordan, terminal, lpcalls
+    aborted = False
     while top > 0:
         top -= 1
+        if aborted:                       # budget exhausted: the rest of the stack is recorded as open
+            ev, nev = _push_ev(ev, nev, 8); continue
         lo = SL[top].copy(); hi = SH[top].copy(); y = SY[top].copy(); hy = SHY[top]
         stats[0] += 1
         if stats[0] > max_boxes:
-            return stats, TL[:nt], TH[:nt], True
+            aborted = True
+            ev, nev = _push_ev(ev, nev, 8); continue
         wmax = 0.0
         for j in range(n): wmax = max(wmax, hi[j] - lo[j])
         if wmax <= w_lp:
-            status, lo, hi, CL, CH = contract(fsize, fp0, fp1, fmode, vstart, vface, vpos, lo, hi, rounds, use_bounds)
+            status, lo2, hi2, CL, CH, qlo, qhi = contract(fsize, fp0, fp1, fmode, vstart, vface, vpos, lo, hi,
+                                                            rounds, use_bounds)
+            for j in range(n):
+                if qlo[j] > 0 or qhi[j] < QMAX:
+                    ev, nev = _push_ev(ev, nev, EV_CONTRACT + j)
+                    qs, nq = _push_q(qs, nq, qlo[j], QMAX - qhi[j])
+            lo = lo2; hi = hi2
         else:
             ok, vok, CL, CH, FL, FH, JL, JH = eval_all(fsize, fp0, fp1, fmode, vstart, vface, vpos, lo, hi, lo, hi)
             status = 0 if (ok and vok) else (1 if not ok else 2)
         if status > 0:
-            stats[status] += 1; continue
+            stats[status] += 1; ev, nev = _push_ev(ev, nev, status); continue
         if hy and gordan_check(vstart, vface, vpos, eu, eus, ew, ews, CL, CH, y):
-            stats[4] += 1; continue
+            stats[4] += 1; ev, nev = _push_ev(ev, nev, 4); continue
         wmax = 0.0
         for j in range(n): wmax = max(wmax, hi[j] - lo[j])
         if wmax <= w_gordan:
@@ -773,10 +855,10 @@ def run_chart(fsize, fp0, fp1, fmode, vstart, vface, vpos, eu, eus, ew, ews, lo0
             if found:
                 y = y2; hy = True
                 if gordan_check(vstart, vface, vpos, eu, eus, ew, ews, CL, CH, y):
-                    stats[5] += 1; continue
+                    stats[5] += 1; ev, nev = _push_ev(ev, nev, 5); continue
             found, y3 = motzkin_vector(vstart, vface, vpos, eu, eus, ew, ews, Cpt)
             if found and motzkin_check(vstart, vface, vpos, eu, eus, ew, ews, CL, CH, y3):
-                stats[5] += 1; continue
+                stats[5] += 1; ev, nev = _push_ev(ev, nev, 6); continue
         k = 0
         for j in range(n):
             if hi[j] - lo[j] > hi[k] - lo[k]: k = j
@@ -784,13 +866,16 @@ def run_chart(fsize, fp0, fp1, fmode, vstart, vface, vpos, eu, eus, ew, ews, lo0
             if nt == TL.shape[0]:
                 TL2 = np.empty((2 * nt, n)); TH2 = np.empty((2 * nt, n)); TL2[:nt] = TL; TH2[:nt] = TH; TL = TL2; TH = TH2
             TL[nt] = lo; TH[nt] = hi; nt += 1; stats[6] += 1
+            ev, nev = _push_ev(ev, nev, 7)
             continue
         if top + 2 > cap:
             cap *= 2
             SL2 = np.empty((cap, n)); SH2 = np.empty((cap, n)); SY2 = np.zeros((cap, 2 * V)); SHY2 = np.zeros(cap, np.bool_)
             SL2[:top] = SL[:top]; SH2[:top] = SH[:top]; SY2[:top] = SY[:top]; SHY2[:top] = SHY[:top]
             SL = SL2; SH = SH2; SY = SY2; SHY = SHY2
+        ev, nev = _push_ev(ev, nev, EV_SPLIT + k)
         mid = 0.5 * (lo[k] + hi[k])
+        # pushed lower first, so the upper child is popped (and logged) first
         SL[top] = lo; SH[top] = hi; SH[top, k] = mid; SY[top] = y; SHY[top] = hy; top += 1
         SL[top] = lo; SH[top] = hi; SL[top, k] = mid; SY[top] = y; SHY[top] = hy; top += 1
-    return stats, TL[:nt], TH[:nt], False
+    return stats, TL[:nt], TH[:nt], aborted, ev[:nev].copy(), qs[:nq].copy()

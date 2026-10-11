@@ -10,7 +10,7 @@ Status keys: [ ] open · [~] in progress · [x] done · [-] dropped
 
 The long run on the iMac should produce data that can be checked independently. These items come first so that weeks of compute are not spent on output nobody can audit.
 
-- [ ] **A1. Certificate format.**
+- [x] **A1. Certificate format.** (2026-10-11: format v1 in `docs/certificate-format.md`; `kisscrit/core/certificate.py` replays it; tag run-v1)
   - **Change:** the branch and bound writes, for each candidate, a compact proof tree: starting boxes per chart, bisections, contractions (removed slabs), and leaves with their exclusion reason (invalid, vertex sum, linear, Gordan or Motzkin, terminal).
   - **Spec:** `docs/certificate-format.md`, written so the checker needs nothing else.
   - **Done when:** the run writes certificates, and their size per candidate has been measured.

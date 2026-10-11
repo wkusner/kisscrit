@@ -81,7 +81,7 @@ source "$MF/etc/profile.d/conda.sh"
 # ---------------------------------------------------------------- 2. environment
 if ! conda env list | grep -q '^kisscrit '; then
   say "Creating the Python environment (a few minutes)"
-  conda create -y -q -n kisscrit -c conda-forge python=3.11 numpy scipy networkx mpmath numba git gh
+  conda create -y -q -n kisscrit -c conda-forge python=3.11 numpy scipy networkx mpmath numba python-flint git gh
 fi
 conda activate kisscrit
 

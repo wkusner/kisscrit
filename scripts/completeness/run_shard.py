@@ -20,6 +20,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 sys.path.insert(0, ROOT)
 GEN = os.path.join(ROOT, 'results', 'completeness', 'gen')
 CERT = os.path.join(ROOT, 'results', 'completeness', 'cert')
+PROOF = os.path.join(ROOT, 'results', 'completeness', 'certificates')
 ROUTES = {'cond': [0, 1, 5, 7], 'test': [3000]}
 R_MIN_DEFAULT = 1.0001          # certify configurations with r >= R_MIN (theta >= theta(R_MIN))
 
@@ -90,7 +91,8 @@ def certify_one(item):
     code, faces = item; a = _ARGS
     S = Structure(faces)
     t0 = time.time()
-    term, st = runner.run(S, theta_of_r(a.r_min), np.radians(63.4349489), tol=a.tol, max_boxes=a.budget)
+    term, st, cert = runner.run(S, theta_of_r(a.r_min), np.radians(63.4349489), tol=a.tol, max_boxes=a.budget,
+                                certificate=True)
     status = 'budget' if st['aborted'] else ('excluded' if not term else 'terminal')
     rec = dict(code=code, status=status, E=len(S.edges), sizes=sorted(S.sizes), stats=st,
                r_min=a.r_min, tol=a.tol, budget=a.budget, host=os.uname().nodename, seconds=round(time.time() - t0, 2))
@@ -98,7 +100,7 @@ def certify_one(item):
         rec['terminal'] = [dict(chart=ch, lo=list(map(float, lo)), hi=list(map(float, hi))) for ch, lo, hi in term[:200]]
         rec['n_terminal'] = len(term)
     rec['faces'] = faces
-    return rec
+    return rec, dict(code=code, certificate=cert)
 
 
 def certify(args):
@@ -114,9 +116,12 @@ def certify(args):
             if d.get('budget', 0) >= args.budget or d['status'] != 'budget': done.add(d['code'])
     todo = [(c, cands[c]) for c in mine if c not in done]
     print('shard %d/%d: %d candidates, %d done, %d to do' % (args.shard, args.of, len(mine), len(done), len(todo)), flush=True)
+    os.makedirs(PROOF, exist_ok=True)
+    pout = os.path.join(PROOF, 'certificates-%s-%d-of-%d.jsonl' % (args.route, args.shard, args.of))
     t0 = time.time(); n = 0
-    with open(out, 'a') as f, Pool(args.workers, initializer=_init, initargs=(args,)) as pool:
-        for rec in pool.imap_unordered(certify_one, todo, chunksize=1):
+    with open(out, 'a') as f, open(pout, 'a') as fp, Pool(args.workers, initializer=_init, initargs=(args,)) as pool:
+        for rec, proof in pool.imap_unordered(certify_one, todo, chunksize=1):
+            fp.write(json.dumps(proof) + '\n'); fp.flush()       # certificate first, then the result line
             f.write(json.dumps(rec) + '\n'); f.flush(); n += 1
             if n % 20 == 0 or rec['status'] != 'excluded':
                 print('%d/%d  %s  %s  %.1fs  (elapsed %.0fs)' % (n, len(todo), rec['status'], rec['code'][:24], rec['seconds'],
