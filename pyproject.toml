@@ -15,6 +15,7 @@ dependencies = ["numpy", "scipy>=1.9", "networkx>=2.8", "mpmath"]
 [project.optional-dependencies]
 exact = ["python-flint", "sympy"]
 test = ["pytest"]
+completeness = ["numba>=0.58"]
 
 [tool.setuptools]
-packages = ["kisscrit"]
+packages = ["kisscrit", "kisscrit.completeness"]
