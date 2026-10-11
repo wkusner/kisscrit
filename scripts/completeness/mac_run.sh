@@ -46,6 +46,13 @@ DETACHED=0; [ "$1" = "--detached" ] && DETACHED=1
 LABEL="org.kisscrit.run"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 
+MACOS_MAJOR="$(sw_vers -productVersion 2>/dev/null | cut -d. -f1)"
+if [ -n "$MACOS_MAJOR" ] && [ "$MACOS_MAJOR" -lt 11 ]; then
+  echo "This Mac runs macOS $(sw_vers -productVersion). The Python packages used here (conda-forge) need macOS 11 or newer."
+  echo "Upgrade macOS first (a Late 2015 iMac can run macOS 12 Monterey), then run this again."
+  exit 1
+fi
+
 say() { printf '\n\033[1m== %s\033[0m\n' "$*"; }
 mkdir -p "$WORK/logs"
 
