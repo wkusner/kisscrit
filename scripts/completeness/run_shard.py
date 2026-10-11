@@ -121,6 +121,8 @@ def certify(args):
             if n % 20 == 0 or rec['status'] != 'excluded':
                 print('%d/%d  %s  %s  %.1fs  (elapsed %.0fs)' % (n, len(todo), rec['status'], rec['code'][:24], rec['seconds'],
                                                               time.time() - t0), flush=True)
+    open(os.path.join(CERT, 'done-%s-%d-of-%d.txt' % (args.route, args.shard, args.of)), 'w').write(
+        '%s budget=%d\n' % (os.uname().nodename, args.budget))
     print('certify shard done:', out)
 
 

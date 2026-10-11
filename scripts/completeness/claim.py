@@ -6,7 +6,8 @@ commits and pushes that file; if the push is rejected (someone else pushed first
 was taken in the meantime we try the next one.
 
   python scripts/completeness/claim.py --phase certify --route cond --of 40 --name lawrence-laptop
-prints the claimed shard number (and nothing else on stdout), or exits with status 1 if none are free.
+prints the claimed shard number (and nothing else on stdout); exits with status 1 if none are free, 3 if git
+fails.
 """
 import argparse, os, subprocess, sys, datetime
 
@@ -27,7 +28,9 @@ def main():
     a = ap.parse_args()
     os.makedirs(CL, exist_ok=True)
     for attempt in range(20):
-        git('pull', '--rebase', '--quiet')
+        r = git('pull', '--rebase', '--quiet', check=False)
+        if r.returncode != 0:
+            print('git pull failed (network? uncommitted changes?):\n' + r.stderr, file=sys.stderr); sys.exit(3)
         taken = set(os.listdir(CL))
         free = [k for k in range(a.of) if '%s-%s-%d-of-%d.txt' % (a.phase, a.route, k, a.of) not in taken]
         if not free:
