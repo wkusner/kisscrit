@@ -16,8 +16,11 @@
 #    7. phase B: claims shards one at a time, certifies them on all cores, commits and pushes each one
 #    8. prints the summary and pushes it
 #
-#  Stop at any time with Control-C (or close the window).  Run the same line again to resume.
-#  The Mac is kept awake while the script runs (caffeinate).  Logs: ~/kisscrit-run/logs/
+#  After the self-test the run is handed to launchd (a LaunchAgent, org.kisscrit.run): it keeps running
+#  with the Terminal window closed, restarts by itself after a reboot or log-in, and keeps the Mac awake
+#  (caffeinate; on a laptop keep it plugged in).  Progress:  tail -f ~/kisscrit-run/logs/run.log
+#  Stop for good:   launchctl bootout gui/$(id -u)/org.kisscrit.run
+#  Interactive run without launchd:   AUTOSTART=0 bash mac_run.sh
 #
 #  Settings you can override, e.g.   REPO=critconfig WORKERS=3 bash ~/Downloads/mac_run.sh
 #    REPO     repository name on your GitHub account                (default: kisscrit)
@@ -38,11 +41,24 @@ WORK="$HOME/kisscrit-run"
 MF="$HOME/miniforge3"
 NAME="$(scutil --get ComputerName 2>/dev/null | tr ' ' '-' || hostname -s)"
 
+AUTOSTART="${AUTOSTART:-1}"
+DETACHED=0; [ "$1" = "--detached" ] && DETACHED=1
+LABEL="org.kisscrit.run"
+PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
+
 say() { printf '\n\033[1m== %s\033[0m\n' "$*"; }
 mkdir -p "$WORK/logs"
 
-# keep the Mac awake for as long as this script runs
-caffeinate -i -w $$ &
+# one copy at a time
+LOCK="$WORK/.lock"
+if mkdir "$LOCK" 2>/dev/null; then echo $$ > "$LOCK/pid"
+elif kill -0 "$(cat "$LOCK/pid" 2>/dev/null)" 2>/dev/null; then
+  echo "A run is already going (pid $(cat "$LOCK/pid")).  Progress: tail -f $WORK/logs/run.log"; exit 0
+else echo $$ > "$LOCK/pid"; fi
+trap 'rm -rf "$LOCK"' EXIT
+
+# keep the Mac awake for as long as this script runs (-s: also on a laptop, while on power)
+caffeinate -ims -w $$ &
 
 if [ -z "$SKIP_SETUP" ]; then   # (SKIP_SETUP=1 is for testing only)
 # ---------------------------------------------------------------- 1. Miniforge
@@ -64,6 +80,7 @@ conda activate kisscrit
 
 # ---------------------------------------------------------------- 3. GitHub login
 if ! gh auth status >/dev/null 2>&1; then
+  [ "$DETACHED" = 1 ] && { echo "Not logged in to GitHub: run  bash $WORK/mac_run.sh  in Terminal once."; exit 1; }
   say "Logging in to GitHub: a code is shown below; your browser opens; paste the code there"
   gh auth login --hostname github.com --git-protocol https --web
 fi
@@ -127,6 +144,38 @@ push() {  # commit result files and push, retrying if another machine pushed fir
 say "Self-test"
 python scripts/completeness/selftest.py | tee "$WORK/logs/selftest.log" | tail -3
 
+# ---------------------------------------------------------------- hand over to launchd
+if [ "$DETACHED" = 0 ] && [ "$AUTOSTART" = 1 ]; then
+  cp "$0" "$WORK/mac_run.sh" 2>/dev/null || true
+  mkdir -p "$HOME/Library/LaunchAgents"
+  cat > "$PLIST" <<PL
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>$LABEL</string>
+  <key>ProgramArguments</key><array><string>/bin/bash</string><string>$WORK/mac_run.sh</string><string>--detached</string></array>
+  <key>EnvironmentVariables</key><dict>
+    <key>REPO</key><string>$REPO</string><key>ROUTE</key><string>$ROUTE</string>
+    <key>SHARDS</key><string>$SHARDS</string><key>WORKERS</key><string>$WORKERS</string>
+    <key>BUDGET</key><string>$BUDGET</string><key>BUNDLE</key><string>$BUNDLE</string>
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <key>ProcessType</key><string>Background</string>
+  <key>Nice</key><integer>5</integer>
+  <key>StandardOutPath</key><string>$WORK/logs/run.log</string>
+  <key>StandardErrorPath</key><string>$WORK/logs/run.log</string>
+</dict></plist>
+PL
+  launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
+  rm -rf "$LOCK"; trap - EXIT
+  launchctl bootstrap "gui/$(id -u)" "$PLIST"
+  say "The run continues in the background (launchd job $LABEL). You can close this window."
+  echo "Progress:        tail -f $WORK/logs/run.log"
+  echo "Summary so far:  cd $ROOT && git pull -q && $MF/envs/kisscrit/bin/python scripts/completeness/merge.py --route $ROUTE"
+  echo "Stop for good:   launchctl bootout gui/\$(id -u)/$LABEL"
+  exit 0
+fi
+
 # ---------------------------------------------------------------- 6. phase A: candidates
 say "Phase A: candidate generation ($ROUTE route)"
 if [ "$ROUTE" = "cond" ]; then
@@ -172,3 +221,4 @@ git add -A results/completeness >/dev/null 2>&1 || true
 git commit -q -m "summary $ROUTE ($NAME)" >/dev/null 2>&1 || true
 git pull -q --rebase && git push -q || true
 say "Done. All shards are claimed. If other machines are still working, rerun later for a fresh summary."
+[ "$DETACHED" = 1 ] && launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
