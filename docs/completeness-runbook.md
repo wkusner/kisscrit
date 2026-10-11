@@ -49,6 +49,9 @@ Otherwise the box is contracted and bisected. The output is `results/completenes
 
 ## 3. One-time setup on each machine
 
+**On a Mac, the one-command path is `bash ~/Downloads/mac_run.sh`** (`scripts/completeness/mac_run.sh`). It installs a private Python (Miniforge) with git and the GitHub CLI, logs in to GitHub, clones the repository (or creates it, private, from `kisscrit-update.bundle`), runs the self-test, and then runs both phases and pushes the results. Running the same line again resumes. The manual steps below are for other machines.
+
+
 Requirements: Python ≥ 3.9 and git. Use Linux, macOS, or Windows with WSL. On native Windows, everything except `claim.py` works.
 
 ```
