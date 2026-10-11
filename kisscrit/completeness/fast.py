@@ -571,15 +571,19 @@ def grid_up(lo0, hi0, x):
 
 @njit(cache=True)
 def contract(fsize, fp0, fp1, fmode, vstart, vface, vpos, lo, hi, rounds, use_bounds):
-    """Returns (status, lo, hi, CL, CH, qlo, qhi): status 0 alive, 1 invalid, 2 vsum, 3 linear exclusion.
-    The returned box is the grid box [grid_value(qlo), grid_value(qhi)] relative to the input box."""
+    """Returns (status, lo, hi, CL, CH, RQL, RQH, MUL, MUH, nr, MU3): status 0 alive, 1 invalid, 2 vsum,
+    3 linear exclusion of the returned box with multipliers MU3.
+    Each contraction round r < nr maps the box at the start of the round to the grid box with indices
+    RQL[r], RQH[r] relative to it; MUL[r, j] / MUH[r, j] are the multipliers that proved the new lower / upper
+    bound of coordinate j (hints for the checker).  The returned box is the result of all rounds."""
     n = lo.shape[0]; V = vstart.shape[0] - 1
-    lo0 = lo.copy(); hi0 = hi.copy()
+    RQL = np.zeros((rounds, n), np.int64); RQH = np.full((rounds, n), QMAX, np.int64); nr = 0
+    MUL = np.zeros((rounds, n, V)); MUH = np.zeros((rounds, n, V)); MU3 = np.zeros(V)
     qlo = np.zeros(n, np.int64); qhi = np.full(n, QMAX, np.int64)
     lo = lo.copy(); hi = hi.copy()
     ok, vok, CL, CH, FL, FH, JL, JH = eval_all(fsize, fp0, fp1, fmode, vstart, vface, vpos, lo, hi, lo, hi)
-    if not ok: return 1, lo, hi, CL, CH, qlo, qhi
-    if not vok: return 2, lo, hi, CL, CH, qlo, qhi
+    if not ok: return 1, lo, hi, CL, CH, RQL, RQH, MUL, MUH, nr, MU3
+    if not vok: return 2, lo, hi, CL, CH, RQL, RQH, MUL, MUH, nr, MU3
     for rnd in range(rounds):
         m = 0.5 * (lo + hi)
         okm, _, _, _, FmL, FmH, _, _ = eval_all(fsize, fp0, fp1, fmode, vstart, vface, vpos, m, m, lo, hi)
@@ -616,7 +620,9 @@ def contract(fsize, fp0, fp1, fmode, vstart, vface, vpos, lo, hi, rounds, use_bo
             mu = lp_multipliers(T, V, n)
             for v in range(V):
                 if not mask[v]: mu[v] = 0.0
-            if excluded_by(mu, FL2, FH2, JL2, JH2, ylo, yhi): return 3, lo, hi, CL, CH, qlo, qhi
+            if excluded_by(mu, FL2, FH2, JL2, JH2, ylo, yhi):
+                MU3[:] = mu
+                return 3, lo, hi, CL, CH, RQL, RQH, MUL, MUH, nr, MU3
             break
         if not use_bounds: break
         w0 = hi - lo
@@ -630,27 +636,41 @@ def contract(fsize, fp0, fp1, fmode, vstart, vface, vpos, lo, hi, rounds, use_bo
                 for v in range(V):
                     if not mask[v]: mu[v] = 0.0
                 nl, nh, emp = gs_update(mu, k, FL2, FH2, JL2, JH2, ylo, yhi)
-                if emp: return 3, lo, hi, CL, CH, qlo, qhi
+                if emp:
+                    # the box is empty; record it as a leaf only if this mu excludes the whole round box
+                    if excluded_by(mu, FL2, FH2, JL2, JH2, lo - m, hi - m):
+                        MU3[:] = mu
+                        return 3, lo, hi, CL, CH, RQL, RQH, MUL, MUH, nr, MU3
+                    continue
+                if nl > ylo[k]: MUL[nr, k, :] = mu
+                if nh < yhi[k]: MUH[nr, k, :] = mu
                 ylo[k] = nl; yhi[k] = nh
-        newlo = np.empty(n); newhi = np.empty(n)
+        newlo = np.empty(n); newhi = np.empty(n); changed = False
         for j in range(n):
             a = max(lo[j], dn(m[j] + ylo[j])); b = min(hi[j], up(m[j] + yhi[j]))
-            if hi0[j] > lo0[j]:
-                qlo[j] = max(qlo[j], grid_down(lo0[j], hi0[j], a))
-                qhi[j] = min(qhi[j], grid_up(lo0[j], hi0[j], b))
-                # keep both indices encodable in 16 bits: qlo <= QMAX - 1, qhi >= qlo + 1 (outward, sound)
-                qlo[j] = min(qlo[j], QMAX - 1)
-                if qhi[j] < qlo[j] + 1: qhi[j] = qlo[j] + 1
-            newlo[j] = grid_value(lo0[j], hi0[j], qlo[j]); newhi[j] = grid_value(lo0[j], hi0[j], qhi[j])
+            ql = 0; qh = QMAX
+            if hi[j] > lo[j]:
+                # leave a margin of 1e-4 of the width (at least 1e-12) between the proved bound and the
+                # recorded one, so that an independent check with slightly different rounding still succeeds
+                mg = 1e-4 * (hi[j] - lo[j]) + 1e-12
+                ql = grid_down(lo[j], hi[j], max(lo[j], a - mg)); qh = grid_up(lo[j], hi[j], min(hi[j], b + mg))
+                # keep both indices encodable in 16 bits: ql <= QMAX - 1, qh >= ql + 1 (outward, sound)
+                ql = min(ql, QMAX - 1)
+                if qh < ql + 1: qh = ql + 1
+            RQL[nr, j] = ql; RQH[nr, j] = qh
+            if ql > 0 or qh < QMAX: changed = True
+            newlo[j] = grid_value(lo[j], hi[j], ql); newhi[j] = grid_value(lo[j], hi[j], qh)
+        if not changed: break
+        nr += 1
         lo = newlo; hi = newhi
         ok, vok, CL, CH, FL, FH, JL, JH = eval_all(fsize, fp0, fp1, fmode, vstart, vface, vpos, lo, hi, lo, hi)
-        if not ok: return 1, lo, hi, CL, CH, qlo, qhi
-        if not vok: return 2, lo, hi, CL, CH, qlo, qhi
+        if not ok: return 1, lo, hi, CL, CH, RQL, RQH, MUL, MUH, nr, MU3
+        if not vok: return 2, lo, hi, CL, CH, RQL, RQH, MUL, MUH, nr, MU3
         shrink = 0.0
         for j in range(n):
             if w0[j] > 0: shrink = max(shrink, (w0[j] - (hi[j] - lo[j])) / w0[j])
         if shrink < 0.2: break
-    return 0, lo, hi, CL, CH, qlo, qhi
+    return 0, lo, hi, CL, CH, RQL, RQH, MUL, MUH, nr, MU3
 
 
 # ============================================================================ Gordan
@@ -783,7 +803,9 @@ def motzkin_check(vstart, vface, vpos, eu, eus, ew, ews, CL, CH, y):
 # Certificate events (see docs/certificate-format.md), one byte each, in depth-first preorder:
 #   1 invalid  2 vertex-sum  3 linear  4 gordan (inherited vector)  5 gordan  6 motzkin  7 terminal  8 open
 #   16 + k     bisect coordinate k at the midpoint; the UPPER child's subtree follows, then the LOWER child's
+#   15         start of a contraction round; the 64 + k events that follow are relative to the box at this point
 #   64 + k     contract coordinate k to grid indices (qlo, QMAX - qhi), two uint16 in the q stream
+EV_ROUND = 15
 EV_SPLIT = 16
 EV_CONTRACT = 64
 
@@ -805,10 +827,34 @@ def _push_q(qs, nq, a, b):
 
 
 @njit(cache=True)
+def _push_mu(qs, nq, ms, nm, mu):
+    """Sparse multiplier hint: count and row indices in the q stream, values (float32) in the m stream.
+    The vector is scaled to max |mu_v| = 1 and entries below 1e-9 are dropped; any real vector is admissible
+    in the checker's inclusion, so this changes nothing about soundness."""
+    mx = 0.0
+    for v in range(mu.shape[0]): mx = max(mx, abs(mu[v]))
+    cnt = 0
+    if mx > 0:
+        for v in range(mu.shape[0]):
+            if abs(mu[v]) > 1e-9 * mx: cnt += 1
+    if nq + cnt + 1 > qs.shape[0]:
+        q2 = np.empty(2 * qs.shape[0] + cnt + 1, np.uint16); q2[:nq] = qs[:nq]; qs = q2
+    if nm + cnt > ms.shape[0]:
+        m2 = np.empty(2 * ms.shape[0] + cnt, np.float32); m2[:nm] = ms[:nm]; ms = m2
+    qs[nq] = cnt; nq += 1
+    if mx > 0:
+        for v in range(mu.shape[0]):
+            if abs(mu[v]) > 1e-9 * mx:
+                qs[nq] = v; nq += 1
+                ms[nm] = mu[v] / mx; nm += 1
+    return qs, nq, ms, nm
+
+
+@njit(cache=True)
 def run_chart(fsize, fp0, fp1, fmode, vstart, vface, vpos, eu, eus, ew, ews, lo0, hi0, tol, max_boxes,
               w_lp, w_gordan, rounds, use_bounds):
     """Depth-first branch and bound over one chart.
-    Returns (stats, terminal_lo, terminal_hi, aborted, events, qstream)."""
+    Returns (stats, terminal_lo, terminal_hi, aborted, events, qstream, mustream)."""
     n = lo0.shape[0]; V = vstart.shape[0] - 1
     cap = 1024
     SL = np.empty((cap, n)); SH = np.empty((cap, n)); SY = np.zeros((cap, 2 * V)); SHY = np.zeros(cap, np.bool_)
@@ -816,6 +862,7 @@ def run_chart(fsize, fp0, fp1, fmode, vstart, vface, vpos, eu, eus, ew, ews, lo0
     TL = np.empty((64, n)); TH = np.empty((64, n)); nt = 0
     ev = np.empty(4096, np.uint8); nev = 0
     qs = np.empty(4096, np.uint16); nq = 0
+    ms = np.empty(1024, np.float32); nm = 0
     stats = np.zeros(8, np.int64)   # boxes, invalid, vsum, linear, gordan_inherit, gordan, terminal, lpcalls
     aborted = False
     while top > 0:
@@ -830,18 +877,30 @@ def run_chart(fsize, fp0, fp1, fmode, vstart, vface, vpos, eu, eus, ew, ews, lo0
         wmax = 0.0
         for j in range(n): wmax = max(wmax, hi[j] - lo[j])
         if wmax <= w_lp:
-            status, lo2, hi2, CL, CH, qlo, qhi = contract(fsize, fp0, fp1, fmode, vstart, vface, vpos, lo, hi,
-                                                            rounds, use_bounds)
-            for j in range(n):
-                if qlo[j] > 0 or qhi[j] < QMAX:
-                    ev, nev = _push_ev(ev, nev, EV_CONTRACT + j)
-                    qs, nq = _push_q(qs, nq, qlo[j], QMAX - qhi[j])
+            # near terminal size, only the exclusion test is used (no bound tightening): slabs cut from tiny
+            # boxes next to a critical point would have no margin left for an independent check
+            ub = use_bounds and wmax > 1000.0 * tol
+            status, lo2, hi2, CL, CH, RQL, RQH, MUL, MUH, nr, MU3 = contract(fsize, fp0, fp1, fmode, vstart,
+                                                                             vface, vpos, lo, hi, rounds, ub)
+            for r in range(nr):
+                ev, nev = _push_ev(ev, nev, EV_ROUND)
+                for j in range(n):
+                    if RQL[r, j] > 0 or RQH[r, j] < QMAX:
+                        ev, nev = _push_ev(ev, nev, EV_CONTRACT + j)
+                        qs, nq = _push_q(qs, nq, RQL[r, j], QMAX - RQH[r, j])
+                        if RQL[r, j] > 0:
+                            qs, nq, ms, nm = _push_mu(qs, nq, ms, nm, MUL[r, j])
+                        if RQH[r, j] < QMAX:
+                            qs, nq, ms, nm = _push_mu(qs, nq, ms, nm, MUH[r, j])
             lo = lo2; hi = hi2
         else:
             ok, vok, CL, CH, FL, FH, JL, JH = eval_all(fsize, fp0, fp1, fmode, vstart, vface, vpos, lo, hi, lo, hi)
             status = 0 if (ok and vok) else (1 if not ok else 2)
         if status > 0:
-            stats[status] += 1; ev, nev = _push_ev(ev, nev, status); continue
+            stats[status] += 1; ev, nev = _push_ev(ev, nev, status)
+            if status == 3:
+                qs, nq, ms, nm = _push_mu(qs, nq, ms, nm, MU3)
+            continue
         if hy and gordan_check(vstart, vface, vpos, eu, eus, ew, ews, CL, CH, y):
             stats[4] += 1; ev, nev = _push_ev(ev, nev, 4); continue
         wmax = 0.0
@@ -878,4 +937,4 @@ def run_chart(fsize, fp0, fp1, fmode, vstart, vface, vpos, eu, eus, ew, ews, lo0
         # pushed lower first, so the upper child is popped (and logged) first
         SL[top] = lo; SH[top] = hi; SH[top, k] = mid; SY[top] = y; SHY[top] = hy; top += 1
         SL[top] = lo; SH[top] = hi; SL[top, k] = mid; SY[top] = y; SHY[top] = hy; top += 1
-    return stats, TL[:nt], TH[:nt], aborted, ev[:nev].copy(), qs[:nq].copy()
+    return stats, TL[:nt], TH[:nt], aborted, ev[:nev].copy(), qs[:nq].copy(), ms[:nm].copy()

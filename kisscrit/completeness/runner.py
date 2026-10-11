@@ -58,7 +58,7 @@ def charts_of(S):
         yield dict(zip(pents, combo))
 
 
-CERT_VERSION = 1
+CERT_VERSION = 2
 
 
 def _pack(arr):
@@ -81,13 +81,14 @@ def run(S, th_lo, th_hi, tol=1e-6, max_boxes=10 ** 8, w_lp=10.0, w_gordan=0.2, r
             if len(S.rot[S.faces[fi][4]]) == 2:
                 k = S.pidx[fi][1] if mode == 'b' else S.pidx[fi][0]
                 lo0[k] = hi0[k] = np.pi
-        st, TL, TH, ab, ev, qs = fast.run_chart(*A, lo0, hi0, tol, max(max_boxes - int(tot[0]), 1), w_lp, w_gordan,
+        st, TL, TH, ab, ev, qs, ms = fast.run_chart(*A, lo0, hi0, tol, max(max_boxes - int(tot[0]), 1), w_lp, w_gordan,
                                                 rounds, use_bounds)
         tot += st; terminal += [(ch, l, h) for l, h in zip(TL, TH)]
         if certificate:
             cert['charts'].append(dict(modes={str(k): v for k, v in sorted(ch.items())},
                                        lo0=[float(x) for x in lo0], hi0=[float(x) for x in hi0],
-                                       events=_pack(ev), q=_pack(qs), n_events=int(len(ev)), complete=not ab))
+                                       events=_pack(ev), q=_pack(qs), mu=_pack(ms), n_events=int(len(ev)),
+                                       complete=not ab))
         if ab or (time_limit and time.time() - t0 > time_limit):
             aborted = True
             if certificate:

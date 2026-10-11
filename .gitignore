@@ -3,3 +3,7 @@ __pycache__/
 .pytest_cache/
 build/
 dist/
+results/completeness/*/*-test-*
+results/completeness/checks/checks-certificates-test-*
+results/completeness/summary-test.json
+__pycache__/

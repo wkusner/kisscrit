@@ -10,11 +10,11 @@ Status keys: [ ] open · [~] in progress · [x] done · [-] dropped
 
 The long run on the iMac should produce data that can be checked independently. These items come first so that weeks of compute are not spent on output nobody can audit.
 
-- [x] **A1. Certificate format.** (2026-10-11: format v1 in `docs/certificate-format.md`; `kisscrit/core/certificate.py` replays it; tag run-v1)
+- [x] **A1. Certificate format.** (2026-10-11: format v2 in `docs/certificate-format.md` — contraction rounds and multiplier hints; `kisscrit/core/certificate.py` replays it)
   - **Change:** the branch and bound writes, for each candidate, a compact proof tree: starting boxes per chart, bisections, contractions (removed slabs), and leaves with their exclusion reason (invalid, vertex sum, linear, Gordan or Motzkin, terminal).
   - **Spec:** `docs/certificate-format.md`, written so the checker needs nothing else.
   - **Done when:** the run writes certificates, and their size per candidate has been measured.
-- [ ] **A2. Independent checker.**
+- [x] **A2. Independent checker.** (2026-10-11: `kisscrit/core/{interval,model,checker}.py`, `scripts/completeness/check_certificates.py`, `tests/test_certificates.py`; verifies all pilot certificates; rejects tampered ones)
   - **What it is:** a small, readable program built on a verified interval library (Arb, via python-flint).
   - **What it does:**
     - re-evaluates the face-angle model;

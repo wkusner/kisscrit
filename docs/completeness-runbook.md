@@ -151,6 +151,18 @@ Use them for development (improving the certifier, identifying `terminal` boxes,
 
 **The departmental LLM is not needed.** The run is plain CPU work with no model calls. The machine it runs on is useful only as CPU.
 
+## 6b. Independent check
+
+Every certificate is checked by `scripts/completeness/check_certificates.py` (`kisscrit/core/checker.py`).
+The checker shares no arithmetic with the search: inf-sup intervals, IEEE-rounded basic operations stepped outward,
+and Arb for the elementary functions. It re-derives every exclusion and subdivides anything it cannot prove.
+It works on partial results, so run it after `git pull`. `mac_run.sh` runs it as phase C, and
+
+    python scripts/completeness/check_certificates.py --summary
+
+reports the totals. In the pilot it was about 30–40 times slower than the search, so expect the check to take
+longer than the run.
+
 ## 7. After the run: what to send back
 
 Push everything, then run `merge.py`. The file `results/completeness/summary-<route>.json` lists every `terminal` and `budget` candidate. Those are the inputs to the next step:

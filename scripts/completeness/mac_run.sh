@@ -14,7 +14,8 @@
 #    5. runs the self-test (1-3 minutes)
 #    6. phase A: generates candidate graphs (4 triangulations in parallel), commits and pushes them
 #    7. phase B: claims shards one at a time, certifies them on all cores, commits and pushes each one
-#    8. prints the summary and pushes it
+#    8. checks every certificate with the independent checker (kisscrit/core/checker.py) and pushes the results
+#    9. prints the summary and pushes it
 #
 #  After the self-test the run is handed to launchd (a LaunchAgent, org.kisscrit.run): it keeps running
 #  with the Terminal window closed, restarts by itself after a reboot or log-in, and keeps the Mac awake
@@ -228,7 +229,14 @@ while true; do
   push "certify $ROUTE shard $K/$SHARDS ($NAME)"
 done
 
-# ---------------------------------------------------------------- 8. summary
+# ---------------------------------------------------------------- 8. independent check of the certificates
+say "Phase C: independent check of all certificates in the repository (resumable)"
+git pull -q --rebase || true
+python scripts/completeness/check_certificates.py --workers "$WORKERS" 2>&1 | tee -a "$WORK/logs/check.log"
+python scripts/completeness/check_certificates.py --summary | tee -a "$WORK/logs/check.log"
+push "checks $ROUTE ($NAME)"
+
+# ---------------------------------------------------------------- 9. summary
 say "Summary"
 python scripts/completeness/merge.py --route "$ROUTE" | tee "$WORK/logs/summary.log"
 git add -A results/completeness >/dev/null 2>&1 || true
