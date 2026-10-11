@@ -67,3 +67,7 @@ Numerical KKT solutions from random starts can miss solutions. Treat the counts 
 ## License
 
 MIT. See `LICENSE`.
+
+## Open questions
+
+See `docs/open-questions.md` for open problems and planned projects (completeness at N = 12, Edwards entropy and basin weights, and others).
