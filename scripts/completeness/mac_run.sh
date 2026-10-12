@@ -207,10 +207,13 @@ fi
 # ---------------------------------------------------------------- 6. phase A: candidates
 say "Phase A: candidate generation ($ROUTE route)"
 if [ "$ROUTE" = "cond" ]; then
+  GEN_PIDS=""
   for k in 0 1 2 3; do
     python scripts/completeness/run_shard.py gen --route cond --shard $k --of 4 > "$WORK/logs/gen-$k.log" 2>&1 &
+    GEN_PIDS="$GEN_PIDS $!"
   done
-  wait
+  # wait for these four only: a bare "wait" would also wait for caffeinate, which never exits (run-v3 hung here)
+  wait $GEN_PIDS
   tail -n 2 "$WORK"/logs/gen-*.log
   push "gen $ROUTE ($NAME)"
 else
