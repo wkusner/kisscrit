@@ -2,7 +2,7 @@
 
 This document lists every fact the completeness computation relies on, with its proof, reference or certificate script and its status. It is the place where "what the run proves" is decided.
 
-Version 2, 2026-10-11 (v2: Lemma R restated for θ < θ_max with the icosahedral exception; circumcenter reduction; test E). Update this file whenever a rule is added to the search or the checker, or a status changes.
+Version 3, 2026-10-12 (v3: L6 proved, L8 derived, uniqueness at θ_max via Lemma U; v2: Lemma R restated for θ < θ_max with the icosahedral exception; circumcenter reduction; test E). Update this file whenever a rule is added to the search or the checker, or a status changes.
 
 **Status keys**
 - **proved:** a short proof is written here.
@@ -36,22 +36,97 @@ A configuration is **critical** if it carries a balanced stress: weights w_ij �
 - *Connected:* a component carrying a balanced positive stress is not contained in an open hemisphere. Look at its point that is extreme in the direction of the hemisphere's pole: all its stressed forces have a positive tangential component towards the pole, so they do not balance. But a second component would lie inside one face of the first, and faces are convex polygons of perimeter < 2π (L6), which lie in an open hemisphere.
 - *Conclusion:* G is 2-connected, so every face is an open disk bounded by a simple cycle.
 
-**L6. Faces are convex equilateral spherical polygons with 3, 4 or 5 corners** (proved, given a standard fact).
-- *Convexity:* by L3, every corner of a face is ≤ π. A simple spherical polygon whose interior angles are all ≤ π, and which is not a lune or a hemisphere, is convex: it is the intersection of the hemispheres bounded by its edges and lies in an open hemisphere. **Reference needed:** the spherical analogue of the planar fact that a locally convex simple polygon is convex. A direct proof via the tangent-line argument on the hemisphere determined by any edge is planned.
-- *Perimeter < 2π:* a convex spherical polygon in an open hemisphere has perimeter < 2π (standard; for example, it is contained in the great circle's hemisphere and its perimeter is less than that of the boundary circle). So kθ < 2π, and θ > π/3 gives k ≤ 5.
-- *Triangulation:* a face contains no configuration point in its interior, by L9, so T triangulates it by diagonals. A k-gon face is therefore a union of k − 2 triangles of T, forming a path in the dual graph.
+**L6. Faces are convex equilateral spherical polygons with 3, 4 or 5 corners** (proved).
+
+Let K be the closure of a face of G. By L5, K is a closed disk whose boundary γ is a simple geodesic polygon v_1 … v_k.
+- Its edges e_i = [v_i v_{i+1}] have length θ < π.
+- Its interior angles are β_i ∈ [α(θ), π] (L3).
+- Orient γ with K on the left. Let n_i be the unit normal of the great circle C_i ⊃ e_i on the side of K, and H_i = {x : ⟨x, n_i⟩ ≥ 0}.
+
+**Claim.** K = H_1 ∩ … ∩ H_k, and K lies in the open hemisphere {x : ⟨x, q⟩ > 0} with q = n_1 + … + n_k.
+
+*Step 1 (the normals lie in an open hemisphere).*
+- Gauss–Bonnet for the disk K gives Area(K) + Σ(π − β_i) = 2π. Since Area(K) > 0, the total turning τ = Σ(π − β_i) is < 2π.
+- Consecutive normals n_{i−1}, n_i are both orthogonal to v_i, at angle π − β_i (the turning angle at v_i). So the closed polygon N = n_1 n_2 … n_k has length τ < 2π.
+- A closed curve of length L < 2π on S² lies in an open hemisphere (the lemma in the proof of Fenchel's theorem):
+  - Split it at two points q_1, q_2 into arcs of length L/2 each. Then d(q_1, q_2) ≤ L/2 < π, so the midpoint m is defined.
+  - The rotation by π about m swaps q_1 and q_2 and sends x ⊥ m to −x. So for x on the great circle m^⊥, d(q_1, x) + d(x, q_2) = d(q_1, x) + d(−x, q_1) = π.
+  - An arc through such an x would therefore have length ≥ π > L/2. So the curve misses m^⊥. It is connected and contains q_1 with ⟨q_1, m⟩ > 0, so it lies in {⟨·, m⟩ > 0}.
+- Put p = m. Then ⟨p, n_i⟩ > 0 for every i, so neither p nor −p lies on any C_i, and γ avoids ±p.
+
+*Step 2 (K is star-shaped from p).*
+- Use polar coordinates (r, φ) about p, with r = d(p, x) ∈ (0, π) and φ the bearing.
+- A great circle C not through ±p, traversed with p on its left, has strictly increasing bearing, and an arc of it of length < π changes φ by less than π.
+- So φ increases strictly along γ, by 2πw in total with w ≥ 1. A simple closed curve in the annulus S² ∖ {±p} has winding number 0 or ±1 about it, so w = 1. Hence every open meridian from p to −p meets γ exactly once, and the two components of S² ∖ γ are the parts of the meridians before and after γ.
+- At a point x of e_1, the geodesic from x towards p starts with ⟨·, n_1⟩ increasing, because ⟨p, n_1⟩ > 0. So it enters K. Hence K is the component containing p: K = {r ≤ r_γ(φ)}.
+
+*Step 3 (support functions).*
+- Put u = cot r. In the coordinates (φ, u):
+  - a great circle C with pole n = cos δ · p + sin δ · e(φ_0), where 0 ≤ δ < π/2, is the graph u = L(φ) = −tan δ · cos(φ − φ_0), a solution of L″ + L = 0;
+  - its p-side hemisphere {⟨x, n⟩ ≥ 0} is {u ≥ L(φ)}.
+- So K = {u ≥ g(φ)}, where the 2π-periodic function g equals L_i on the φ-interval I_i of the edge e_i, and H_i = {u ≥ L_i}.
+- At v_i the interior angle is ≤ π, so near v_i the set K is the wedge H_{i−1} ∩ H_i. Hence g = max(L_{i−1}, L_i) near the break point, and g′ jumps up by some κ_i ≥ 0 there.
+- Fix j and put w = g − L_j. Then w″ + w = Σ_i κ_i δ_{φ_i} ≥ 0, and w ≡ 0 on I_j = [φ_s, φ_e]. Variation of constants gives:
+  - w(φ) = Σ_{φ_e < φ_i ≤ φ} κ_i sin(φ − φ_i) ≥ 0 for φ ∈ [φ_e, φ_e + π];
+  - w(φ) = Σ_{φ ≤ φ_i < φ_s} κ_i sin(φ_i − φ) ≥ 0 for φ ∈ [φ_s − π, φ_s].
+- Since I_j has positive length, these two ranges cover the circle. So g ≥ L_j everywhere, i.e. K ⊆ H_j.
+- As g equals some L_i at every φ, g = max_i L_i and K = ∩ H_i.
+
+*Step 4 (open hemisphere).*
+- If the n_i span R³, then for x ∈ K ∖ {0} we have ⟨x, q⟩ = Σ⟨x, n_i⟩ ≥ 0, with equality only if x ⊥ every n_i, i.e. x = 0. So K ⊂ {⟨·, q⟩ > 0}.
+- Otherwise all the C_i pass through a pair ±c, and K = ∩ H_i is a lune or a hemisphere, with boundary length 2π = kθ. That is impossible here, because 2π/θ ∈ (5.67, 6) is not an integer for θ ∈ (60°, θ_max].
+
+*Perimeter.*
+- K is compact in the open hemisphere, so K ⊂ a cap B of radius ρ < π/2 about q/|q|.
+- Cut B successively along the great circles C_1, …, C_k, keeping the side containing K. Each cut replaces a boundary arc by the minimizing geodesic between its endpoints, so the perimeter does not increase, and the result is K.
+- Hence kθ = per(K) ≤ 2π sin ρ < 2π. With θ > π/3 this gives k ≤ 5.
+
+*Triangulation.* For θ < θ_max, a face contains no configuration point in its interior (L9), so T triangulates it by diagonals. A k-gon face is a union of k − 2 triangles of T, forming a path in the dual graph. At θ = θ_max the configuration is the icosahedron (L9).
 
 **L7. Rhombus faces have corners in [α(θ), 2α(θ)]** (proved). An equilateral spherical quadrilateral with side θ is a rhombus. Its corners are A, O, A, O with O = 2β(θ, A), where β(θ, A) = arctan(cos(A/2) / (cos θ sin(A/2))) is the base angle of the isosceles triangle with legs θ and apex A. 2β decreases in A. At A = 2α(θ), the rhombus is two equilateral triangles and O = α(θ). By L3, O ≥ α(θ), so A ≤ 2α(θ); A ≥ α(θ) is L3 again.
 
 **L8. Pentagon faces: formulas and validity** (proved).
-- *Formulas:* with corners f1, f2 at P1, P2, the corner functions of `kisscrit/core/model.py:pentagon` follow from the spherical law of cosines and the four-part (cotangent) formula, applied to the triangles P0P1P2, P0P2P3 and P0P3P4. Checked against direct construction on 707 random pentagons: `scripts/completeness/` pilot, error < 1e-12. A written derivation is in the docstring and is to be expanded in the appendix.
-- *Validity:* every diagonal is ≥ θ, so in particular P0P3 ≥ θ, and every corner is ≥ α(θ) by L3.
+
+Let P0 … P4 be a convex equilateral pentagon with side θ and corners f1, f2 at P1, P2. By L6 it is convex, so the diagonals P0P2 and P0P3 lie inside it and cut it into the triangles P0P1P2, P0P2P3 and P0P3P4. Its corners are sums of the angles of these triangles. The code is `kisscrit/core/model.py:pentagon` (checker) and `kisscrit/completeness/fast.py:pentagon` (search). Write β(θ, A) = arctan(cos(A/2)/(cos θ sin(A/2))).
+
+1. *Triangle P0P1P2* (legs θ, apex f1). Halve it into right triangles.
+   - The base d2 = P0P2 satisfies sin(d2/2) = sin θ sin(f1/2) (Napier: the sine of a side is the sine of the hypotenuse times the sine of the opposite angle).
+   - The base angles satisfy cos θ = cot(f1/2) cot b1, i.e. b1 = β(θ, f1).
+2. *Angle at P2 in P0P2P3.* Convexity puts P2→P0 inside the corner f2 at P2, so the angle between P2→P0 and P2→P3 is g = f2 − b1.
+3. *Triangle P0P2P3* (sides d2, θ with included angle g).
+   - Law of cosines: cos d3 = cos d2 cos θ + sin d2 sin θ cos g, with d3 = P0P3.
+   - The four-part formula, cot A sin C = cot a sin b − cos b cos C, applied with C = g:
+     - at P0 (a = θ, b = d2): cot a0 = (cos θ sin d2 − sin θ cos d2 cos g)/(sin θ sin g);
+     - at P3 (a = d2, b = θ): cot a3 = (sin θ cos d2 − cos θ sin d2 cos g)/(sin d2 sin g).
+
+     The code writes these as a = π/2 − arctan(cot a), which is valid for a ∈ (0, π).
+4. *Triangle P0P3P4* (legs θ, base d3).
+   - The apex is f4 = 2h with sin h = sin(d3/2)/sin θ, h ∈ (0, π/2], since f4 ≤ π.
+   - The base angles are b3 = β(θ, f4).
+5. *Corners:* c0 = b1 + a0 + b3, c1 = f1, c2 = f2, c3 = a3 + b3, c4 = f4.
+
+*Validity:*
+- The triangle P0P2P3 is non-degenerate exactly when g ∈ (0, π); the code checks this (clip and ok flag).
+- The pentagon exists exactly when d3 ≤ 2θ, i.e. when the asin argument is ≤ 1.
+- Every diagonal is ≥ θ, so in particular d3 ≥ θ.
+- Every corner is ≥ α(θ), by L3.
+- Given θ, f1 and f2, the pentagon is determined up to isometry, so the chart (θ, f1, f2) covers all pentagons. In regions b and c it is used after a cyclic relabelling (L10).
+
+*Check:* the formulas agree with direct construction (`polygon_vertices` in `scripts/completeness/lemmas.py`, and `tests/test_lemmas.py`) to 1e-12. The Lemma R pentagon chart builds the vertices directly instead (L9).
 
 **L9. No rattlers** (proved + computer: `scripts/completeness/lemmas.py R`). A rattler is a configuration point that is not a vertex of G. It lies in the interior of a face K of G, at distance ≥ θ from every vertex of K. The face is a convex equilateral triangle, rhombus or pentagon with side θ ∈ [60°, θ_max], corners in [α(θ), π] and diagonals ≥ θ (L3, L6–L8).
 
 **Lemma R.** For θ < θ_max, no point of such a face is at distance ≥ θ from all its vertices. For θ = θ_max, the only exception is the centre of the regular pentagon, which is at distance exactly θ_max from its five vertices; that is the icosahedron.
 
-**Consequence.** For θ < θ_max there are no rattlers. At θ = θ_max the configuration is the icosahedron, by the uniqueness of the optimal Tammes configuration for N = 12 (Fejes Tóth; **reference to be checked**), which is in the census.
+**Consequence.** For θ < θ_max there are no rattlers. At θ = θ_max the configuration is the icosahedron (below), which is in the census.
+
+**Uniqueness at θ_max** (proved + computer: `scripts/completeness/lemmas.py U`). Twelve points with minimum distance θ_max = arctan 2 form a regular icosahedron. This is Fejes Tóth's argument [Fejes Tóth 1943], with the equality case made explicit.
+1. Every hull face has an empty open circumcap of radius R. Its centre is at distance ≥ R from all twelve points. If R ≥ 60°, adding the centre would give 13 points with pairwise distances ≥ 60°, contradicting the kissing number 12 [Schütte–van der Waerden 1953]. So R < 60°. Triangulating any non-triangular hull face keeps the same circumcircle.
+2. So the hull triangulation consists of 2·12 − 4 = 20 spherical triangles, with sides ≥ θ_max and circumradius < 60° (< 90°, so they tile the sphere). Their areas sum to 4π.
+3. **Lemma U** (computer): such a triangle has area ≥ π/5 = 3·72° − 180°, with equality only for the equilateral triangle of side θ_max. Near that corner, the box is closed by monotonicity (all three partial derivatives of the area are positive).
+4. Since 20 · π/5 = 4π, every triangle is equilateral with side θ_max and angles 72°. So every vertex has degree 5. The only 5-regular triangulation with 12 vertices is the icosahedron's, and developing from one triangle (each neighbour is its reflection across the shared edge) fixes the configuration up to isometry.
+
+*The circumradius bound matters.* With circumradius θ_max, the isosceles triangle (θ_max, θ_max, 116.57°), half of the regular-pentagon fan, also has area exactly π/5. `tests/test_lemmas.py` checks that Lemma U fails on a box around it when the bound is raised to 64°.
 
 **The bound is sharp at θ_max.** The five neighbours of an icosahedron vertex form a regular pentagon with side θ_max, and the vertex is at distance θ_max from all of them. So the margin of Lemma R tends to 0 as θ → θ_max, and a purely numerical test cannot reach θ_max. Test E below handles this.
 
@@ -149,9 +224,8 @@ Only these necessary conditions are used to exclude boxes. Realizability, which 
 | R, triangles | `lemmas.py R` | proved (1 box) |
 | R, rhombi | `lemmas.py R` | proved (1061 boxes, about 1 s) |
 | R, pentagons | `lemmas.py R` (or `R 0 2` and `R 1 2` in parallel) | proved (25409 + 32997 boxes, about 27 CPU-minutes) |
+| U | `lemmas.py U` | proved (1805 boxes, about 1 s) |
 
 ## Still to do
 
-- **L6:** a reference or written proof for "a locally convex simple spherical polygon is convex".
-- **L8:** a written derivation of the pentagon formulas, for the appendix.
-- **L9:** a reference for the uniqueness of the icosahedron as the optimal Tammes configuration for N = 12.
+Nothing for the lemmas themselves. For the appendix (D3), write L6, L8 and the uniqueness argument of L9 in LaTeX, and add the references Fejes Tóth 1943 (Jber. Deutsch. Math.-Verein. 53, 66–68) and Schütte–van der Waerden 1953 (Math. Ann. 125, 325–334).

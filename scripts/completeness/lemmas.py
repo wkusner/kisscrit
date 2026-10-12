@@ -5,6 +5,7 @@ All computations use the checker's interval arithmetic (kisscrit/core/interval.p
 operations stepped outward, Arb for elementary functions) and the checker's face model (kisscrit/core/model.py).
 
   python scripts/completeness/lemmas.py P      Lemma P: no two adjacent corners of a face pentagon are >= 155 deg
+  python scripts/completeness/lemmas.py U      Lemma U: Fejes Toth's area bound at theta_max with equality case
   python scripts/completeness/lemmas.py R [i K] Lemma R: a face polygon contains no point at distance >= theta
                                                from all its vertices (so there are no rattlers)
 Each prints the number of boxes and ends with "proved" or raises SystemExit with the box it could not exclude.
@@ -298,9 +299,59 @@ def lemma_R(part=0, parts=1):
         'Lemma R (pentagons%s)' % ('' if parts == 1 else ', theta part %d of %d' % (part + 1, parts)))
 
 
+# ---------------------------------------------------------------- Lemma U
+def lemma_U(): run(*U_problem(), 'Lemma U')
+
+
+def U_problem(rmax_deg=60.0):
+    """Lemma U (Fejes Toth's area lemma at theta_max, with its equality case): a spherical triangle with all
+    sides >= theta_max = atan 2 (the icosahedron edge) and circumradius < 60 deg has area >= pi/5, with equality
+    only for the equilateral triangle with side theta_max.  Used in docs/lemmas.md (L9) to show that the
+    icosahedron is the only configuration of 12 points with minimum distance theta_max.
+
+    Sides (a, b, c) range over [theta_max, 120 deg] (a side of a triangle with circumradius < 60 deg is < 120 deg).
+    A box is discarded when no valid triangle lies in it, when the circumradius is certainly >= 60 deg, or when
+    the area is certainly > pi/5.  At the corner (theta_max, theta_max, theta_max) the area equals pi/5; there the
+    box is closed by monotonicity: if every partial derivative of the area is positive on the box, the area on
+    {x in box, x >= theta_max} is minimal only at the corner."""
+    TM = I.atan(Iv(2.0)); FIFTH = PI / Iv(5.0)
+    CR2 = I.square(I.cos(Iv(math.radians(rmax_deg))))          # cos^2 of the circumradius bound
+    CR2 = Iv(CR2.lo - 1e-15)                                    # rounded down: a looser bound, still sound
+    TOP = math.radians(2 * rmax_deg) + 1e-9                     # a side is at most twice the circumradius
+
+    def angle(a, b, c):                                   # angle opposite a, AD in (a, b, c)
+        x = M.div(M.sub(M.cos_(a), M.mul(M.cos_(b), M.cos_(c))), M.mul(M.sin_(b), M.sin_(c)))
+        if x[0].lo > 1 or x[0].hi < -1: return None
+        x, _ = M.clip(x, -1.0, 1.0)
+        return M.acos_(x)[0]
+
+    def area(a, b, c):
+        A, B, C = angle(a, b, c), angle(b, c, a), angle(c, a, b)
+        if A is None or B is None or C is None: return None, None
+        return M.sub(M.add(M.add(A, B), C), M.const(PI)), A
+
+    def excluded(box):
+        v = [M.var(box[k][0], box[k][1], k) for k in range(3)]
+        E, A = area(*v)
+        if E is None: return True                                       # no triangle with these sides
+        a, b, c = (x[0] for x in v)
+        P0 = (Iv(0.0), Iv(0.0), Iv(1.0)); P1 = (I.sin(c), Iv(0.0), I.cos(c))
+        P2 = (I.sin(b) * I.cos(A[0]), I.sin(b) * I.sin(A[0]), I.cos(b))
+        n = cross(sub(P1, P0), sub(P2, P0)); D = det(P0, P1, P2)
+        if D.hi <= 0 or (I.square(D) - CR2 * dot(n, n)).hi < 0: return True       # circumradius >= rmax
+        if (E[0] - FIFTH).lo > 0: return True                                     # area > pi/5
+        if all(g.lo > 0 for g in E[1:]):                                          # increasing in each side
+            if all(box[k][0] == TM.lo for k in range(3)): return True             # the equality corner
+            Ec, _ = area(*[M.var(box[k][0], box[k][0], k) for k in range(3)])
+            if Ec is not None and (Ec[0] - FIFTH).lo > 0: return True
+        return False
+    return [(TM.lo, TOP)] * 3, excluded
+
+
 if __name__ == '__main__':
     which = sys.argv[1:] or ['P', 'R']
     if 'P' in which: lemma_P()
+    if 'U' in which: lemma_U()
     if 'R' in which:
         # optional: R <part> <parts> splits the pentagon theta range, to run the parts in parallel
         rest = which[which.index('R') + 1:]

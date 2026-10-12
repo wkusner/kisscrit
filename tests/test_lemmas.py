@@ -100,3 +100,15 @@ def test_pentagon_vertex_chart():
         for i in range(5):
             t = L.det(P[i - 1], P[i], P[(i + 1) % 5])
             assert abs(q['turn'][i][0].lo - t.lo) < 1e-12
+
+
+def test_lemma_U_is_sharp():
+    """Lemma U needs the circumradius bound: at circumradius theta_max the isosceles triangle
+    (theta_max, theta_max, 116.565 deg), half of the regular pentagon fan, also has area pi/5.  With the bound
+    raised to 64 deg the test must fail on a small box around it; with 60 deg that box is excluded."""
+    t = math.atan(2.0)
+    c = math.acos(math.cos(t) ** 2 + math.sin(t) ** 2 * math.cos(math.radians(144.0)))
+    box = [(t, t + 1e-7), (t, t + 1e-7), (c - 1e-7, c + 1e-7)]
+    assert not L.U_problem(64.0)[1](box)
+    assert L.U_problem(60.0)[1](box)
+    L.lemma_U()
