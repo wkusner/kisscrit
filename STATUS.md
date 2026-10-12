@@ -26,6 +26,7 @@ The conclusion of the run is conditional on these. Each is a checklist item.
 These are believed standard; they are not assumptions of the conjecture kind, but the proof is not complete until they are written or cited.
 
 - **L6 (convexity).** A simple spherical polygon with all corners ≤ π, which is not a lune or a hemisphere, is convex. A reference or a written proof is needed.
+- **L9 (θ = θ_max).** At θ_max the only configuration is the icosahedron (uniqueness for the Tammes problem with N = 12). A precise reference is needed.
 - **L8 (pentagon formulas).** The corner formulas are checked numerically against direct construction (error < 1e-12). A written derivation is needed for the appendix.
 
 ### Proved
@@ -33,7 +34,7 @@ These are believed standard; they are not assumptions of the conjecture kind, bu
 Every other rule the search and the checker use is proved in `docs/lemmas.md`, by hand or by computer:
 
 - `scripts/completeness/lemmas.py P` — Lemma P (pentagon regions cover all pentagons);
-- `scripts/completeness/lemmas.py R` — Lemma R (no rattlers);
+- `scripts/completeness/lemmas.py R` — Lemma R (no rattlers for θ < θ_max; about 27 CPU-minutes);
 - `tests/test_lemmas.py` — checks that these computations are not vacuous.
 
 Both scripts use the checker's arithmetic (`kisscrit/core/interval.py`).

@@ -2,7 +2,7 @@
 
 This document lists every fact the completeness computation relies on, with its proof, reference or certificate script and its status. It is the place where "what the run proves" is decided.
 
-Version 1, 2026-10-11. Update this file whenever a rule is added to the search or the checker, or a status changes.
+Version 2, 2026-10-11 (v2: Lemma R restated for θ < θ_max with the icosahedral exception; circumcenter reduction; test E). Update this file whenever a rule is added to the search or the checker, or a status changes.
 
 **Status keys**
 - **proved:** a short proof is written here.
@@ -47,7 +47,13 @@ A configuration is **critical** if it carries a balanced stress: weights w_ij �
 - *Formulas:* with corners f1, f2 at P1, P2, the corner functions of `kisscrit/core/model.py:pentagon` follow from the spherical law of cosines and the four-part (cotangent) formula, applied to the triangles P0P1P2, P0P2P3 and P0P3P4. Checked against direct construction on 707 random pentagons: `scripts/completeness/` pilot, error < 1e-12. A written derivation is in the docstring and is to be expanded in the appendix.
 - *Validity:* every diagonal is ≥ θ, so in particular P0P3 ≥ θ, and every corner is ≥ α(θ) by L3.
 
-**L9. No rattlers** (proved + computer: `scripts/completeness/lemmas.py R`). A rattler is a configuration point that is not a vertex of G. It lies in the interior of a face K of G, at distance ≥ θ from every vertex of K. The face is a convex equilateral triangle, rhombus or pentagon with side θ ∈ [60°, 63.435°], corners in [α(θ), π] and diagonals ≥ θ (L3, L6–L8). **Lemma R:** no point of such a face is at distance ≥ θ from all its vertices.
+**L9. No rattlers** (proved + computer: `scripts/completeness/lemmas.py R`). A rattler is a configuration point that is not a vertex of G. It lies in the interior of a face K of G, at distance ≥ θ from every vertex of K. The face is a convex equilateral triangle, rhombus or pentagon with side θ ∈ [60°, θ_max], corners in [α(θ), π] and diagonals ≥ θ (L3, L6–L8).
+
+**Lemma R.** For θ < θ_max, no point of such a face is at distance ≥ θ from all its vertices. For θ = θ_max, the only exception is the centre of the regular pentagon, which is at distance exactly θ_max from its five vertices; that is the icosahedron.
+
+**Consequence.** For θ < θ_max there are no rattlers. At θ = θ_max the configuration is the icosahedron, by the uniqueness of the optimal Tammes configuration for N = 12 (Fejes Tóth; **reference to be checked**), which is in the census.
+
+**The bound is sharp at θ_max.** The five neighbours of an icosahedron vertex form a regular pentagon with side θ_max, and the vertex is at distance θ_max from all of them. So the margin of Lemma R tends to 0 as θ → θ_max, and a purely numerical test cannot reach θ_max. Test E below handles this.
 
 *Reduction to circumcenters* (proved). Let f(x) = min over vertices v of d(x, v), and suppose max_K f ≥ θ, attained at x*.
 1. x* is not on the boundary: a point of an edge of length θ is within θ/2 of an endpoint.
@@ -55,7 +61,21 @@ A configuration is **critical** if it carries a balanced stress: weights w_ij �
 3. So each d(·, v) is smooth near x* (x* ≠ ±v), and x* is an interior local maximum of their minimum over the active vertices A (those at distance f(x*)). By the first-order condition for a maximum of a minimum of smooth functions, 0 is in the convex hull of the gradients, which are the unit tangent vectors at x* pointing away from the vertices in A.
 4. |A| = 1 is impossible (a single nonzero gradient). If |A| = 2, the two vertices u, w lie in opposite directions, so x* is the midpoint of a geodesic arc uw of length 2f(x*) < π. Moving from x* perpendicular to that arc increases both distances (cos d = cos f · cos t), so x* is not a local maximum.
 5. Hence |A| ≥ 3: x* is equidistant, at distance R = f(x*) ∈ [θ, 90°), from three vertices a, b, c. So x* = c_abc, their circumcenter on the side where the circumradius is below 90°.
-6. Conclusion: it suffices to show, for every triple of vertices and both normals ±n of the plane through them, that the corresponding circumcenter has circumradius ≥ 90° or < θ, or lies outside K, or has another vertex strictly closer. These are the tests A–D of `no_deep_hole` and `triple_excluded`; all of them are sign conditions on polynomials in the vertex coordinates.
+6. Conclusion: it suffices to show, for every triple of vertices and both normals ±n of the plane through them, that the corresponding circumcenter c satisfies one of:
+   - A: its circumradius is ≥ 90°;
+   - B: its circumradius is < θ;
+   - C: it lies outside K;
+   - D: another vertex is strictly closer.
+
+   These are the tests A–D of `no_deep_hole` and `triple_excluded`. All of them are sign conditions on polynomials in the vertex coordinates.
+
+*Test E (pentagons, near θ_max)* (proved). Suppose x* is a deep hole, as above, and all five vertices are within 70° of it.
+- The triangles x*P_iP_{i+1} tile K, so their angles X_i at x* sum to 2π.
+- The legs a = d(x*, P_i) and b = d(x*, P_{i+1}) lie in [θ, 70°], and the opposite side is θ. So cos X_i = F(a, b) = (cos θ − cos a cos b)/(sin a sin b).
+- The sign of ∂F/∂a is the sign of cos b − cos a cos θ ≥ cos 70° − cos²60° > 0.34 − 0.25 > 0, and the same holds for b. So F(a, b) ≥ F(θ, θ) = cos θ/(1 + cos θ) = cos α(θ), with equality only at a = b = θ.
+- Hence X_i ≤ α(θ) ≤ 72°, and 2π = ΣX_i ≤ 5α(θ) ≤ 2π. So θ = θ_max and every distance equals θ.
+
+The script proves "all five vertices within 70°" as (n·P_m)² > cos²70°·|n|² with the correct sign. This test removes the neighbourhood of the regular θ_max pentagon, and it is the reason the statement of Lemma R distinguishes θ = θ_max. It is used only in the pentagon chart, where the threshold equals the side length (the sharpness test in `tests/test_lemmas.py` uses other thresholds and so calls `no_deep_hole` without E).
 
 *Charts.*
 - Triangles: one parameter θ.
@@ -73,7 +93,7 @@ A configuration is **critical** if it carries a balanced stress: weights w_ij �
 - the centroid passes every inside test;
 - the test fails just below the true covering radius and passes just above it.
 
-*Numerical margin.* The largest covering radius of a valid pentagon is about θ − 2.7° at θ = 63.435° and θ − 3.9° at θ = 60°, at nearly regular pentagons (corners around 140°). Triangles and rhombi have larger margins.
+*Numerical margin.* At θ = 60° the largest covering radius of a valid pentagon is about θ − 3.9°. It tends to θ as θ → θ_max, at the regular pentagon (see above). A coarse grid at θ = 63.435° suggested a margin of 2.7°; that grid missed the regular pentagon. Triangles and rhombi have large margins (4α(θ) < 2π, so test E's argument alone excludes them).
 
 ## B. Pentagon charts
 
@@ -128,9 +148,10 @@ Only these necessary conditions are used to exclude boxes. Realizability, which 
 | P | `lemmas.py P` | proved (1319 boxes, about 1 s) |
 | R, triangles | `lemmas.py R` | proved (1 box) |
 | R, rhombi | `lemmas.py R` | proved (1061 boxes, about 1 s) |
-| R, pentagons | `lemmas.py R 0 2`, `R 1 2` | running |
+| R, pentagons | `lemmas.py R` (or `R 0 2` and `R 1 2` in parallel) | proved (25409 + 32997 boxes, about 27 CPU-minutes) |
 
 ## Still to do
 
 - **L6:** a reference or written proof for "a locally convex simple spherical polygon is convex".
 - **L8:** a written derivation of the pentagon formulas, for the appendix.
+- **L9:** a reference for the uniqueness of the icosahedron as the optimal Tammes configuration for N = 12.

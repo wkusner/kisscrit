@@ -110,15 +110,20 @@ def cross(u, v): return (u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u
 def sub(u, v): return (u[0] - v[0], u[1] - v[1], u[2] - v[2])
 
 
-def triple_excluded(d, close, dets, gaps):
+def triple_excluded(d, close, dets, gaps, near=None):
     """The decision of no_deep_hole for one triple, from enclosures of d = det(Pa, Pb, Pc) (= n.Pa),
-    close = (d^2 - cos^2(th) |n|^2 > 0 proved), dets[m] = det(P_m, P_m+1, n), gaps = n.P_m - d (other m)."""
+    close = (d^2 - cos^2(th) |n|^2 > 0 proved), dets[m] = det(P_m, P_m+1, n), gaps = n.P_m - d (other m).
+    near (pentagons only, threshold = side): (d_near, others) with d_near = (d^2 - cos^2(70 deg) |n|^2 > 0
+    proved) and others = [(n.P_m, (n.P_m)^2 - cos^2(70 deg) |n|^2 > 0 proved)] for the other two vertices; test E
+    (all five vertices within 70 deg of c) shows c is not a deep hole unless theta = theta_max (docs/lemmas.md)."""
     for s in (1, -1):
         sd = d if s > 0 else -d
         if sd.hi <= 0: continue                                          # A
         if sd.lo > 0 and close: continue                                 # B
         if any((e.hi if s > 0 else -e.lo) < 0 for e in dets): continue   # C
         if any((g.lo if s > 0 else -g.hi) > 0 for g in gaps): continue   # D
+        if near is not None and sd.lo > 0 and near[0] and all(
+                (v.lo if s > 0 else -v.hi) > 0 and ok for v, ok in near[1]): continue   # E
         return False
     return True
 
@@ -189,6 +194,12 @@ def _arot(v, axis, c, s):
     return tuple(M.add(M.add(M.mul(v[i], c), M.mul(cx[i], s)), M.mul(M.mul(axis[i], d), one_c)) for i in range(3))
 
 
+# cos 70 deg, rounded up: proving <c, P> >= C70 > cos 70 deg proves the distance is < 70 deg.
+C70 = I.cos(Iv(math.radians(70.0))).hi + 1e-15
+assert C70 > math.cos(math.radians(70.0))
+C70SQ = (Iv(C70) * Iv(C70)).hi                # rounded up, so C70SQ >= cos^2 70 deg
+
+
 def pentagon_quantities(t, c0, f1, cosL):
     """All quantities the pentagon test needs, as AD values (see pentagon_by_vertices for the construction).
     Returns None when the pentagon certainly does not exist in this chart."""
@@ -210,9 +221,12 @@ def pentagon_quantities(t, c0, f1, cosL):
     for a, b, cc in TRIPLES[5]:
         n = _across(_asub(P[b], P[a]), _asub(P[cc], P[a]))
         d = _adet(P[a], P[b], P[cc])
-        q[(a, b, cc)] = (d, M.sub(M.mul(d, d), M.mul(ct2, _adot(n, n))),
+        nn = _adot(n, n); far = M.scale(nn, C70SQ)
+        others = [_adot(n, P[i]) for i in range(5) if i not in (a, b, cc)]
+        q[(a, b, cc)] = (d, M.sub(M.mul(d, d), M.mul(ct2, nn)),
                          [_adet(P[i], P[(i + 1) % 5], n) for i in range(5)],
-                         [M.sub(_adot(n, P[i]), d) for i in range(5) if i not in (a, b, cc)])
+                         [M.sub(o, d) for o in others],
+                         M.sub(M.mul(d, d), far), [(o, M.sub(M.mul(o, o), far)) for o in others])
     return q
 
 
@@ -243,10 +257,11 @@ def pentagon_excluded(box, cosL):
         if E(qb['turn'][i], qm and qm['turn'][i]).hi < 0: return True           # a corner > pi (L3)
         if E(qb['diag'][i], qm and qm['diag'][i]).lo > 0: return True           # a diagonal < theta (L8)
     for t in TRIPLES[5]:
-        db, Qb, Db, Gb = qb[t]
-        dm, Qm, Dm, Gm = qm[t] if qm else (None, None, [None] * 5, [None] * 2)
+        db, Qb, Db, Gb, Fb, Ob = qb[t]
+        dm, Qm, Dm, Gm, Fm, Om = qm[t] if qm else (None, None, [None] * 5, [None] * 2, None, [(None, None)] * 2)
+        near = (E(Fb, Fm).lo > 0, [(E(xb, xm), E(yb, ym).lo > 0) for (xb, yb), (xm, ym) in zip(Ob, Om)])
         if not triple_excluded(E(db, dm), E(Qb, Qm).lo > 0, [E(x, y) for x, y in zip(Db, Dm)],
-                               [E(x, y) for x, y in zip(Gb, Gm)]):
+                               [E(x, y) for x, y in zip(Gb, Gm)], near):
             return False
     return True
 
