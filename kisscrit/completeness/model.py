@@ -14,7 +14,7 @@ position (s + j) mod 5; c_q = corner at boundary position q; D = DELTA):
   'c':  c4 >= pi - D, c1 >= pi - D;   s = 3, parameters c4, c0 (c4 in [pi - D, pi]), apex c2 <= pi - D,
                                        and boxes with c1 < pi - D everywhere are rejected.
 The regions cover every pentagon, given Lemma P (no two adjacent corners are >= pi - D), which is checked
-separately (scripts/completeness/lemma_pentagon.py).  Every chart clamps its apex to <= pi - D, so all
+separately (scripts/completeness/lemmas.py P).  Every chart clamps its apex to <= pi - D, so all
 formulas are smooth on their regions.
 
 Value clipping.  Where a quantity is known to lie in a range on every valid point of the box (for instance the

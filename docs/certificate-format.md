@@ -91,7 +91,7 @@ The checker may replace an exclusion with a different one, or subdivide a box an
 These are fixed by the code version, which is the tag of the run:
 
 - the candidate list and its completeness — candidate generation, and the lemmas in `docs/lemmas.md`;
-- the pentagon region cover — Lemma P, `scripts/completeness/lemma_pentagon.py`;
+- the pentagon region cover — Lemma P, `scripts/completeness/lemmas.py P` (checker arithmetic; see `docs/lemmas.md`);
 - the face-angle model itself (`kisscrit/completeness/model.py`, and the compiled equivalent in `fast.py`).
 
 ## 6. Size

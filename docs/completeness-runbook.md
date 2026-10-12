@@ -45,7 +45,7 @@ Otherwise the box is contracted and bisected. The output is `results/completenes
 - All exclusions use outward-rounded interval arithmetic: one ulp per arithmetic operation, and ≥ 4 ulp plus 1e-15 for each libm call.
 - Floating-point LP solutions are used only to choose multipliers.
 - `kisscrit/completeness/model.py` is a slower reference implementation of the same mathematics. `selftest.py` checks the compiled kernels against it.
-- Lemma P (no two adjacent near-straight pentagon corners) is proved by `scripts/completeness/lemma_pentagon.py`.
+- Lemma P (no two adjacent near-straight pentagon corners) is proved by `scripts/completeness/lemmas.py P` (checker arithmetic; see `docs/lemmas.md`).
 
 ## 3. One-time setup on each machine
 

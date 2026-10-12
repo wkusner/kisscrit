@@ -175,6 +175,15 @@ def square(a):
     return Iv(0.0, (Iv(m) * Iv(m)).hi)
 
 
+def sqrt(a):
+    """Range of the square root on [max(a.lo, 0), a.hi]; the caller checks a.hi >= 0.  IEEE sqrt is correctly
+    rounded, so one ulp outward is rigorous."""
+    lo = max(a.lo, 0.0)
+    l = 0.0 if lo == 0.0 else _nx(math.sqrt(lo), -INF)
+    h = INF if math.isinf(a.hi) else _nx(math.sqrt(max(a.hi, 0.0)), INF)
+    return Iv(max(l, 0.0), h)
+
+
 PI = Iv(down(_PI), up(_PI))
 HALF_PI = Iv(down(_PI / 2), up(_PI / 2))
 TWO_PI = Iv(down(2 * _PI), up(2 * _PI))

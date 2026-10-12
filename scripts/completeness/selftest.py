@@ -6,7 +6,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 sys.path.insert(0, ROOT); sys.path.insert(0, os.path.join(ROOT, 'scripts', 'completeness'))
 import numpy as np
 t0 = time.time()
-import lemma_pentagon; lemma_pentagon.main()
+import lemmas; lemmas.lemma_P()
 from kisscrit.completeness.candidates import candidates_of_triangulation
 from kisscrit.completeness.structure import Structure
 from kisscrit.completeness.model import Model

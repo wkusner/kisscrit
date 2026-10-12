@@ -22,7 +22,7 @@ The long run on the iMac should produce data that can be checked independently. 
     - re-derives every exclusion, recomputing multipliers and Gordan vectors itself.
   - **Rigour:** it does not use the search code's rounding scheme, and floating-point LPs appear in it only as a source of multipliers. A leaf it cannot verify is subdivided and retried, never accepted.
   - **Done when:** the checker verifies the certificates from the pilot (A4) end to end.
-- [ ] **A3. Lemma inventory.** Every rule used to prune candidates or boxes gets a numbered entry, with a proof, a reference, or a certificate script, and its status. The rules:
+- [~] **A3. Lemma inventory.** (2026-10-11: `docs/lemmas.md` L1–L16, `STATUS.md`, `scripts/completeness/lemmas.py`, `tests/test_lemmas.py`; Lemma P and Lemma R for triangles and rhombi proved; Lemma R for pentagons running; L6 reference and L8 derivation still to write) Every rule used to prune candidates or boxes gets a numbered entry, with a proof, a reference, or a certificate script, and its status. The rules:
   - G ⊆ hull edges;
   - faces are convex 3-, 4- or 5-gons;
   - degrees are 2..5;
