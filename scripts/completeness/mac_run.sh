@@ -127,6 +127,19 @@ fi
 SRC="${SRC_OVERRIDE:-$WORK/$REPO}"
 cd "$SRC"
 git pull -q || true
+# A self-contained copy of this script carries newer code than a repository created earlier: merge it in
+# (code and results live in different files, so this never conflicts) and push it.
+if grep -q '^__BUNDLE_BASE64__$' "$0"; then
+  EMB="$WORK/embedded.bundle"
+  sed -n '/^__BUNDLE_BASE64__$/,$p' "$0" | tail -n +2 \
+    | python -c "import sys, base64; sys.stdout.buffer.write(base64.b64decode(sys.stdin.read()))" > "$EMB"
+  git fetch -q --tags "$EMB" main:refs/remotes/embedded/main
+  if ! git merge-base --is-ancestor refs/remotes/embedded/main HEAD; then
+    say "Updating the code in $USER_LOGIN/$REPO from this script ($(git describe --tags --always refs/remotes/embedded/main))"
+    git merge -q --no-edit refs/remotes/embedded/main
+    git push -q --follow-tags || echo "(push failed; it will be retried with the first results)"
+  fi
+fi
 # the code may live in a subfolder of the repository (e.g. critconfig/kisscrit)
 RS="$(find . -path ./.git -prune -o -name run_shard.py -path '*scripts/completeness/*' -print | head -1)"
 if [ -z "$RS" ]; then echo "This repository has no scripts/completeness/run_shard.py: push the new code first."; exit 1; fi
