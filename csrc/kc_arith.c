@@ -1,6 +1,7 @@
 /* kc_arith.c: certified interval arithmetic for the C checker kernel (see kc_arith.h for the contract).
  *
- * Status: trusted.  Implements docs/code-tour.md section 0.1; a bit-for-bit reimplementation of
+ * Status: trusted.
+ * Implements: docs/code-tour.md section 0.1 (the arithmetic contract); a bit-for-bit reimplementation of
  * kisscrit/core/interval.py, whose docstrings carry the justification of every rule restated here.
  * Build with -O2 -fno-fast-math -ffp-contract=off (csrc/Makefile); kc_init checks the environment.
  */
