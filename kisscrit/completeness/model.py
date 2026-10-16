@@ -1,5 +1,7 @@
 """Batched interval evaluation of corner angles, vertex angle sums and their Jacobians.
 
+Status: untrusted (the search's face model. Soundness does not depend on it; the checker has its own (kisscrit/core/model.py)).
+
 A batch is B boxes in face-parameter space, given as arrays lo, hi of shape (npar, B).  Everything is computed
 by forward-mode automatic differentiation over intervals (class D: value I of shape (B,), gradient I of
 shape (npar, B)).  Division by an interval containing 0 gives the whole line (interval.STRICT_DIV = False), so
@@ -29,6 +31,7 @@ from .interval import I
 iv.STRICT_DIV = False
 np.seterr(all='ignore')
 PI = np.pi
+PI_HI = float(np.nextafter(np.pi, np.inf))     # the double just above pi: box upper bounds must contain pi
 DELTA = np.radians(25.0)
 
 
@@ -201,7 +204,7 @@ class Model:
         for fi, k in enumerate(S.sizes):
             for i in S.pidx[fi]:
                 if k == 4: lo[i], hi[i] = a_lo, 2 * a_hi
-                else: lo[i], hi[i] = a_lo, PI
+                else: lo[i], hi[i] = a_lo, PI_HI
             if k == 5 and self.charts[fi] == 'b':
                 lo[S.pidx[fi][1]] = PI - DELTA          # formula position 2 = boundary position 4
             if k == 5 and self.charts[fi] == 'c':

@@ -1,4 +1,8 @@
-"""Python front end for the compiled branch and bound (fast.py): one Structure, all pentagon regions."""
+"""Python front end for the compiled branch and bound (fast.py): one Structure, all pentagon regions.
+
+Status: untrusted (the search front end. Soundness does not depend on it).
+
+"""
 import itertools, time, zlib, base64
 import numpy as np
 from . import fast
@@ -80,7 +84,7 @@ def run(S, th_lo, th_hi, tol=1e-6, max_boxes=10 ** 8, w_lp=10.0, w_gordan=0.2, r
         for fi, mode in ch.items():          # straight corners at degree-2 vertices are fixed at pi
             if len(S.rot[S.faces[fi][4]]) == 2:
                 k = S.pidx[fi][1] if mode == 'b' else S.pidx[fi][0]
-                lo0[k] = hi0[k] = np.pi
+                lo0[k], hi0[k] = np.pi, float(np.nextafter(np.pi, np.inf))      # the box must contain pi exactly
         st, TL, TH, ab, ev, qs, ms = fast.run_chart(*A, lo0, hi0, tol, max(max_boxes - int(tot[0]), 1), w_lp, w_gordan,
                                                 rounds, use_bounds)
         tot += st; terminal += [(ch, l, h) for l, h in zip(TL, TH)]

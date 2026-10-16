@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Sharded, resumable driver for the completeness computation.
 
+Status: untrusted (the sharded driver of the search; it writes certificates the checker verifies).
+
 Phase A (gen):      enumerate candidates from triangulations, shard = triangulation indices i with i % K == k.
                     Output: results/completeness/gen/gen-<route>-<k>-of-<K>.jsonl.gz  (one candidate per line)
 Phase B (certify):  certify deduplicated candidates, shard = candidates whose code hashes to k mod K.
@@ -26,8 +28,18 @@ R_MIN_DEFAULT = 1.0001          # certify configurations with r >= R_MIN (theta 
 
 
 def theta_of_r(r):
-    import numpy as np
-    return 2 * np.arcsin(r / (1 + r))
+    """theta_lo = 2 asin(r / (1 + r)), rounded DOWN to a double, so that the certified range theta >= theta_lo
+    contains the claimed range r >= r_min (spec v0.2, V3).  r is taken as the exact decimal written on the
+    command line (a float such as 1.0001 is first converted back to its shortest decimal)."""
+    import math
+    from fractions import Fraction
+    import mpmath
+    rq = Fraction(repr(float(r)))
+    with mpmath.workdps(60):
+        t = 2 * mpmath.asin(mpmath.mpf(rq.numerator) / (rq.numerator + rq.denominator))
+        f = float(t)
+        while mpmath.mpf(f) > t: f = math.nextafter(f, -math.inf)
+    return f
 
 
 def tri_indices(route):
