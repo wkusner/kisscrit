@@ -63,3 +63,20 @@ def test_shell_scripts_have_headers():
     for p in glob.glob(str(ROOT / 'scripts' / 'full' / '*.sh')):
         lines = open(p).read().splitlines()[:6]
         assert any(l.startswith('#') and len(l) > 10 for l in lines[1:]), p
+
+
+TRUSTED_C = ['csrc/kc_arith.c', 'csrc/kc_arith.h']
+
+
+def test_c_files_have_status_headers():
+    """Every C source and header starts with a comment that says Status: trusted or untrusted; the trusted
+    ones say trusted and name what they implement."""
+    for p in glob.glob(str(ROOT / 'csrc' / '*.[ch]')):
+        rel = os.path.relpath(p, ROOT)
+        head = '\n'.join(open(p).read().splitlines()[:30])
+        assert head.lstrip().startswith('/*'), '%s does not start with a header comment' % rel
+        assert 'Status: trusted' in head or 'Status: untrusted' in head, '%s has no Status line' % rel
+        if rel in TRUSTED_C:
+            assert 'Status: trusted' in head and 'Implements:' in head, rel
+        else:
+            assert 'Status: trusted' not in head, '%s claims to be trusted but is not in the trusted list' % rel

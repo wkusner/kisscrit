@@ -8,7 +8,7 @@ Version 1, 2026-10-16 (checklist F9). Update this file in the same commit as any
 
 | Component | Files | Status |
 |---|---|---|
-| Interval arithmetic of the checker | `kisscrit/core/interval.py` | trusted |
+| Interval arithmetic of the checker | `kisscrit/core/interval.py` (Python reference), `csrc/kc_arith.c` (C kernel) | trusted |
 | Face model (corners, vertex sums, Jacobians) | `kisscrit/core/model.py` | trusted |
 | Certificate replay | `kisscrit/core/certificate.py` | trusted |
 | Exclusion tests and structural checks | `kisscrit/core/checker.py` | trusted |
@@ -27,6 +27,12 @@ Arithmetic: `+ − × ÷ √` on doubles are IEEE correctly rounded and are step
 Structural checks V1–V5 are listed in `docs/certificate-format.md` §4; V6 (the checker imports search code only as an untrusted oracle) is `tests/test_checker_imports.py`; V7 (the checker reports its own bisections and fallbacks) is `check_certificates.py --summary`; V8 (check results are pushed incrementally) is `scripts/completeness/mac_run.sh` phase C.
 
 ## 1. Arithmetic (paper Appendix D)
+
+Two implementations, bit-for-bit identical on every tested input (`tests/test_carith.py`): the Python reference and the C kernel's.
+
+- `csrc/kc_arith.c`, `csrc/kc_arith.h` (checklist F2): the same contract in C11 on FLINT/Arb. `kc_init` asserts round-to-nearest and the absence of FMA contraction (the product 0.1·10 − 1 is 0 only without contraction) and computes the constants; `kc_down`/`kc_up` round a ball to doubles through `arb_get_lbound_arf`/`arb_get_ubound_arf` at 64 bits and `arf_get_d` with floor/ceil; `op_down`/`op_up` step IEEE results one ulp outward; `kc_cos` enumerates the multiples of π that may lie inside the interval with the same margins as the reference and decides containment only by Arb comparisons (for |x| > 10⁹, which the model never produces, it returns [−1, 1]); `kc_sin` is cos shifted by π/2 on an outward-rounded interval; `kc_atan`, `kc_asin`, `kc_acos` are monotone ranges from the endpoints. Built by `csrc/Makefile` with `-O2 -fno-fast-math -ffp-contract=off`. `csrc/test_arith.c` checks containment against Arb at 256 bits on 10⁶ random intervals per function plus the special endpoints (measured 2026-10-16: 0 failures).
+- `kisscrit/core/carith.py`: the ctypes loader (untrusted; it only moves numbers).
+
 
 - `kisscrit/core/interval.py`: an interval is a pair of doubles. `+ − × ÷` and `sqrt` use IEEE double arithmetic (correctly rounded) and step one ulp outward (`_op_down`, `_op_up`). `sin`, `cos`, `atan`, `asin`, `acos` and π go through Arb at 64 bits and are rounded outward (`down`, `up`, `_mono`). `cos` widens to ±1 where a multiple of π may lie inside the interval.
 - Nothing in the trusted base calls the system libm.
