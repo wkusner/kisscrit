@@ -1,4 +1,3 @@
-#define _POSIX_C_SOURCE 200809L
 /* test_arith.c: containment tests of kc_arith against Arb at 256 bits (spec v0.3 section 4.3).
  *
  * Status: untrusted (a test).  For each function, N random intervals over the ranges the face model uses,
@@ -7,6 +6,7 @@
  * operations are tested on random endpoint pairs the same way.  Exits nonzero on the first failure.
  * Usage: test_arith [N]   (default 1000000)
  */
+#define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
