@@ -1,3 +1,8 @@
+"""rattler_check.py: see the module.
+
+Status: untrusted (exploration or tooling; no part of the proof).
+
+"""
 import numpy as np
 exec(open('pent.py').read().split('def pentagons')[0])
 def pent_list(th,n):

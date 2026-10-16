@@ -1,5 +1,7 @@
 """Compiled (numba) kernels for the completeness branch and bound.
 
+Status: untrusted (the search (numba branch and bound). Soundness does not depend on it: it proposes proof trees that the checker re-verifies).
+
 Same mathematics as model.py / bnb2.py (which remain the readable reference implementation and are used by the
 tests to cross-check this module), reorganised for speed: one box at a time, all in nopython mode.
 

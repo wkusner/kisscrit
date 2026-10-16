@@ -1,5 +1,7 @@
 """The square KKT system of a contact graph, and a Levenberg-Marquardt solver for it.
 
+Status: untrusted (exploration or tooling; no part of the proof).
+
 For a contact graph A on N points in S^{d-1}, critical configurations with contact graph A are the
 solutions of
 

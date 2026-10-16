@@ -1,5 +1,7 @@
 """Equal-ball packings in a container as a min-type problem: the same toolkit as on the sphere.
 
+Status: untrusted (exploration or tooling; no part of the proof).
+
 Configurations: n centers X in R^d.  The packing radius
     rho(X) = min over active functions g_k(X)
 with

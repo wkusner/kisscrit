@@ -1,5 +1,7 @@
 """Forward-mode automatic differentiation over intervals (or floats).
 
+Status: untrusted (superseded prototype (checklist B1)).
+
 AD(v, g): value v (interval I or float) and gradient g (I with arrays, or numpy array) with respect to the
 face parameters.  Supports +, -, *, /, cos, sin, arctan, arcsin, arccos and constants.
 """

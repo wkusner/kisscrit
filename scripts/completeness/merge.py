@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Summarise the completeness computation from all result files in the repository.
 
+Status: untrusted (exploration or tooling; no part of the proof).
+
   python scripts/completeness/merge.py --route cond [--of 40]
 Prints: candidates generated, certified by status, missing shards, and the codes that need attention
 (status 'terminal' = boxes left near a possible critical point, to be identified against the census;

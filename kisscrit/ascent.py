@@ -1,5 +1,7 @@
 """Monotone ascent of r (descent of the max cosine) by LP directions on the delta-active set.
 
+Status: untrusted (exploration or tooling; no part of the proof).
+
 At each step: take the pairs within delta of the max cosine, find a tangent direction v with
 |v|_inf <= 1 decreasing all of them at rate >= t (maximize t by LP), and step with backtracking so
 that the max cosine strictly decreases.  If t ~ 0 the delta-active set carries a nonnegative balanced

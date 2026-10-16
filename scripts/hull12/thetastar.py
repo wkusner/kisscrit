@@ -1,7 +1,10 @@
 """For a triangulation T of the sphere (12 vertices), maximize the minimum edge angle over convex
 realizations inscribed in the unit sphere whose boundary complex is T (faces may become coplanar in the limit).
 Variables: X (12x3), c = max edge cosine.  minimize c  s.t.  |x_i|=1,  <x_i,x_j> <= c on edges,
-det(x_j-x_i, x_k-x_i, x_l-x_i) <= 0 for every oriented face (i,j,k) and every other vertex l."""
+det(x_j-x_i, x_k-x_i, x_l-x_i) <= 0 for every oriented face (i,j,k) and every other vertex l.
+
+Status: untrusted (exploration or tooling; no part of the proof).
+"""
 import numpy as np, networkx as nx, json, sys, time
 from scipy.optimize import minimize
 def oriented_faces(F, X0):

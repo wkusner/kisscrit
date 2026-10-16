@@ -1,5 +1,8 @@
 """From certified joins (results/joins_n12.json): component counts of BConf(12; theta(r)) for r > 1,
-assuming the census of critical configurations above r = 1 is complete."""
+assuming the census of critical configurations above r = 1 is complete.
+
+Status: untrusted (exploration or tooling; no part of the proof).
+"""
 import sys, os, json, math
 import numpy as np
 from sympy.combinatorics import Permutation, PermutationGroup

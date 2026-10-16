@@ -1,6 +1,8 @@
 """Combinatorial structure of a candidate stressed graph: oriented faces, corners, rotation systems,
 and the face-parameter vector.
 
+Status: untrusted (combinatorial bookkeeping for the search).
+
 A Structure is built from oriented face cycles (each face listed counterclockwise as seen from outside the
 sphere).  At a vertex v of a face (... a, v, b ...) the corner spans counterclockwise from the edge v->b to
 the edge v->a, so in the counterclockwise rotation at v the neighbor a follows b.

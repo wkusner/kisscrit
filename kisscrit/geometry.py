@@ -1,5 +1,7 @@
 """Geometry of N points on the unit sphere S^{d-1} in R^d.
 
+Status: untrusted (exploration or tooling; no part of the proof).
+
 Conventions
 -----------
 * A configuration is an (N, d) array X with unit rows.

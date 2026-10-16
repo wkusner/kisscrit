@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Computer-assisted lemmas used by the completeness computation (statements in docs/lemmas.md).
 
+Status: trusted. Part of the trusted base (transfer prompt v1.2, code standards).
+Implements: the computer-assisted lemmas P, R and U of docs/lemmas.md (L9, L10); paper Appendix A, Lemmas A.8 and A.9.
+
 All computations use the checker's interval arithmetic (kisscrit/core/interval.py: IEEE-rounded basic
 operations stepped outward, Arb for elementary functions) and the checker's face model (kisscrit/core/model.py).
 
@@ -22,7 +25,9 @@ TH0, TH1 = math.radians(60.0), math.radians(63.435)
 LSTRAIGHT = M.LSTRAIGHT                       # pi - 25 deg, the region threshold of the search
 
 
-def alpha_lo(t): return M.alpha_range(t, t).lo
+def alpha_lo(t):
+    """alpha(t) rounded down (the lower endpoint of the checker's enclosure)."""
+    return M.alpha_range(t, t).lo
 
 
 def pentagon_values(box, unclamped=True):
@@ -36,6 +41,7 @@ def pentagon_values(box, unclamped=True):
 
 
 def bisect(box):
+    """Split the box along its widest coordinate at the midpoint (any split is sound; this one only affects cost)."""
     k = max(range(len(box)), key=lambda j: box[j][1] - box[j][0])
     lo, hi = box[k]; m = 0.5 * (lo + hi)
     b1 = list(box); b1[k] = (lo, m); b2 = list(box); b2[k] = (m, hi)
@@ -43,6 +49,7 @@ def bisect(box):
 
 
 def run(start, excluded, name, min_width=1e-9, max_boxes=10 ** 8):
+    """Exhaustive branch and bound: the lemma holds on `start` if every box reached is excluded by `excluded` (an interval proof on the whole box); a box narrower than min_width that is not excluded aborts with 'NOT proved'. Prints progress and the box count."""
     stack = [start]; n = 0; t = time.time()
     vol = lambda b: math.prod(h - l for l, h in b)
     v0, vdone = vol(start), 0.0
@@ -64,6 +71,7 @@ def lemma_P():
     corners >= LSTRAIGHT."""
     a = alpha_lo(TH0)
     def excluded(box):
+        """True iff no two adjacent corners of the pentagon are both >= LSTRAIGHT on the whole box (Lemma P, L10): each corner enclosure is compared with the same double threshold the search and the checker use."""
         cs, ok = pentagon_values(box)
         if not ok: return True
         al = M.alpha_range(box[0][0], box[0][1]).lo
@@ -82,10 +90,13 @@ def rot(v, axis, c, s):
     return tuple(v[i] * c + cx[i] * s + axis[i] * d * one_c for i in range(3))
 
 
-def dot(u, v): return u[0] * v[0] + u[1] * v[1] + u[2] * v[2]
+def dot(u, v):
+    """Interval dot product of two interval 3-vectors."""
+    return u[0] * v[0] + u[1] * v[1] + u[2] * v[2]
 
 
 def det(u, v, w):
+    """Interval determinant of three interval 3-vectors (triple product)."""
     return (u[0] * (v[1] * w[2] - v[2] * w[1]) - u[1] * (v[0] * w[2] - v[2] * w[0])
             + u[2] * (v[0] * w[1] - v[1] * w[0]))
 
@@ -105,10 +116,14 @@ def polygon_vertices(th, corners):
     return P
 
 
-def cross(u, v): return (u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0])
+def cross(u, v):
+    """Interval cross product."""
+    return (u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0])
 
 
-def sub(u, v): return (u[0] - v[0], u[1] - v[1], u[2] - v[2])
+def sub(u, v):
+    """Componentwise interval difference."""
+    return (u[0] - v[0], u[1] - v[1], u[2] - v[2])
 
 
 def triple_excluded(d, close, dets, gaps, near=None):
@@ -180,17 +195,27 @@ def pentagon_by_vertices(th, c0, f1, cosL):
 # (theta, c0, f1); it is evaluated with forward differentiation on the box (value q(B), gradient g(B)) and at the
 # midpoint m, and enclosed by q(B) intersected with q(m) + g(B) . (B - m) (mean value theorem).  This removes
 # most of the dependency blow-up of plain interval evaluation, which otherwise needs boxes ~100x smaller.
-def _adot(u, v): return M.add(M.add(M.mul(u[0], v[0]), M.mul(u[1], v[1])), M.mul(u[2], v[2]))
-def _asub(u, v): return tuple(M.sub(x, y) for x, y in zip(u, v))
-def _across(u, v): return (M.sub(M.mul(u[1], v[2]), M.mul(u[2], v[1])), M.sub(M.mul(u[2], v[0]), M.mul(u[0], v[2])),
+def _adot(u, v):
+    """AD dot product (value and gradient enclosures)."""
+    return M.add(M.add(M.mul(u[0], v[0]), M.mul(u[1], v[1])), M.mul(u[2], v[2]))
+def _asub(u, v):
+    """AD componentwise difference."""
+    return tuple(M.sub(x, y) for x, y in zip(u, v))
+def _across(u, v):
+    """AD cross product."""
+    return (M.sub(M.mul(u[1], v[2]), M.mul(u[2], v[1])), M.sub(M.mul(u[2], v[0]), M.mul(u[0], v[2])),
                            M.sub(M.mul(u[0], v[1]), M.mul(u[1], v[0])))
-def _adet(u, v, w): return _adot(u, _across(v, w))
+def _adet(u, v, w):
+    """AD triple product u . (v x w)."""
+    return _adot(u, _across(v, w))
 def _asqrt(a):
+    """AD square root: value sqrt(a), derivative 1/(2 sqrt(a))."""
     v = I.sqrt(a[0])
     return M.chain(a, v, Iv(0.5) / v)
 
 
 def _arot(v, axis, c, s):
+    """AD Rodrigues rotation of v about the unit axis by the angle with cosine c and sine s: v c + (axis x v) s + axis (axis . v)(1 - c)."""
     cx = _across(axis, v); d = _adot(axis, v); one_c = M.sub(M.const(1.0), c)
     return tuple(M.add(M.add(M.mul(v[i], c), M.mul(cx[i], s)), M.mul(M.mul(axis[i], d), one_c)) for i in range(3))
 
@@ -253,7 +278,9 @@ def pentagon_excluded(box, cosL):
         enc = lambda x: x[0]
     else:
         enc = None
-    def E(key_b, key_m): return key_b[0] if enc else _mv(key_b, key_m, rad)
+    def E(key_b, key_m):
+        """Enclosure of a quantity on the box: the plain box value, intersected with the mean-value form around the midpoint when the midpoint is valid."""
+        return key_b[0] if enc else _mv(key_b, key_m, rad)
     for i in range(5):
         if E(qb['turn'][i], qm and qm['turn'][i]).hi < 0: return True           # a corner > pi (L3)
         if E(qb['diag'][i], qm and qm['diag'][i]).lo > 0: return True           # a diagonal < theta (L8)
@@ -274,12 +301,14 @@ def lemma_R(part=0, parts=1):
     a = alpha_lo(TH0)
 
     def excl_tri(box):
+        """Triangles: Lemma R on the equilateral triangle with side theta in the box (corners alpha(theta))."""
         th = Iv(*box[0]); al = M.alpha_range(*box[0])
         return no_deep_hole(th, polygon_vertices(th, [al, al, al]))
     run([(TH0, TH1)], excl_tri, 'Lemma R (triangles)')
 
     # rhombi: corners (A, O, A, O) with O = 2 beta(theta, A), A in [alpha, 2 alpha]
     def excl_quad(box):
+        """Rhombi: Lemma R on the rhombus with side theta and corner A in the box, after the corner bounds of L3 (a box with no valid rhombus is excluded)."""
         C, ok = M.Graph([[0, 1, 2, 3], [3, 2, 1, 0]], {}).corners([box[0][0], box[1][0], box[1][0]],
                                                                   [box[0][1], box[1][1], box[1][1]])
         if not ok: return True
@@ -293,14 +322,18 @@ def lemma_R(part=0, parts=1):
     # pentagons: vertex chart (theta, c0, f1), corners c0 at P0 and f1 at P1 (see pentagon_by_vertices)
     cosL = I.cos(Iv(LSTRAIGHT))
 
-    def excl_pent(box): return pentagon_excluded(box, cosL)
+    def excl_pent(box):
+        """Pentagons: Lemma R in the vertex chart (theta, c0, f1), through pentagon_excluded."""
+        return pentagon_excluded(box, cosL)
     t0 = TH0 + (TH1 - TH0) * part / parts; t1 = TH1 if part == parts - 1 else TH0 + (TH1 - TH0) * (part + 1) / parts
     run([(t0, t1), (a, math.pi), (a, math.pi)], excl_pent,
         'Lemma R (pentagons%s)' % ('' if parts == 1 else ', theta part %d of %d' % (part + 1, parts)))
 
 
 # ---------------------------------------------------------------- Lemma U
-def lemma_U(): run(*U_problem(), 'Lemma U')
+def lemma_U():
+    """Run Lemma U (Fejes Toth's area bound with its equality case; see U_problem)."""
+    run(*U_problem(), 'Lemma U')
 
 
 def U_problem(rmax_deg=60.0):
@@ -320,17 +353,20 @@ def U_problem(rmax_deg=60.0):
     TOP = math.radians(2 * rmax_deg) + 1e-9                     # a side is at most twice the circumradius
 
     def angle(a, b, c):                                   # angle opposite a, AD in (a, b, c)
+        """AD enclosure of the angle opposite side a in the spherical triangle (a, b, c), by the law of cosines; None if no triangle with these sides exists."""
         x = M.div(M.sub(M.cos_(a), M.mul(M.cos_(b), M.cos_(c))), M.mul(M.sin_(b), M.sin_(c)))
         if x[0].lo > 1 or x[0].hi < -1: return None
         x, _ = M.clip(x, -1.0, 1.0)
         return M.acos_(x)[0]
 
     def area(a, b, c):
+        """AD enclosure of the area A + B + C - pi of the spherical triangle (a, b, c) (Girard), and the angle A."""
         A, B, C = angle(a, b, c), angle(b, c, a), angle(c, a, b)
         if A is None or B is None or C is None: return None, None
         return M.sub(M.add(M.add(A, B), C), M.const(PI)), A
 
     def excluded(box):
+        """True iff every triangle with sides in the box is excluded: no triangle exists, the circumradius is certainly >= rmax, the area is certainly > pi/5, or (at the corner) all partial derivatives of the area are positive so the minimum sits at the equilateral corner where the area is exactly pi/5."""
         v = [M.var(box[k][0], box[k][1], k) for k in range(3)]
         E, A = area(*v)
         if E is None: return True                                       # no triangle with these sides

@@ -1,5 +1,7 @@
 """Linear-relaxation contractor for the vertex angle-sum equations S_v(p) = 2 pi.
 
+Status: untrusted (superseded prototype (checklist B1)).
+
 For a box B with midpoint m and an interval enclosure J(B) of the Jacobian (automatic differentiation over
 intervals), every p in B satisfies S(p) in S(m) + J(B)(p - m)  (mean value theorem).  Writing J(B) = Jc + [-Jr, Jr],
 any zero p in B satisfies the linear inequalities

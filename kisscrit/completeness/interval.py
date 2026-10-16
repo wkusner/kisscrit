@@ -1,5 +1,7 @@
 """Minimal interval arithmetic on numpy arrays (lo, hi), with outward rounding.
 
+Status: untrusted (the search's interval arithmetic with libm padding; no verdict depends on it).
+
 Every arithmetic result is widened by one ulp in each direction (np.nextafter); every libm function
 (cos, sin, arccos, sqrt) is widened by 4 ulps, which covers the documented accuracy of glibc's
 double-precision implementations (< 1 ulp for these functions).  This is the usual standard for

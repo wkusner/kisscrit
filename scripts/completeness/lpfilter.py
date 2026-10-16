@@ -3,7 +3,10 @@ Variables: alpha; per quad: D (corner at the endpoints of the deleted diagonal),
 per pentagon: one variable per corner.  Constraints:
   vertex sums = 360; triangle corner = alpha; alpha <= D,O <= 2 alpha; 3 alpha <= D+O <= 3 alpha + S4;
   alpha <= pentagon corner <= 180; 9 alpha + S5L <= pentagon sum <= 9 alpha + S5U;
-  alpha in [A60, 72].  Returns min alpha (None if infeasible)."""
+  alpha in [A60, 72].  Returns min alpha (None if infeasible).
+
+Status: untrusted (exploration or tooling; no part of the proof).
+"""
 import numpy as np
 from scipy.optimize import linprog
 A60 = float(np.degrees(np.arccos(1 / 3)))

@@ -1,3 +1,8 @@
+"""seeded.py: see the module.
+
+Status: untrusted (exploration or tooling; no part of the proof).
+
+"""
 import json,numpy as np,networkx as nx,sys
 from scipy.spatial import ConvexHull
 from thetastar import theta_star

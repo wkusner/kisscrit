@@ -1,3 +1,8 @@
+"""tables.py: see the module.
+
+Status: untrusted (exploration or tooling; no part of the proof).
+
+"""
 import numpy as np, json
 from scipy.optimize import minimize
 exec(open('pent.py').read().split('for thd in')[0])

@@ -1,4 +1,8 @@
-"""Signed counts vs chi(M_{0,N}) from results/census_n*.json."""
+"""Signed counts vs chi(M_{0,N}) from results/census_n*.json.
+
+Status: untrusted (exploration or tooling; no part of the proof).
+
+"""
 import sys, os, glob, warnings
 warnings.filterwarnings('ignore')
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))

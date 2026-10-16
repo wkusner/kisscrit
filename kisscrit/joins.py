@@ -1,6 +1,8 @@
 """Certified joins: for an index-1 critical configuration s on S^2, certify which local maxima the two sides
 of its ascending direction lie with, in the superlevel set {rho > rho(s)}.
 
+Status: untrusted (exploration or tooling; no part of the proof).
+
 For each side we build a polygonal path
     y = y_+-  ->  ascent points  ->  a copy of the maximum (aligned)
 and verify, rigorously up to an explicit floating-point error bound, that the max cosine along every

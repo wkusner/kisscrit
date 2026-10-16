@@ -1,5 +1,7 @@
 """Batched branch and bound over face-parameter boxes of one candidate stressed graph.
 
+Status: untrusted (superseded prototype (checklist B1)).
+
 For one Structure S, every pentagon chart assignment (see model.py) is a separate starting box.  A box is
 discarded when one of these sound tests succeeds on the whole box:
   invalid  the parameters cannot describe convex equilateral faces in this chart;

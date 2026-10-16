@@ -1,5 +1,7 @@
 """High-precision refinement of critical configurations and minimal polynomials of c = cos(theta).
 
+Status: untrusted (exploration or tooling; no part of the proof).
+
 refine_kkt  : Newton (Gauss-Newton) on the KKT system at arbitrary precision (mpmath).
 minpoly     : LLL search (python-flint) for an integer polynomial vanishing at c, with an acceptance
               test comparing the height to the precision used, which rejects the spurious high-degree

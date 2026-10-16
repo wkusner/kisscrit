@@ -1,6 +1,8 @@
 """Graph-mode census for n points on S^2: solve the square KKT system for every graph on n vertices
 (minimum degree >= 2, n <= 7) from random and graph-seeded starts.
 
+Status: untrusted (exploration or tooling; no part of the proof).
+
 usage: python scripts/graph_census.py n starts out.json
 """
 import sys, os, time

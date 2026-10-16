@@ -1,4 +1,8 @@
-"""Ascend random 12-point configurations to just above r=1 (min angle > 60 deg) and record hull types."""
+"""Ascend random 12-point configurations to just above r=1 (min angle > 60 deg) and record hull types.
+
+Status: untrusted (exploration or tooling; no part of the proof).
+
+"""
 import sys, json, collections, numpy as np, networkx as nx
 sys.path.insert(0,'/home/claude/kisscrit-repo')
 import warnings; warnings.filterwarnings('ignore')

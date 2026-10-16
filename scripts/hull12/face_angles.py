@@ -1,3 +1,8 @@
+"""face_angles.py: see the module.
+
+Status: untrusted (exploration or tooling; no part of the proof).
+
+"""
 import numpy as np, sys
 th=float(sys.argv[1]); rho_max=float(sys.argv[2]); step=float(sys.argv[3])
 g=np.radians(np.arange(th,120.0+1e-9,step))

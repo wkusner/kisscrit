@@ -1,4 +1,8 @@
-"""Certify the joins of the index-1 saddles of N=12 above r=1 (results/joins_n12.json)."""
+"""Certify the joins of the index-1 saddles of N=12 above r=1 (results/joins_n12.json).
+
+Status: untrusted (exploration or tooling; no part of the proof).
+
+"""
 import sys, os, json, time
 import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))

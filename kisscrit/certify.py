@@ -1,5 +1,7 @@
 """Interval certification of a nondegenerate critical configuration on S^2 (Krawczyk operator).
 
+Status: untrusted (exploration or tooling; no part of the proof).
+
 Given a contact graph A and a numerical solution of the KKT system, we certify:
 
   (1) existence and uniqueness, in an explicit box, of a solution z* = (X, c, sigma, mu) of the

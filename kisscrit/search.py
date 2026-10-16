@@ -1,5 +1,7 @@
 """Searching for critical configurations: random ascent, KKT polishing, and contact-graph surgery.
 
+Status: untrusted (exploration or tooling; no part of the proof).
+
 A *type* is a critical configuration up to O(d) and relabeling.  Types are keyed by the radius
 (rounded), the degree sequence and a Weisfeiler-Lehman hash of the stressed contact graph; the key
 is a heuristic invariant, and collisions are resolved by comparing sorted Gram spectra.

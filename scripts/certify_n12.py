@@ -1,4 +1,8 @@
-"""Interval-certify the critical configurations of 12 points above r=1 (data/n12_above1.json)."""
+"""Interval-certify the critical configurations of 12 points above r=1 (data/n12_above1.json).
+
+Status: untrusted (exploration or tooling; no part of the proof).
+
+"""
 import sys, os, json, time
 import numpy as np, mpmath as mp
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))

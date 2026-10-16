@@ -1,3 +1,8 @@
+"""icosub.py: see the module.
+
+Status: untrusted (exploration or tooling; no part of the proof).
+
+"""
 import networkx as nx, itertools, numpy as np, collections, sys
 from networkx.algorithms import isomorphism as iso
 G=nx.icosahedral_graph(); E=sorted(tuple(sorted(e)) for e in G.edges()); idx={e:i for i,e in enumerate(E)}

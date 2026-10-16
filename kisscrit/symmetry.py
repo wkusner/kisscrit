@@ -1,4 +1,8 @@
-"""Symmetry group of a point configuration on S^{d-1}: all (R in O(d), permutation p) with R x_i = x_p(i)."""
+"""Symmetry group of a point configuration on S^{d-1}: all (R in O(d), permutation p) with R x_i = x_p(i).
+
+Status: untrusted (exploration or tooling; no part of the proof).
+
+"""
 import numpy as np
 
 

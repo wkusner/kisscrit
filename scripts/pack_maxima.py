@@ -1,5 +1,8 @@
 """Local maxima of the packing radius by random ascent; best value, number of distinct maxima, and an LLL
-minimal polynomial of the best radius.  usage: python scripts/pack_maxima.py CONTAINER n_lo n_hi ascents"""
+minimal polynomial of the best radius.  usage: python scripts/pack_maxima.py CONTAINER n_lo n_hi ascents
+
+Status: untrusted (exploration or tooling; no part of the proof).
+"""
 import sys, os, json, time, warnings
 import numpy as np
 import mpmath as mp, mpmath as mp

@@ -1,5 +1,8 @@
 """Ascent + surgery census for N points on S^{d-1} (any N).
-usage: python scripts/ascent_census.py N d runs rounds out.json"""
+usage: python scripts/ascent_census.py N d runs rounds out.json
+
+Status: untrusted (exploration or tooling; no part of the proof).
+"""
 import sys, os, time
 import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))

@@ -1,4 +1,8 @@
-"""Euler-characteristic check for the packing censuses in results/pack_*.json, with one-rattler strata."""
+"""Euler-characteristic check for the packing censuses in results/pack_*.json, with one-rattler strata.
+
+Status: untrusted (exploration or tooling; no part of the proof).
+
+"""
 import sys, os, json, glob, re, warnings
 import numpy as np
 import mpmath as mp

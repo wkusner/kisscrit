@@ -1,4 +1,8 @@
-"""Build the LaTeX tables of Appendix B from results/maxima_*.json and results/pack_euler.json."""
+"""Build the LaTeX tables of Appendix B from results/maxima_*.json and results/pack_euler.json.
+
+Status: untrusted (exploration or tooling; no part of the proof).
+
+"""
 import json, os, sys
 R = os.path.join(os.path.dirname(__file__), '..', 'results')
 NAMES = [('sq', 'square'), ('disk', 'disk'), ('tor', 'square torus'), ('hex', 'hexagonal torus'),

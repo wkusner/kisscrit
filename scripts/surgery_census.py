@@ -1,5 +1,8 @@
 """Extend a census by contact-graph surgery (and optional random ascent).
-usage: python scripts/surgery_census.py census.json rounds [ascent_runs]"""
+usage: python scripts/surgery_census.py census.json rounds [ascent_runs]
+
+Status: untrusted (exploration or tooling; no part of the proof).
+"""
 import sys, os, time
 import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))

@@ -1,5 +1,7 @@
 """Branch and bound over the face-parameter box of a candidate stressed graph.
 
+Status: untrusted (superseded prototype (checklist B1)).
+
 A box is excluded if
   (V) some vertex angle sum cannot equal 2 pi, or some face parameters cannot form a convex polygon; or
   (G) a Gordan certificate exists: vectors y_v in the tangent plane at each vertex (in the local frame given

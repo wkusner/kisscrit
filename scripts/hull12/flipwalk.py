@@ -1,4 +1,8 @@
-"""Explore triangulations reachable above 60 deg by single flips, seeding theta* with the parent realization."""
+"""Explore triangulations reachable above 60 deg by single flips, seeding theta* with the parent realization.
+
+Status: untrusted (exploration or tooling; no part of the proof).
+
+"""
 import json, numpy as np, networkx as nx, collections, itertools, sys
 sys.path.insert(0,'/home/claude/kisscrit-repo')
 import warnings; warnings.filterwarnings('ignore')

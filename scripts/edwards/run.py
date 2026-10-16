@@ -1,4 +1,8 @@
-"""Basin statistics for free planar clusters modulo similarity.  Usage: python run.py N runs {morse|slsqp} seed"""
+"""Basin statistics for free planar clusters modulo similarity.  Usage: python run.py N runs {morse|slsqp} seed
+
+Status: untrusted (exploration or tooling; no part of the proof).
+
+"""
 import sys, json, time, numpy as np, collections, networkx as nx
 import os; HERE = os.path.dirname(os.path.abspath(__file__)); OUT = os.path.join(HERE, '..', '..', 'results', 'edwards')
 sys.path.insert(0, HERE); from shape import *

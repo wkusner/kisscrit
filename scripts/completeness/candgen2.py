@@ -1,5 +1,7 @@
 """Candidate stressed contact graphs for 12 points with minimum angle in (60, 63.4349] degrees.
 
+Status: untrusted (exploration or tooling; no part of the proof).
+
 Faces of a candidate are unions of 1, 2 or 3 triangles of a triangulation T (triangle, quadrilateral, pentagon;
 a pentagon is a path of three triangles in the dual).  We enumerate the partitions of the 20 triangles of each T
 into such faces by depth-first search, pruning as soon as a vertex has all its triangles assigned:

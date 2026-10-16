@@ -3,6 +3,9 @@ triangulation T of the sphere by merging adjacent triangles (a quadrilateral = 2
 path of 3 triangles).  Every plane graph with faces of size 3..5 arises from some T (triangulate its faces by
 diagonals), so running over all 7595 triangulations with 12 vertices enumerates every candidate.
 
+Status: trusted. Part of the trusted base (transfer prompt v1.2, code standards).
+Implements: candidate generation (tilings of the 7,595 triangulations, L12-L14 of docs/lemmas.md; paper Appendix A, proof of Corollary 6.3). Known gap G1: the LP discard is floating point until exact Farkas certificates are logged (checklist F6).
+
 Pruning used during enumeration (each is a necessary condition for a critical configuration with
 60 deg < theta <= 63.4349 deg; see docs/completeness-runbook.md, section "What is proved, what is assumed"):
   * every vertex has degree 2..5; a degree-2 vertex has two straight pentagon corners;
@@ -26,6 +29,7 @@ FULL = (1 << NC) - 1
 
 
 def _vmask(t, q, p):
+    """Bit mask over the alpha cells [A60, A63] of the vertex types (t triangles, q rhombi, p pentagons at a vertex) that can close to 360 degrees: a cell is kept if d*alpha_lo <= 360 and t*alpha_hi + 2q*alpha_hi + 180p >= 360 (L3, L7, L13: triangle corners equal alpha, rhombus corners at most 2 alpha, pentagon corners at most 180). Degree 2 only as two pentagon corners (L4). Floating point with a permissive slack of 1e-9; the exact version is checklist item G2 (F6)."""
     d = t + q + p
     if d < 2 or d > 5: return 0
     if d == 2: return FULL if (t == 0 and q == 0 and p == 2) else 0
@@ -67,6 +71,7 @@ def tilings(F):
     face_of = [-1] * nF; faces = []
 
     def corners_at(v):
+        """The (triangle, rhombus, pentagon) corner counts at vertex v of the current partial tiling."""
         t = q = p = 0
         for fid in set(face_of[f] for f in vtris[v]):
             k = len(faces[fid]) + 2
@@ -76,6 +81,7 @@ def tilings(F):
         return t, q, p
 
     def check(k, mask):
+        """True iff the vertex types at the vertices of triangle k are still feasible under the mask after assigning it."""
         for v in range(12):
             if vlast[v] == k:
                 mask &= VMASK.get(corners_at(v), 0)
@@ -83,6 +89,7 @@ def tilings(F):
         return mask
 
     def rec(k, mask):
+        """Depth-first assignment of triangle k to a face (alone, or merged with a neighbour into a rhombus or pentagon), pruned by the vertex masks."""
         while k < nF and face_of[order[k]] != -1:
             mask = check(k, mask)
             if not mask: return

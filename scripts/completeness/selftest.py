@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Quick check that a machine is set up correctly (about 1-3 minutes, mostly numba compilation).
-Checks: Lemma P; the compiled kernels agree with the reference implementation; one candidate certifies."""
+Checks: Lemma P; the compiled kernels agree with the reference implementation; one candidate certifies.
+
+Status: untrusted (exploration or tooling; no part of the proof).
+"""
 import os, sys, time, json
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, ROOT); sys.path.insert(0, os.path.join(ROOT, 'scripts', 'completeness'))

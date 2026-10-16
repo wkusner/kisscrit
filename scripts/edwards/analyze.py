@@ -1,3 +1,8 @@
+"""analyze.py: see the module.
+
+Status: untrusted (exploration or tooling; no part of the proof).
+
+"""
 import json, numpy as np, sys
 from scipy.optimize import minimize_scalar
 from scipy.stats import chi2

@@ -1,5 +1,8 @@
 """Exact second-order data at the two kissing configurations FCC and HCP (r = 1).
 
+Status: trusted. Part of the trusted base (transfer prompt v1.2, code standards).
+Implements: paper Appendix B, Proposition B.5 (exact second-order data at FCC and HCP), in exact arithmetic.
+
 For a balanced configuration C at r = 1 with contact graph G, let Q_w = (cD - W) (x) I_3 restricted to the tangent
 space (the stress Laplacian of L17, the Hessian of -sum_ij w_ij <u_i, u_j> in the exponential chart).  The
 second-order isolation theorem (paper, Appendix B; Project doc research-r1-second-order-isolation-2026-10-15)
@@ -25,11 +28,13 @@ HALF = sp.Rational(1, 2)
 
 
 def contact_edges(U):
+    """Pairs at exactly 60 degrees (inner product exactly 1/2, decided symbolically)."""
     N = len(U)
     return [(i, j) for i in range(N) for j in range(i + 1, N) if sp.simplify(U[i].dot(U[j]) - HALF) == 0]
 
 
 def tangent_bases(U):
+    """An exact orthonormal basis of the tangent plane at each point."""
     T = []
     for u in U:
         a = u.cross(sp.Matrix([1, 0, 0])) if u[0] ** 2 != 1 else u.cross(sp.Matrix([0, 1, 0]))
@@ -49,6 +54,7 @@ def rigidity(U, E, T):
 
 
 def rotations(U, T):
+    """The three infinitesimal rotations in tangent coordinates."""
     N = len(U)
     rot = sp.zeros(2 * N, 3)
     for a in range(3):
@@ -96,11 +102,13 @@ def analyze(U, named_stresses):
 # ---------------------------------------------------------------- the two configurations
 
 def fcc():
+    """The cuboctahedron (FCC kissing configuration): the 12 permutations of (+-1, +-1, 0)/sqrt 2."""
     s2 = sp.sqrt(2)
     return [sp.Matrix(p) / s2 for p in itertools.product([-1, 0, 1], repeat=3) if sum(abs(x) for x in p) == 2]
 
 
 def fcc_stresses(E, U):
+    """The four great-hexagon stresses of FCC (each a balanced 6-cycle) and the uniform stress, normalized."""
     out = []
     for n in [(1, 1, 1), (1, 1, -1), (1, -1, 1), (-1, 1, 1)]:
         n = sp.Matrix(n)
@@ -112,6 +120,7 @@ def fcc_stresses(E, U):
 
 
 def hcp():
+    """The triangular orthobicupola (HCP kissing configuration): a great hexagon and two aligned triangles at latitude arctan(sqrt 2)."""
     s3 = sp.sqrt(3)
     hexa = [sp.Matrix([sp.cos(k * sp.pi / 3), sp.sin(k * sp.pi / 3), 0]) for k in range(6)]
     cphi, sphi = 1 / s3, sp.sqrt(sp.Rational(2, 3))        # latitude arctan(sqrt 2): distance 60 deg to the hexagon
@@ -120,6 +129,7 @@ def hcp():
 
 
 def hcp_stresses(E, U):
+    """The equatorial-hexagon stress of HCP and the uniform stress, normalized."""
     w = [1 if (U[i][2] == 0 and U[j][2] == 0) else 0 for (i, j) in E]
     assert sum(w) == 6
     return [('equator-hexagon', [sp.Rational(x, 6) for x in w]), ('uniform', [sp.Rational(1, len(E))] * len(E))]

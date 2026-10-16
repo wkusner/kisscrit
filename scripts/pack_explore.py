@@ -1,5 +1,7 @@
 """Explore critical configurations of equal-ball packings in a container.
 
+Status: untrusted (exploration or tooling; no part of the proof).
+
 usage: python scripts/pack_explore.py CONTAINER n ascents kkt_starts
 CONTAINER: sq (disks in unit square), cube (balls in unit cube), tor (square flat torus),
            hex (hexagonal flat torus), tor3 (cubic 3-torus), disk (disks in a disk), ball (balls in a ball)

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Claim the next free shard through git, so several machines can share the work without a server.
 
+Status: untrusted (exploration or tooling; no part of the proof).
+
 A claim is a small file results/completeness/claims/<phase>-<route>-<k>-of-<K>.txt naming the machine.  Claiming
 commits and pushes that file; if the push is rejected (someone else pushed first), we pull, and if the shard
 was taken in the meantime we try the next one.

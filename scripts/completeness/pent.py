@@ -1,3 +1,8 @@
+"""pent.py: see the module.
+
+Status: untrusted (exploration or tooling; no part of the proof).
+
+"""
 import numpy as np
 def rot(axis, ang):
     axis=axis/np.linalg.norm(axis); K=np.array([[0,-axis[2],axis[1]],[axis[2],0,-axis[0]],[-axis[1],axis[0],0]])

@@ -1,6 +1,9 @@
 """Canonical codes of embedded plane graphs (rotation systems), up to orientation-preserving and -reversing
 isomorphism.
 
+Status: trusted. Part of the trusted base (transfer prompt v1.2, code standards).
+Implements: the canonical code of an embedded plane graph (L12: deduplication of candidates); the checker reimplements it independently in kisscrit/core/checker.py (V4).
+
 For every directed edge (u, w) and both orientations, number the vertices in breadth-first order, visiting the
 neighbours of each vertex in rotation order starting from the edge by which it was first reached (the start
 vertex starts at w).  The code is the sequence of neighbour numbers; the canonical code is the lexicographic
@@ -11,6 +14,7 @@ configurations, so certifying one representative certifies both.
 
 
 def _code(rot, u, w, rev):
+    """The code of the rotation system from the start edge (u, w) in the given orientation: per vertex in breadth-first order, its degree then its neighbours' numbers; None if the graph is disconnected."""
     n = len(rot)
     num = {u: 0}; order = [u]; first = {u: w}; out = []
     i = 0
@@ -38,8 +42,10 @@ def canonical_code(rot):
 
 
 def code_string(code):
+    """Dot-joined text form of a code."""
     return '.'.join(map(str, code))
 
 
 def rotation_of(S):
+    """rot[v] = neighbours of v in counterclockwise order, from a Structure."""
     return [[w for (w, fi, pos) in S.rot[v]] for v in range(S.n)]

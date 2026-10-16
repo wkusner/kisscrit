@@ -1,5 +1,8 @@
 """N points in the plane modulo similarity (Kendall shape space CP^{N-2}).
-rho(x) = min_{i<j} |x_i - x_j| / sqrt(sum |x_i - xbar|^2).  Local maxima = jammed free clusters."""
+rho(x) = min_{i<j} |x_i - x_j| / sqrt(sum |x_i - xbar|^2).  Local maxima = jammed free clusters.
+
+Status: untrusted (exploration or tooling; no part of the proof).
+"""
 import numpy as np, itertools, networkx as nx
 from scipy.optimize import minimize, linprog
 from networkx.algorithms.isomorphism import GraphMatcher

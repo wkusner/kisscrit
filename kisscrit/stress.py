@@ -1,5 +1,7 @@
 """Stresses, Clarke criticality, rigidity and the co-index of a critical configuration.
 
+Status: untrusted (exploration or tooling; no part of the proof).
+
 For the max-cosine function c(X) = max c_ij (equivalently the min-type function r), Clarke
 criticality at X means: 0 lies in the convex hull of the tangential gradients of the active c_ij,
 i.e. there is sigma >= 0, sum sigma = 1, with  sum_j sigma_ij P_i x_j = 0  at every vertex i

@@ -5,6 +5,9 @@ For C with contact graph G (pairs at 60 deg):
   CC   = critical cone: flexes of supp(w) with other G-edges nondecreasing (here = Flex(G) if a full-support stress exists),
   Q_w  = (cD - W) x I_3 restricted to tangent space,
 report eigenvalues of Q_w on Flex(G)/SO(3) for extreme rays w and the uniform-combination stress.
+
+Status: untrusted (floating-point exploration; the exact version is exact_lambda.py).
+
 """
 import numpy as np, itertools
 from scipy.optimize import linprog

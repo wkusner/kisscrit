@@ -1,5 +1,7 @@
 """Corner angles of the faces of a candidate stressed graph, as functions of the face parameters.
 
+Status: untrusted (search-side face formulas (used by the search and by scripts/completeness/lemmas.py only through the checker arithmetic where it matters)).
+
 All faces are convex spherical polygons with all sides equal to theta.  Formulas use half-angle (Napier)
 and cotangent four-part forms, which are smooth on the whole parameter range (including straight corners):
   base angle of the isosceles triangle with legs t and apex A:   beta(t, A) = atan2(cos(A/2), cos t sin(A/2))

@@ -1,4 +1,8 @@
-"""Command line: python -m kisscrit {census,analyze,triangulations}"""
+"""Command line: python -m kisscrit {census,analyze,triangulations}
+
+Status: untrusted (exploration or tooling; no part of the proof).
+
+"""
 import argparse, json, sys
 import numpy as np
 

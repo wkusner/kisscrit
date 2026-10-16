@@ -1,5 +1,8 @@
 """Resumable theta*(T) survey over all 7595 triangulations; worker w of W handles indices k with k%W==w.
-Results appended line-by-line to ts_w{w}.jsonl."""
+Results appended line-by-line to ts_w{w}.jsonl.
+
+Status: untrusted (exploration or tooling; no part of the proof).
+"""
 import json, sys, os, numpy as np, time
 from thetastar import theta_star
 w,W=int(sys.argv[1]),int(sys.argv[2]); out='ts_w%d.jsonl'%w
