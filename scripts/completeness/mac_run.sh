@@ -14,7 +14,8 @@
 #    5. runs the self-test (1-3 minutes)
 #    6. phase A: generates candidate graphs (4 triangulations in parallel), commits and pushes them
 #    7. phase B: claims shards one at a time, certifies them on all cores, commits and pushes each one
-#    8. checks every certificate with the independent checker (kisscrit/core/checker.py) and pushes the results
+#    8. checks every certificate with the independent checker (kisscrit/core/checker.py), pushing after every
+#       certificate file (V8), then the summary and the manifest
 #    9. prints the summary and pushes it
 #
 #  After the self-test the run is handed to launchd (a LaunchAgent, org.kisscrit.run): it keeps running
@@ -246,11 +247,16 @@ while true; do
 done
 
 # ---------------------------------------------------------------- 8. independent check of the certificates
-say "Phase C: independent check of all certificates in the repository (resumable)"
+say "Phase C: independent check of all certificates in the repository (resumable; pushed after every file, V8)"
 git pull -q --rebase || true
-python scripts/completeness/check_certificates.py --workers "$WORKERS" 2>&1 | tee -a "$WORK/logs/check.log"
-python scripts/completeness/check_certificates.py --summary | tee -a "$WORK/logs/check.log"
-push "checks $ROUTE ($NAME)"
+for CF in results/completeness/certificates/certificates-"$ROUTE"-*.jsonl; do
+  python scripts/completeness/check_certificates.py --route "$ROUTE" --workers "$WORKERS" "$CF" 2>&1 | tee -a "$WORK/logs/check.log"
+  cp "$WORK/logs/check.log" results/completeness/checks/check-log-"$NAME".txt 2>/dev/null || true
+  push "checks $ROUTE $(basename "$CF") ($NAME)"
+done
+python scripts/completeness/check_certificates.py --route "$ROUTE" --summary | tee -a "$WORK/logs/check.log"
+python scripts/completeness/check_certificates.py --route "$ROUTE" --manifest | tee -a "$WORK/logs/check.log"
+push "checks $ROUTE summary ($NAME)"
 
 # ---------------------------------------------------------------- 9. summary
 say "Summary"
