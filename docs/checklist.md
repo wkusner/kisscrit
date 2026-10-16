@@ -2,7 +2,7 @@
 
 Purpose: the working checklist for this project, in the order we intend to do the items. Each item says what "done" means. After an item is closed, Claude gives a short progress report and review, and asks before starting the next one.
 
-Version 1, 2026-10-11. Update this file as items close; don't keep a separate list.
+Version 2, 2026-10-16 (v2: section F for the `full` route and the compiled pipeline; C1/C2 dropped; C5 now Appendix B). Update this file as items close; don't keep a separate list.
 
 Status keys: [ ] open · [~] in progress · [x] done · [-] dropped
 
@@ -62,14 +62,14 @@ The long run on the iMac should produce data that can be checked independently. 
 
 ## C. Mathematics needed for completeness
 
-- [ ] **C1. Hull lemma (a).**
+- [-] **C1. Hull lemma (a).** (2026-10-16: dropped from the proof path; the `full` route removes H. Kept in the paper as Conjecture 6.3 with the survey, marked unused.)
   - **To prove:** a certified bound θ*(T) ≤ 60° for each of the 7591 triangulations other than T0, T1, T5 and T7.
   - **How:** first a degree and area argument to dispose of most of them, then interval branch and bound for the rest.
   - **Known difficulty:** about 8 triangulations reach exactly 60°.
-- [ ] **C2. Hull lemma (b).** In T1, T5 and T7 with minimum angle above 60°, the flipped diagonal is never a contact.
+- [-] **C2. Hull lemma (b).** (2026-10-16: dropped with C1.) In T1, T5 and T7 with minimum angle above 60°, the flipped diagonal is never a contact.
 - [ ] **C3. Budget cases.** Stronger exclusion for low-edge graphs (E = 17–19, where V_G has dimension 3–5): first-order (Taylor-model) Gordan certificates, so that exclusion along V_G works at coarse widths.
 - [ ] **C4. Terminal boxes.** Identify every terminal box with a census configuration, using X-space Krawczyk uniqueness. Here a box is never declared to be "a new critical point" without certification.
-- [ ] **C5. The range 1 < r < r_min.**
+- [~] **C5. The range 1 < r < r_min.** (2026-10-16: the argument is Appendix B of the paper — compactness, second-order isolation with explicit radius, exact lambda at FCC (1/6) and HCP (>= 1/12) in `scripts/r1/exact_lambda.py`. Open: the Bott form at the KKLS M_5 4-simplex, the list of strata of Z_1, the band run with the delta-ball exclusion; see F7.)
   - **Why it is open:** the computation starts at r_min = 1.0001.
   - **Known:** the lowest critical points lie about 25° away from FCC and HCP, so this is not a local problem around FCC/HCP.
   - **Needed:** an argument covering this range.
@@ -91,3 +91,18 @@ The long run on the iMac should produce data that can be checked independently. 
 - Edwards entropy and basin weights: free clusters, containers, channels.
 - Sticky growth in flat geometry.
 - Exactness of the remaining critical values.
+
+## F. The `full` route with the compiled, certified pipeline (2026-10-16)
+
+Decisions of 2026-10-15 (`docs/decisions.md`): run `full` (all 7,595 triangulations, no hypothesis H); rebuild the checker in C on FLINT/Arb with every error bound from a certified source (spec v0.3, Project doc `code-completeness-compiled-pipeline-spec-v0.3-2026-10-15.md`); report progress to GitHub during the run; archive certificates on Zenodo, not in git. `cond` becomes a pilot and a regression set.
+
+- [x] **F0. Checklist, status, decisions.** (2026-10-16: this section; `STATUS.md` v3; `docs/decisions.md`; the 90,836/45,260 count resolved — 90,836 is the number of gen lines including duplicates, 45,260 the number of distinct codes.)
+- [ ] **F1. Complete reference checker (Python).** V1–V5 of spec v0.2 (own starting boxes, own chart set, θ range tied to r_min, checker-owned canonical code and face match, manifest), lazy tightening, and the mutation tests. **Done when:** every mutation is rejected and the measured 42.7 s → 20.6 s on the 3,654-box certificate is reproduced with identical verdicts.
+- [ ] **F2. Certified elementary functions in C.** FLINT/Arb on interval endpoints; IEEE basic operations stepped outward; rounding-environment asserts; the FMA test; containment against Arb at 256 bits on ≥ 10⁶ random intervals per function; build with `-O2 -fno-fast-math -ffp-contract=off`.
+- [ ] **F3. C model and replay.** Corners, vertex sums, Jacobians, tightening; value-by-value diff against the Python model on random boxes; bit-exact replay diff against `certificate.replay`.
+- [ ] **F4. C kernel and fallback.** Leaf tests in the v0.3 §4.2 order, `ctypes` interface, Python fallback for unclosed boxes; differential run on the `cond` certificates (stop if C accepts where Python rejects); the performance gate (kernel ns per box against the search's 0.87 ms per box).
+- [ ] **F5. Format v3 witnesses in the search.** Decoder still reads v2; 1,000 `cond` candidates re-run with v3, checked with the C kernel; certificate bytes per candidate measured and recorded here.
+- [ ] **F6. Gen for `full`.** G2 exact vertex-mask table; compiled enumerator written fresh (so `candidates.py` stays an independent second enumerator); G1 exact rational Farkas certificates for every LP discard; G3 set comparison on T0, T1, T5, T7 and 2% of the rest, counts on all 7,595; the L12 cross-check. **Done when:** the measured `full` candidate count is reported.
+- [ ] **F7. Algorithmic items** (the G2–G10 handoff): C4 terminal identification, C3 Taylor-model Gordan for budget cases, the r1 package (constants, δ per stratum, band-run hook, M_5 stratum, margin diagnostic), attribution of the budget-box blow-up. Priority: whatever cuts `budget` boxes (on `cond`, 54 of 45,260 candidates took 41% of the boxes).
+- [ ] **F8. Run scripts.** `scripts/full/run.sh` for macOS and Linux: setup (Miniforge, `libflint`, compilers, `gh auth`), Zenodo token from the Keychain or `~/.config/kisscrit/zenodo.token`, self-test with a sandbox round trip, resumable phases gen → certify → check → manifest, `results/full/progress.json` pushed at least hourly (rates, no ETA), one Zenodo draft per run with per-shard uploads and a pushed manifest, never publish, `status` and `stop`. The setup guide `docs/setup-guide.md` changes in the same commit as any manual step.
+

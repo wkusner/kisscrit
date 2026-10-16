@@ -2,7 +2,7 @@
 
 What is proved, what is only numerical, and what the completeness computation assumes. Each claim names the file or script that supports it.
 
-Version 2, 2026-10-12 (v2: L6, L8 and L9 closed). This version covers the completeness computation (checklist item A3). The full inventory of the other results (census, co-indices, joins, hull survey, containers, Edwards pilot) is checklist item B2 and will be added here.
+Version 3, 2026-10-16 (v3: the `full` route replaces hypothesis H; `cond` is a pilot; the candidate count resolved. v2: L6, L8 and L9 closed). This version covers the completeness computation (checklist item A3). The full inventory of the other results (census, co-indices, joins, hull survey, containers, Edwards pilot) is checklist item B2 and will be added here.
 
 ## Completeness of the critical census above r = 1 (in progress)
 
@@ -10,7 +10,11 @@ Version 2, 2026-10-12 (v2: L6, L8 and L9 closed). This version covers the comple
 
 **What a finished run will prove.** If every candidate is `excluded` or `terminal`, every certificate verifies with `scripts/completeness/check_certificates.py`, and every terminal box is identified with a census point, then the claim holds under the assumptions below.
 
-**Not yet true.** The run has not been done (checklist A4, A5), terminal boxes are not yet identified (C4), and budget cases have no strong test yet (C3).
+**Not yet true.** The `cond` run is done but conditional on H (below); terminal boxes are not yet identified (C4), and budget cases have no strong test yet (C3). The `full` run has not been done (checklist F).
+
+**State of the `cond` run (measured, 2026-10-15).** 45,260 candidate codes (the gen files hold 90,836 lines because every code is generated twice across the four shards; 45,260 is the count of distinct codes, and it is the number to use). Results: 44,740 `excluded`, 466 `terminal`, 54 `budget`; 39.5 M boxes and 9.3 search CPU-hours, of which the 54 budget candidates used 16.2 M boxes and 3.9 h. Checker results from the iMac's phase C (old Python checker, labelled `checker-1`) are informational; the claim will rest on `checker-2` (the C kernel with Python fallback and V1–V5, checklist F1–F4).
+
+**Decision (2026-10-15).** The `full` route over all 7,595 triangulations will be run, which removes H. `cond` is kept as a pilot and a regression set. See `docs/decisions.md`.
 
 ### Assumptions
 
@@ -18,8 +22,8 @@ The conclusion of the run is conditional on these. Each is a checklist item.
 
 | | assumption | used by | to remove it |
 |---|---|---|---|
-| H | **Hull conjecture (a).** For θ > 60°, the hull triangulation of a critical configuration is one of T0, T1, T5, T7. | the `cond` route (`run_shard.py --route cond`) | prove it (C1), or run the `full` route over all 7595 triangulations |
-| R0 | **Range.** Only r ≥ r_min = 1.0001, i.e. θ ≥ 60.0033°, is covered. | every route | an argument for 1 < r < r_min (C5) |
+| H | **Hull conjecture (a).** For θ > 60°, the hull triangulation of a critical configuration is one of T0, T1, T5, T7. | the `cond` route only (`run_shard.py --route cond`) | the `full` route over all 7,595 triangulations (checklist F); C1 is dropped |
+| R0 | **Range.** Only r ≥ r_min = 1.0001, i.e. θ ≥ 60.0033°, is covered. | every route | the paper's Appendix B (compactness and second-order isolation at the balanced 60° configurations, exact at FCC and HCP in `scripts/r1/exact_lambda.py`) plus a band run with δ-ball exclusion (C5, F7) |
 
 ### Proved
 
