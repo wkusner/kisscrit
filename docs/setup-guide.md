@@ -1,25 +1,28 @@
-# Setup guide: the kisscrit `full` run (accounts, iMac, progress, Zenodo)
+# Setup guide: the kisscrit `full` run (Linux server over SSH, GitHub progress, Zenodo)
 
-Purpose: everything Wöden does by hand for the restarted completeness run, in the order he does it, with the exact command, what success looks like, and what to do if it fails.
+Purpose: everything Wöden does by hand for the restarted completeness run, in order: the exact command, what success looks like, and what to do if it fails.
 
-Date: 2026-10-16. Version 1.1 (repo copy of the Project draft v1 of 2026-10-15). This copy wins when the two differ. The code changes it in the same commit as any code that changes a manual step.
-- Written before the new run script exists. Steps marked **(confirm)** depend on a website's current layout, which was not checked.
+Date: 2026-10-16. Version 2.2 (repo copy of the Project guide v2.1; this copy wins when the two differ, and the code changes it in the same commit as any code that changes a manual step).
+- v2.1: the server runs Ubuntu 26.04 and Wöden has no admin rights. Step A4 uses `scripts/full/kisscrit-preflight.sh`, which tests the server and drafts the request to the sysadmin.
+- v2: the run machine is a dedicated Linux server reached by SSH. It has no scheduler, Wöden is probably its only user, and it has 32 or 64 cores. The iMac becomes the fallback. v1 (2026-10-15) assumed the iMac.
+- Written before the run script exists. Steps marked **(confirm)** depend on a website's current layout, which was not checked.
 
 ## The plan in one paragraph
 
-A Claude Code session rebuilds the pipeline: a fast certified checker in C on FLINT/Arb, faster candidate generation, and certificates with witnesses. It then hands you one script. That script runs the `full` route on a machine you choose (the iMac, or a Linux server if the iMac is too slow). While it runs:
+A Claude Code session rebuilds the pipeline: a fast certified checker in C on FLINT/Arb, faster candidate generation, and certificates with witnesses. It then hands you one script, `run.sh`. You copy that script to the server, run `setup` once, then `start`. The run survives logging out and reboots. While it runs:
 - every finished piece is committed to GitHub;
 - a progress file there is updated at least hourly;
 - the certificate files are uploaded to a private Zenodo **draft**.
 
-At the end you publish the Zenodo record (this gives a DOI, and cannot be undone), make the repository public, and cite both in the paper.
+At the end you publish the Zenodo record (this gives a DOI and cannot be undone), make the repository public, and cite both in the paper.
 
 | When | Part |
 |---|---|
-| Now (about 30 minutes, no hurry) | A: accounts and tokens, iMac preparation |
-| When the code session says the run script is ready | B: stop the old run, install, test, start |
+| Now, while you set up the server (no hurry) | A: accounts, tokens, server checks |
+| When the code session says `run.sh` is ready | B: install, test, start |
 | During the run | C: watching it, and fixing common problems |
 | At the end | D: publish |
+| Any time (optional) | E: the iMac's old run |
 
 ---
 
@@ -27,162 +30,177 @@ At the end you publish the Zenodo record (this gives a DOI, and cannot be undone
 
 ### A1. Zenodo account
 
-1. Go to https://zenodo.org and sign up, or log in with GitHub or ORCID. Using GitHub makes the code-archiving step in D3 easier.
-2. Link your ORCID in your Zenodo profile if you have one. It goes into the record's creator field.
+1. Go to https://zenodo.org. Sign up, or log in with GitHub or ORCID. GitHub makes step D3 easier.
+2. Link your ORCID in your Zenodo profile if you have one.
 
-**Success:** you can see "Upload" or "New upload" in the top bar.
+**Success:** "Upload" or "New upload" appears in the top bar.
 
 ### A2. Zenodo sandbox account (for tests)
 
-The sandbox is a separate test copy of Zenodo. Its DOIs are fake (prefix 10.5072) and it can be wiped at any time. Every test upload goes there first.
+The sandbox is a separate test copy of Zenodo. Its DOIs are fake (prefix 10.5072), and it can be wiped at any time. Every test upload goes there first.
 
-1. Go to https://sandbox.zenodo.org and register **separately**. Your zenodo.org login does not carry over.
+1. Register **separately** at https://sandbox.zenodo.org. Your zenodo.org login does not carry over.
 
-### A3. Two access tokens
+### A3. Two access tokens (in your laptop's browser)
 
-Make one token on each site. **(confirm the menu names)**
+**(confirm the menu names)**
 
-1. Click your account menu (top right), then **Applications**, then **Personal access tokens**, then **New token**.
-2. Name: `kisscrit-run` (sandbox: `kisscrit-run-sandbox`).
+1. On each site, open your account menu (top right), then **Applications**, then **Personal access tokens**, then **New token**.
+2. Name it `kisscrit-run`, or `kisscrit-run-sandbox` on the sandbox.
 3. Scopes: tick **deposit:write** and **deposit:actions**.
-   - deposit:write lets the script create the draft and upload files.
-   - deposit:actions lets it edit or discard drafts. The script will never publish; you do that by hand in D2.
-4. Copy the token. It is shown only once.
+   - The script uses deposit:write to create the draft and upload.
+   - It uses deposit:actions only to edit or discard drafts.
+   - It never publishes. You do that by hand in D2.
+4. Copy the token. It is shown only once. Keep it in your clipboard for A5.
 
-**Don't paste tokens into a chat, an email or a file in the repo.** They go only into the iMac's Keychain (A4).
+**Don't paste tokens into a chat, an email, a file in the repo, or a shared folder.**
 
-### A4. Store the tokens in the iMac's Keychain
+### A4. Server checks (over SSH): run the preflight script
 
-In Terminal on the iMac, run one line per token. Each line asks for a "password": paste the token and press Return.
+The server runs Ubuntu 26.04 and you have no admin rights. So the first step is to find out what the sysadmin must do. `scripts/full/kisscrit-preflight.sh` (also in the Meta inbox and the Project) does that:
+- it tests everything the run needs, without sudo;
+- it saves a report;
+- it ends with a ready-to-send email to the sysadmin that lists only what is missing.
+
+From your Mac:
 
 ```
-security add-generic-password -a "$USER" -s kisscrit-zenodo -w
-security add-generic-password -a "$USER" -s kisscrit-zenodo-sandbox -w
+scp ~/Meta_Inbox/kisscrit-preflight.sh you@server:~/
+ssh you@server
+bash kisscrit-preflight.sh                  # quick checks, about a minute
+bash kisscrit-preflight.sh --try-install    # optional: also installs FLINT and a C compiler into ~/kisscrit-preflight and compiles a test
 ```
 
-To check them without printing them (each line should print a number around 60):
+`--try-install` needs conda-forge to be reachable. It answers the two open questions: whether the toolchain installs without root, and whether conda-forge's `libflint` ships its headers. Delete its test install afterwards with `rm -rf ~/kisscrit-preflight`.
+
+The report is saved to `~/kisscrit-preflight-report.txt`.
+- Send the "Draft request to the sysadmin" section to your sysadmin.
+- Paste the whole report into the code chat. It contains your user name and the host name, nothing secret.
+
+The rest of this section explains what the script checks, in case you want to do it by hand. Log in (`ssh you@server`) and run:
 
 ```
-security find-generic-password -s kisscrit-zenodo -w | wc -c
-security find-generic-password -s kisscrit-zenodo-sandbox -w | wc -c
+nproc                 # cores: 32 or 64 expected
+free -g               # memory in GB
+df -h ~               # free disk in your home directory
+which git tmux crontab curl
+curl -sI https://github.com | head -1
+curl -sI https://zenodo.org | head -1
+curl -sI https://sandbox.zenodo.org | head -1
+loginctl show-user "$USER" -p Linger
 ```
 
-If a token is wrong or expired, replace it by adding `-U` before `-w`.
+What you want to see:
+- **Disk:** at least 50 GB free in `~`. Certificates are written locally before they upload. The code session revises this figure after its pilot (milestone F5).
+- **`which`:** prints a path for each of git, tmux, crontab and curl.
+  - Missing ones go in the sysadmin request (`sudo apt install tmux cron curl`).
+  - git and gh also come with the run environment, so tmux and cron are the ones that matter.
+- **The three `curl` lines:** each prints a line starting with `HTTP/` (any status code).
+  - If one hangs or errors, the server cannot reach that site. Ask IT to allow outbound HTTPS to github.com, zenodo.org and sandbox.zenodo.org.
+  - This is the one thing that would block the run.
+- **`Linger=yes`:** lets the run continue as a background service after you log out.
+  - If it says `no`: you have no root, so this goes in the sysadmin request (`sudo loginctl enable-linger <you>`).
+  - The alternative is a `tmux` session plus a restart-on-reboot cron line, which needs tmux and cron installed and cron allowed for your account. That works just as well; the sysadmin can choose.
 
-The first time the run script reads a token, macOS may ask whether "security" may use the Keychain item. Choose **Always Allow**.
+Send the code chat the output of these commands, with nothing secret in it.
 
-*If you run on Linux instead:* put each token in `~/.config/kisscrit/zenodo.token` (or `zenodo-sandbox.token`), then run `chmod 600` on that file.
+### A5. Store the tokens on the server
 
-### A5. Prepare the iMac
+```
+mkdir -p ~/.config/kisscrit && chmod 700 ~/.config/kisscrit
+cat > ~/.config/kisscrit/zenodo.token
+```
 
-1. **Apple's Command Line Tools** (the C compiler). They are needed for the new checker.
+Paste the **real** token, press Return, then Control-D. Then the sandbox token:
 
-   ```
-   xcode-select --install
-   ```
+```
+cat > ~/.config/kisscrit/zenodo-sandbox.token
+```
 
-   A window opens; click Install. If it says they are already installed, that's fine.
+Paste it, Return, Control-D. Then lock down both files:
 
-   **Success:** `clang --version` prints a version.
+```
+chmod 600 ~/.config/kisscrit/*.token
+wc -c ~/.config/kisscrit/*.token      # each about 60; prints sizes, not the tokens
+```
 
-2. **Disk space.**
+The script refuses to run if these files are readable by anyone but you.
 
-   ```
-   df -h ~
-   ```
+As the only user, you're the only one who can read them. Root on the machine always can, which is acceptable for revocable tokens with only these scopes.
 
-   Keep at least 30 GB free. The certificate files are written locally before they are uploaded. The code session will tell you the measured size per candidate after a pilot (milestone F5); revise this number then.
+To replace a token, repeat the `cat >` line. To revoke one, use the same Applications page on Zenodo.
 
-3. **Stay logged in.** The run is a LaunchAgent (as now). It runs only while your user is logged in, and it survives Terminal closing and reboots once you log in again.
-   - Either turn on automatic login: System Preferences → Users & Groups → Login Options. **(confirm on macOS 12)**
-   - Or log in after any reboot.
+### A6. Optional: an SSH key from your laptop
 
-4. **Leave the current run alone for now.** It is checking the old `cond` certificates with the old Python checker. Its results are informational only. Part B stops it.
+If you don't already log in with a key:
 
-### A6. Which machine runs `full`: decide after the pilot
+```
+ssh-copy-id you@server
+```
 
-The iMac has 4 cores. How many candidates the `full` route has is not known until the new generator runs (milestone F6). The code session will report that count with measured rates, and then you choose:
-
-- **The iMac.** Free, and set up already. Possibly weeks of wall-clock time.
-- **A departmental or college Linux server.** Ask your IT or computing contact whether there is a machine with many cores you can use for a few days. The script will run on Linux.
-- **A rented cloud machine**, paid by the hour.
-
-The script is the same in each case, and the GitHub progress reporting and Zenodo uploads work identically.
+Run this on your laptop, once. After that, `ssh you@server` doesn't ask for a password.
 
 ---
 
-## Part B: when the code session says the run script is ready
+## Part B: when the code session says `run.sh` is ready
 
-The code session will give you the script's exact name and download location. Below it is called `run.sh`.
+### B1. Copy the script to the server
 
-### B1. Look at the old run once
-
-```
-tail -n 30 ~/kisscrit-run/logs/run.log
-tail -n 30 ~/kisscrit-run/logs/check.log
-```
-
-Note where it is. If the summary in `check.log` says it finished, the old checker's results have been pushed.
-
-### B2. Stop the old run
+The repository is private, so the simplest route is from your laptop. Download `run.sh` from the chat into `~/Downloads`, then run this on the laptop:
 
 ```
-launchctl bootout gui/$(id -u)/org.kisscrit.run
+scp ~/Downloads/run.sh you@server:~/
 ```
 
-**Success:** `launchctl list | grep kisscrit` prints nothing.
-
-Do **not** delete `~/kisscrit-run`. It holds the old run's logs and its clone of the repository.
-
-### B3. Install and self-test
+### B2. Install and self-test
 
 ```
-bash ~/Downloads/run.sh setup
+ssh you@server
+bash ~/run.sh setup
 ```
 
-This does the following:
-- installs or updates the private Python environment, now including FLINT and the compiler tools;
-- checks the GitHub login, which may open your browser once, as before;
+This installs a private Python and C toolchain in your home directory (no root needed), including FLINT. It then:
+- logs in to GitHub: it prints a code and a URL, which you open on your laptop and approve;
 - compiles the checker and runs the self-tests;
 - does a **sandbox Zenodo round trip**: it creates a draft on sandbox.zenodo.org, uploads a small file, checks it, and deletes it.
 
-**Success:** the last line says the self-test passed, including Zenodo sandbox.
+**Success:** the last line says the self-test passed, including Zenodo sandbox. It also reports cores, memory, and how the run will survive logout (systemd or tmux).
 
 **If it fails:**
-- *"clang not found"* or a compiler error: redo A5.1.
-- *"Zenodo 401"* or *"403"*: the sandbox token is wrong or lacks a scope. Redo A3 and A4 for the sandbox.
-- Any other error: copy the last 30 lines of the output into the code chat.
+- **"cannot reach …":** see A4 (outbound HTTPS).
+- **"Zenodo 401" or "403":** the sandbox token is wrong or lacks a scope. Redo A3 and A5 for the sandbox.
+- **"token file permissions":** run `chmod 600 ~/.config/kisscrit/*.token`.
+- **Anything else:** copy the last 30 lines into the code chat.
 
-### B4. Start the run
+### B3. Start
 
 ```
-bash ~/Downloads/run.sh start --route full
+bash ~/run.sh start --route full
 ```
 
-After a short check this hands the run to launchd, as the old script did. You can close Terminal.
+Then log out. The run continues.
 
 ---
 
 ## Part C: during the run
 
-### C1. Watch it on GitHub (from anywhere, including your phone)
+### C1. On GitHub (from anywhere, including your phone)
 
-- **`results/full/progress.json`**, updated at least hourly. It shows the phase, shards done out of the total, candidates by status, boxes, CPU time and the measured rate. It has no time estimate on purpose, since earlier estimates were wrong.
-- **Commits.** One per finished shard, from the iMac.
+- **`results/full/progress.json`**, updated at least hourly. It shows the phase, shards done out of total, candidates by status, boxes, CPU time and the measured rate. There is no time estimate on purpose.
+- **Commits.** One per finished shard.
 - **`results/full/zenodo-manifest.json`**. One entry per certificate file uploaded to Zenodo, with its checksum.
 
-### C2. Watch it on the iMac
+### C2. On the server
 
 ```
-bash ~/Downloads/run.sh status
-tail -f ~/kisscrit-run/logs/run.log
+bash ~/run.sh status
+tail -f ~/kisscrit-run/logs/run.log      # Control-C leaves tail, not the run
+tmux attach -t kisscrit                  # only in tmux mode; detach with Control-B then D
 ```
 
-Press Control-C to leave `tail`; that doesn't stop the run.
+### C3. The Zenodo draft
 
-### C3. Watch the Zenodo draft
-
-On zenodo.org, go to your uploads. **(confirm the page name)** The run's draft is listed there, and its files grow as shards finish.
+Look in your uploads on zenodo.org **(confirm the page name)**. The draft's files grow as shards finish.
 
 **Don't press Publish.**
 
@@ -190,13 +208,13 @@ On zenodo.org, go to your uploads. **(confirm the page name)** The run's draft i
 
 | Symptom | Likely cause | What to do |
 |---|---|---|
-| No new commits for hours, and `status` shows the same shard | a long shard, or a hang | Compare the log's last lines over an hour. If nothing changes, run `run.sh stop`, then `run.sh start --route full`. The run resumes. |
-| Log shows "push failed" | expired GitHub login, or no network | `gh auth status`, then `gh auth login` if needed. The script retries on the next shard. |
-| Log shows "Zenodo 401" | token expired or revoked | Make a new token (A3), then store it with `-U` (A4). The script retries. |
-| "No space left on device" | disk full | Free space. Files already uploaded to Zenodo can be removed locally only if this guide says that is safe. |
-| The Mac rebooted | power, or updates | Log in. The run restarts by itself. |
+| No new commits for hours, and `status` is stuck on one shard | a long shard, or a hang | Compare the log's last lines an hour apart. If nothing changes: `run.sh stop`, then `run.sh start --route full`. The run resumes. |
+| "push failed" in the log | expired GitHub login, or the network | `gh auth status`; if needed, `gh auth login`. The script retries. |
+| "Zenodo 401" | token expired or revoked | New token (A3), then replace the file (A5). The script retries. |
+| "No space left on device" | disk full | Free space. Delete uploaded certificate files only if `run.sh status` lists them as uploaded and verified. |
+| The server rebooted | maintenance | Nothing to do: systemd or cron restarts the run. Check `run.sh status`. |
 
-To stop for good: `bash ~/Downloads/run.sh stop`.
+To stop for good: `bash ~/run.sh stop`.
 
 ---
 
@@ -205,56 +223,82 @@ To stop for good: `bash ~/Downloads/run.sh stop`.
 ### D1. Check that the run is complete
 
 ```
-bash ~/Downloads/run.sh status --final
+bash ~/run.sh status --final
 ```
 
-**Success:** every candidate is verified by the new checker, or is terminal and identified. The gen, certificate and check sets agree. Every certificate file is in the Zenodo manifest.
+**Success means all of these hold:**
+- every candidate is verified by the new checker, or is terminal and identified;
+- the gen, certificate and check sets agree;
+- every certificate file is in the Zenodo manifest.
 
-Anything else means the proof is not finished: bring the output to the code chat.
+Anything else means the proof is not finished. Take the output to the code chat.
 
 ### D2. Publish the Zenodo record (irreversible)
 
 1. Open the draft on zenodo.org.
-2. Fill in the metadata. The code session will give you the text.
+2. Fill in the metadata. The code session gives you the text.
    - Title.
    - Creators, with your ORCID.
    - Description.
    - Upload type: Dataset.
-   - License: CC BY 4.0 is the usual choice for data. Your call.
-   - Related identifiers: the GitHub repository and, later, the paper.
-3. Press **Publish**. You get a DOI.
-   - You can correct files only within 30 days of publishing.
-   - After that, changes need a new version, which gets its own DOI under the same concept DOI.
+   - License: CC BY 4.0 is usual for data; your call.
+   - Related identifiers: the GitHub repository, and later the paper.
+3. Press **Publish**. This gives the DOI.
+   - Files can be corrected only within 30 days.
+   - After that, changes need a new version, with its own DOI under the same concept DOI.
 
 ### D3. Archive the code
 
-This is checklist item B4. The repository becomes public at this point.
+The repository becomes public here (checklist item B4).
+
 1. Add `CITATION.cff` and `.zenodo.json`. The code session prepares both.
-2. On Zenodo, go to account menu → GitHub, and switch the repository on. **(confirm the menu location)** Whether Zenodo can archive a private repository was not confirmed; plan on making it public first.
-3. Make a GitHub release, for example `v1.0`. Zenodo archives that release and gives the code its own DOI.
+2. On Zenodo, open account menu → GitHub and switch the repository on **(confirm the menu location)**. Whether Zenodo can archive a private repository was not confirmed; make it public first.
+3. Make a GitHub release, for example `v1.0`. Zenodo archives it and gives the code its own DOI.
 
 ### D4. Cite both DOIs in the paper
 
-The paper cites the data DOI (D2) and the code DOI (D3). Both go into the completeness section and the certification appendix.
+The data DOI (D2) and the code DOI (D3) go into the completeness section and the certification appendix.
+
+---
+
+## Part E: the iMac's old run (optional, any time)
+
+The iMac may still be checking the old `cond` certificates with the old Python checker. Those results are informational and play no part in the proof. You can let it finish, or stop it.
+
+```
+tail -n 30 ~/kisscrit-run/logs/check.log       # where it is
+launchctl bootout gui/$(id -u)/org.kisscrit.run  # stop it
+launchctl list | grep kisscrit                   # prints nothing once stopped
+```
+
+Keep the `~/kisscrit-run` folder on the iMac. If the server falls through, the iMac can run `run.sh` too. For that it needs Apple's Command Line Tools (`xcode-select --install`), and the tokens go in its Keychain:
+
+```
+security add-generic-password -a "$USER" -s kisscrit-zenodo -w
+security add-generic-password -a "$USER" -s kisscrit-zenodo-sandbox -w
+```
+
+Each line prompts you to paste a token.
 
 ---
 
 ## Reference
 
-- **Zenodo limits** (help.zenodo.org and developers.zenodo.org, checked 2026-10-15):
-  - 100 files and 50 GB per record, raisable to 200 GB through a storage-quota request;
-  - the API needs the scopes deposit:write (create and upload) and deposit:actions (publish, edit, discard);
+- **Zenodo** (help.zenodo.org and developers.zenodo.org, checked 2026-10-15):
+  - limits: 100 files and 50 GB per record, raisable to 200 GB through a storage-quota request;
+  - API scopes: deposit:write and deposit:actions;
   - publishing cannot be undone.
-- **GitHub release assets:** each file under 2 GiB, up to 1,000 per release, with no total limit (docs.github.com, checked 2026-10-15). This is a fallback store if Zenodo's per-record size is not enough.
+- **GitHub release assets** (docs.github.com, checked 2026-10-15): each file under 2 GiB, up to 1,000 per release, no total limit. This is the fallback if one Zenodo record is not enough.
+- **Ubuntu 26.04 notes** (from release coverage, not yet tested on the server): `/tmp` is a tmpfs capped at half of RAM, so the run keeps scratch files under `~/kisscrit-run`; the default `sha256sum` is a slower rewrite, so the scripts hash with Python; the system Python is not used.
 - **Where things live:**
   - code and progress: GitHub `wkusner/kisscrit`;
   - certificates: the Zenodo draft, then the published record;
-  - tokens: the iMac Keychain;
-  - logs: `~/kisscrit-run/logs/`.
+  - tokens: `~/.config/kisscrit/` on the server, or the iMac Keychain;
+  - logs: `~/kisscrit-run/logs/` on the run machine.
 
 ## Maintenance
 
-Version 1.1, 2026-10-16. Revise:
-- when the run script exists (exact names and flags);
-- after the F5 pilot (disk-space figure);
-- after the machine choice (A6).
+Version 2.2, 2026-10-16. Revise:
+- when `run.sh` exists (exact names and flags);
+- after the F5 pilot (the disk figure);
+- after the A4 server checks (anything the server lacks).
