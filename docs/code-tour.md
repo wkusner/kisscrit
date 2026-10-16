@@ -20,7 +20,13 @@ Version 1, 2026-10-16 (checklist F9). Update this file in the same commit as any
 
 Every Python file says which in its module docstring (`Status:` line, enforced by `tests/test_code_standards.py`).
 
-## 1. Arithmetic (paper Appendix D; spec v0.3 §1.2)
+## 0.1 The arithmetic contract and the structural checks (restated from the specifications, which are Project documents outside this repository)
+
+Arithmetic: `+ − × ÷ √` on doubles are IEEE correctly rounded and are stepped one ulp outward; `sin, cos, atan, asin, acos` and π are evaluated as Arb balls at 64 bits and rounded outward to doubles; no verdict depends on the system libm, on `-ffast-math`, on FMA contraction, on a floating-point LP result, or on the search's rounding.
+
+Structural checks V1–V5 are listed in `docs/certificate-format.md` §4; V6 (the checker imports search code only as an untrusted oracle) is `tests/test_checker_imports.py`; V7 (the checker reports its own bisections and fallbacks) is `check_certificates.py --summary`; V8 (check results are pushed incrementally) is `scripts/completeness/mac_run.sh` phase C.
+
+## 1. Arithmetic (paper Appendix D)
 
 - `kisscrit/core/interval.py`: an interval is a pair of doubles. `+ − × ÷` and `sqrt` use IEEE double arithmetic (correctly rounded) and step one ulp outward (`_op_down`, `_op_up`). `sin`, `cos`, `atan`, `asin`, `acos` and π go through Arb at 64 bits and are rounded outward (`down`, `up`, `_mono`). `cos` widens to ±1 where a multiple of π may lie inside the interval.
 - Nothing in the trusted base calls the system libm.
@@ -46,13 +52,15 @@ Every Python file says which in its module docstring (`Status:` line, enforced b
 1. `structural_check`:
    - V3 `theta_claim_ok`: θ_lo ≤ 2 arcsin(r_min/(1 + r_min)), θ_hi ≥ arctan 2, decided in Arb;
    - V4 `canonical_code` (an independent reimplementation of the canonical code) and `faces_match`;
-   - V2 `required_modes`: the pentagon regions that Lemma P (L10) and L11 require;
-   - V1 `apriori_box`: the a-priori box of each chart from L3, L4, L7 and L10, rounded outward; the certificate's box must contain it.
+   - V2 `required_modes`: the pentagon regions that L10′ and L11′ require (the region definitions and the cover proof are L10′);
+   - V1 `apriori_box`: the a-priori box of each chart from L3, L4, L7 and L10′, rounded outward; the certificate's box must contain it.
 2. `check_certificate`: replays each chart; every excluded leaf and every contraction slab goes to `Checker.exclude` / `exclude_slab`; terminal leaves are collected; an open leaf fails the certificate.
 3. `Checker.exclude`: cheap pass without tightening (`test_invalid_vsum`, `test_linear`), then with tightening, then `test_gordan`, `test_motzkin`, then bisection (bounded by `MAX_DEPTH`, `MAX_PIECES`). A box no test excludes is reported, never accepted.
-   - `test_invalid_vsum`: the model's validity flag and the vertex-sum intervals (L14/L15);
+   - `test_invalid_vsum`: the model's validity flag (L3, L6–L8, L10′) and the vertex-sum intervals (L15);
    - `test_linear`, `test_linear_combo`, `test_linear_mu`, `test_linear_bound`: the mean-value inclusion 0 ∉ μ·F(m) + Σ_j (μᵀJ(B))_j (B_j − m_j); floating point only chooses μ (`combination` is the interval proof);
-   - `test_gordan`, `test_motzkin`: Gordan's and Motzkin's alternatives (L16) with `_edge_terms` the interval edge terms; floating point only chooses y.
+   - `test_gordan`, `test_motzkin`: Gordan's and Motzkin's alternatives (L16) with `_edge_terms` the interval edge terms in the per-vertex frames of `model.Graph.directions` (L16, "edge directions and frames"); floating point only chooses y.
+   - One import from untrusted code: `test_linear_bound` imports `kisscrit.completeness.fast` and uses its simplex only to propose a multiplier vector μ for a contraction slab; the proof is the interval `combination` with that μ, and any real μ is admissible there, so a wrong μ can only make the test fail (`tests/test_checker_imports.py` keeps this the only such import).
+   - Terminal leaves are not exclusions: `check_certificate` records them and checks that they are no wider than the certificate's `tol`; completeness needs them identified (checklist C4).
 4. `scripts/completeness/check_certificates.py`: `manifest` (V5: gen = cert = certificates = checks, no duplicates, every code verified or terminal-and-identified) and `summary` (V7: the checker's own bisections and fallbacks).
 
 Mutation tests: `tests/test_certificates.py` (each named for its gap); `tests/test_checker_imports.py` (V6).

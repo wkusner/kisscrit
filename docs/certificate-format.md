@@ -2,7 +2,7 @@
 
 This document specifies the proof tree that the completeness search writes for each candidate stressed graph. It is everything an independent checker needs to re-verify the search.
 
-2026-10-11 (v2: contraction rounds and multiplier hints). Written by `kisscrit/completeness/runner.py` (`run(..., certificate=True)`) and decoded by `kisscrit/core/certificate.py`.
+2026-10-11 (v2: contraction rounds and multiplier hints; 2026-10-16: the straight-corner box is [π⁻, π⁺], and the checker's own checks V1–V5 are listed in section 4). Written by `kisscrit/completeness/runner.py` (`run(..., certificate=True)`) and decoded by `kisscrit/core/certificate.py`.
 
 ## 1. What a certificate claims
 
@@ -20,7 +20,7 @@ Certificates live one per line in `results/completeness/certificates/certificate
 
 ```
 {"code": <canonical code of G>, "certificate": {
-   "version": 1,
+   "version": 2,
    "theta": [θ_lo, θ_hi],                  radians
    "tol": <terminal width>,
    "faces": [[v0, v1, ...], ...],          oriented face cycles (counterclockwise seen from outside)
@@ -41,7 +41,7 @@ Parameter vector p:
 - one parameter per quadrilateral: the corner at boundary positions 0 and 2;
 - two per pentagon: the corners at formula positions 1 and 2 of its chart. Region 'a' uses boundary positions 1 and 2, region 'b' uses 3 and 4, region 'c' uses 4 and 0.
 
-The parameter index of each face follows the face order. A pentagon whose boundary position 4 is a vertex of degree 2 has that straight corner fixed at π in the starting box, so lo0 = hi0 = π for that coordinate.
+The parameter index of each face follows the face order. A pentagon whose boundary position 4 is a vertex of degree 2 has that straight corner equal to π (L4); its coordinate of the starting box is the two-double interval [π⁻, π⁺] = [`math.pi`, `nextafter(math.pi, inf)`], which contains the real π. (Certificates written before 2026-10-16 stored the point box lo0 = hi0 = `math.pi`, which does not contain π; the checker rejects them under V1.)
 
 ## 3. The proof tree
 
@@ -82,6 +82,15 @@ Evaluated exactly as stated, the splits and contractions leave no gaps or overla
 
 ## 4. What the checker must verify
 
+Before any box (structural checks; `kisscrit/core/checker.py:structural_check`):
+- **V1.** The checker derives its own a-priori starting box per chart from L3, L4, L7 and L10′ in Arb, rounded outward, and requires the certificate's box to contain it coordinatewise.
+- **V2.** The checker recomputes the required pentagon regions from the faces (L11′) and requires each to be present and complete.
+- **V3.** θ_lo ≤ 2 arcsin(r_min/(1 + r_min)) (the contact angle of two spheres of radius r_min on a unit sphere) and θ_hi ≥ arctan 2 (the icosahedral angle), decided in Arb.
+- **V4.** A checker-owned canonical code of the faces' rotation system equals the record's `code`, and the faces equal the gen record's faces up to cyclic rotation. Mirror images share a code by construction (the reflection of a critical configuration is critical).
+- **V5.** The manifest step (`scripts/completeness/check_certificates.py --manifest`): the sets of codes in gen, cert, certificates and checks are equal and duplicate-free, every code is verified, and every terminal box is identified (C4) before completeness is reported.
+
+Then, for every leaf and every removed slab:
+
 For every leaf and every removed slab, the checker re-derives the stated exclusion from its own interval evaluation of the model. It recomputes Gordan and Motzkin vectors itself. Multiplier hints are used as given and checked: any real vector μ is admissible in the interval inclusion, so a hint can make a check succeed but never makes a false exclusion pass. A hint that does not work leads to the checker's own tests.
 
 The checker may replace an exclusion with a different one, or subdivide a box and exclude the pieces. It may not accept a box without an interval proof. Contraction slabs carry no reason code. Any exclusion is acceptable for them, typically the linear test on the parent box, which the search used.
@@ -92,7 +101,7 @@ These are fixed by the code version, which is the tag of the run:
 
 - the candidate list and its completeness — candidate generation, and the lemmas in `docs/lemmas.md`;
 - the pentagon region cover — Lemma P, `scripts/completeness/lemmas.py P` (checker arithmetic; see `docs/lemmas.md`);
-- the face-angle model itself (`kisscrit/completeness/model.py`, and the compiled equivalent in `fast.py`).
+- the face-angle model itself: the checker's own `kisscrit/core/model.py` (L3, L6–L8, L10′), which is the one the proof relies on; the search evaluates the same formulas in `kisscrit/completeness/fast.py`, untrusted.
 
 ## 6. Size
 

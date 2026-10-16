@@ -102,7 +102,7 @@ def manifest(route, base=BASE):
     for k, v in sets.items():
         c = collections.Counter(v)
         report[k] = dict(lines=len(v), distinct=len(c), duplicates=sum(n - 1 for n in c.values() if n > 1))
-    base = distinct['gen'] if distinct['gen'] else distinct['cert']
+    base = distinct['gen']          # the candidate list; without it nothing can be called complete
     for k in ('cert', 'certificates', 'checks'):
         report['missing_from_' + k] = len(base - distinct[k]); report['extra_in_' + k] = len(distinct[k] - base)
     report['verified'] = len(verified & base)
@@ -111,7 +111,7 @@ def manifest(route, base=BASE):
     equal = all(distinct[k] == base for k in ('cert', 'certificates', 'checks')) and \
         all(report[k]['duplicates'] == 0 for k in ('cert', 'certificates', 'checks'))
     report['sets_equal_no_duplicates'] = equal
-    report['complete'] = equal and report['not_verified'] == 0 and report['terminal_unidentified'] == 0
+    report['complete'] = bool(base) and equal and report['not_verified'] == 0 and report['terminal_unidentified'] == 0
     report['note'] = ('gen lines count duplicates across shards; the distinct count is the candidate count. '
                       'Completeness requires sets_equal_no_duplicates, not_verified == 0 and every terminal box '
                       'identified (checklist C4); terminal identification is not yet implemented, so '

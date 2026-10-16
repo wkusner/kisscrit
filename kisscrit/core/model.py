@@ -18,12 +18,31 @@ Pentagon charts ('a', 'b', 'c') rotate the formula positions: formula position j
 (s + j) mod 5 with s = 0, 2, 3, and the apex corner (formula position 4) is clamped to at most LSTRAIGHT.
 
 Clamped functions.  Where the formulas need a quantity in a range that every valid configuration satisfies
-(corners at least alpha(theta), the apex corner at most LSTRAIGHT, the angle g in [0, pi]), the value is clamped
-to that range and derivatives are multiplied by [0, 1] where the clamp may act.  The clamped function agrees
-with the true corner function at every valid point and is Lipschitz, so its interval Jacobian encloses the
-Clarke generalized Jacobian and the mean value inclusion F(p) in F(m) + J(B)(p - m) holds for p, m in a box B.
+(corners at least alpha(theta), the apex corner at most LSTRAIGHT on its region, the angle g in [0, pi]), the
+value is clamped to that range and derivatives are multiplied by [0, 1] where the clamp may act.  The clamped
+function agrees with the true corner function at every valid point of the chart's region (docs/lemmas.md
+L10', "the clamp is harmless").  It is Lipschitz on every box except at the degenerate boundary of the
+pentagon formulas where cos d3 -> 1 (the diagonal P0 P3 collapses); there `acos_` returns the derivative
+enclosure (-inf, inf), the mean value inclusion F(p) in F(m) + J(B)(p - m) becomes vacuous, and the linear
+test proves nothing (L16).  Elsewhere the interval Jacobian encloses the Clarke generalized Jacobian and the
+inclusion holds for p, m in the box B (Lebourg's mean value theorem).  Infinite endpoints always mean
+"unbounded range of finite reals".
 
-Every function returns balls; `ok` is False only when the box certainly contains no valid point.
+Every function returns intervals; `ok` is False only when the box certainly contains no point of the
+chart's region that is a valid configuration (an exclusion of kind `invalid`, L10').
+
+Notation (docs/lemmas.md L8, paper Lemma A.8):
+  theta, ct, st   the side theta and cos theta, sin theta;
+  f1, f2          the corners at P1, P2 (the pentagon's parameters);
+  hd2, d2         half of, and the diagonal d2 = |P0 P2|;
+  b1 = beta(theta, f1)   base angle of the isosceles triangle P0 P1 P2;
+  g = f2 - b1     the angle at P2 between P2 P0 and P2 P3;
+  cd3, d3         cos of, and the diagonal d3 = |P0 P3|;
+  a0, a3          the angles of the triangle P0 P2 P3 at P0 and P3;
+  h, f4 = 2 h     half of, and the apex corner at P4;
+  b3 = beta(theta, f4)   base angle of the isosceles triangle P0 P3 P4;
+  cs              the five corners in formula order, `o`/`ok` validity flags.
+Code aliases: m0 = interval product, d0 = interval quotient, Z = the exact zero [0, 0].
 """
 import math
 from flint import arb
@@ -40,9 +59,11 @@ def hull(lo, hi):
 
 
 def intersect(x, y):
-    """Intersection of two intervals that are both enclosures of the same quantity; if they do not meet (which cannot happen for two valid enclosures) the first is kept, which is conservative."""
+    """Intersection of two intervals that are both enclosures of the same quantity.  Two valid enclosures
+    always meet; disjoint ones mean a bug in one of them, so this raises rather than continuing."""
     lo = max(x.lo, y.lo); hi = min(x.hi, y.hi)
-    return x if lo > hi else Iv(lo, hi)
+    if lo > hi: raise ArithmeticError('disjoint enclosures of the same quantity: %r and %r' % (x, y))
+    return Iv(lo, hi)
 
 
 def lower(x):
@@ -188,9 +209,14 @@ def pentagon(ct, st, hmin, hmax, f1, f2):
     """Corners (formula positions 0..4) of the convex equilateral pentagon P0..P4 with corners f1, f2 at P1, P2.
     P0 P2 is the base of the isosceles triangle P0 P1 P2; P3 follows from the angle g at P2 between P2 P0 and
     P2 P3; P4 is the apex of the isosceles triangle on the diagonal P0 P3, on the convex side."""
+    # d2/2 = asin(sin theta sin(f1/2)) (L8, step 1).  The clamp to [0, HALF_PI.lo] does not act at valid
+    # points: d2 <= 2 theta < 127 deg, so d2/2 < pi/2 by a wide margin.
     hd2, ok = asin_angle(mul(st, sin_(scale(f1, 0.5))), 0.0, HALF_PI.lo)
     d2 = scale(hd2, 2)
     b1 = beta(ct, f1)
+    # g = f2 - b1 in [0, pi] for a convex pentagon (L8, step 2).  The clamp to [0, PI.lo] (PI.lo is the double
+    # just below pi) does not act at valid points: g > PI.lo would need f2 within one ulp of pi and b1 within
+    # one ulp of 0, i.e. f1 within an ulp of pi too, and two adjacent corners >= LSTRAIGHT are excluded by L10.
     g, o = clip(sub(f2, b1), 0.0, PI.lo); ok = ok and o
     cg, sg = cos_(g), sin_(g)
     cd2, sd2 = cos_(d2), sin_(d2)
@@ -215,9 +241,13 @@ def _pick(g, lo, hi, want_min):
 
 
 def _tighten(c, j, tlo, thi, alo, ahi, blo, bhi, hmin, hmax):
-    """Monotonicity tightening of the computed pentagon corner j: where a partial derivative enclosure has a
-    sign on the box, the corner function is monotone in that variable, so its extreme values are attained on
-    the corresponding face of the box; evaluate there (with the same clamp bounds)."""
+    """Monotonicity tightening of the computed pentagon corner j (L16, "monotonicity tightening"): where a
+    partial derivative enclosure has a sign on the box, the clamped corner function (Lipschitz on the box) is
+    monotone in that variable by Lebourg's theorem, so its extreme values are attained on the corresponding
+    face of the box; evaluate there with the same clamp bounds.  The validity flags of those face evaluations
+    are ignored on purpose: the clamped formulas enclose the clamped function on every face, whether or not
+    the face contains valid pentagons, so the tightened interval still encloses the corner at every valid
+    point of the box.  Returns the corner with a narrower value and the same gradient."""
     lo, hi = c[0].lo, c[0].hi
     for want_min in (True, False):
         a = _pick(c[1], tlo, thi, want_min); b = _pick(c[2], alo, ahi, want_min); d = _pick(c[3], blo, bhi, want_min)
@@ -227,7 +257,7 @@ def _tighten(c, j, tlo, thi, alo, ahi, blo, bhi, hmin, hmax):
         v = cs[j][0]
         if want_min: lo = max(lo, v.lo)
         else: hi = min(hi, v.hi)
-    if lo > hi: return c
+    if lo > hi: raise ArithmeticError('monotonicity tightening produced an empty interval for corner %d' % j)
     return (Iv(lo, hi), c[1], c[2], c[3])
 
 
@@ -272,7 +302,8 @@ class Graph:
 
     # -------------------------------------------------------------- evaluation
     def corners(self, lo, hi, blo=None, bhi=None, tighten=True):
-        """Corner values with local gradients on the box [lo, hi]; clamp bounds from the box [blo, bhi].
+        """Corner values with local gradients on the box [lo, hi]; the clamp bound hmin comes from the lower
+        end of the enclosing box [blo, bhi] (only blo[0] is used; bhi is accepted for symmetry).
         Returns (C, ok): C[f][q] = (value, g_theta, g_p1, g_p2) in boundary order.
         tighten=False skips the monotonicity tightening of pentagon corners (values are then wider, the
         gradients are the same); the checker uses it for a cheap first pass."""
@@ -291,7 +322,8 @@ class Graph:
                 i = self.pidx[fi][0]
                 A = var(lo[i], hi[i], 1)
                 O = scale(beta(ct, A), 2)
-                # 2 beta is increasing in theta and decreasing in A: exact range from two corners of the box
+                # 2 beta is decreasing in A (L7) and increasing in theta: cot beta = cos theta tan(A/2) and
+                # cos theta decreases on (0, pi/2), so beta increases with theta.  Exact range from two corners
                 ex = Iv(down(2 * self._beta_pt(lo[0], hi[i])), up(2 * self._beta_pt(hi[0], lo[i])))
                 Ov = intersect(ex, O[0])
                 O = (Ov, O[1], O[2], O[3])

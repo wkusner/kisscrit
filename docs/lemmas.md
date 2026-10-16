@@ -87,7 +87,7 @@ Let K be the closure of a face of G. By L5, K is a closed disk whose boundary γ
 
 **L8. Pentagon faces: formulas and validity** (proved).
 
-Let P0 … P4 be a convex equilateral pentagon with side θ and corners f1, f2 at P1, P2. By L6 it is convex, so the diagonals P0P2 and P0P3 lie inside it and cut it into the triangles P0P1P2, P0P2P3 and P0P3P4. Its corners are sums of the angles of these triangles. The code is `kisscrit/core/model.py:pentagon` (checker) and `kisscrit/completeness/fast.py:pentagon` (search). Write β(θ, A) = arctan(cos(A/2)/(cos θ sin(A/2))).
+Let P0 … P4 be a convex equilateral pentagon with side θ and corners f1, f2 at P1, P2. By L6 it is convex, so the diagonals P0P2 and P0P3 lie inside it and cut it into the triangles P0P1P2, P0P2P3 and P0P3P4. Its corners are sums of the angles of these triangles. The code is `kisscrit/core/model.py:pentagon` (checker; the search side, `kisscrit/completeness/fast.py:pentagon`, is untrusted and plays no part in the proof). Write β(θ, A) = arctan(cos(A/2)/(cos θ sin(A/2))).
 
 1. *Triangle P0P1P2* (legs θ, apex f1). Halve it into right triangles.
    - The base d2 = P0P2 satisfies sin(d2/2) = sin θ sin(f1/2) (Napier: the sine of a side is the sine of the hypotenuse times the sine of the opposite angle).
@@ -172,9 +172,27 @@ The script proves "all five vertices within 70°" as (n·P_m)² > cos²70°·|n|
 
 ## B. Pentagon charts
 
-**L10. Lemma P** (computer: `scripts/completeness/lemmas.py P`, proved in 1319 boxes). No two adjacent corners of a face pentagon (θ ∈ [60°, 63.435°], corners ≥ α(θ), diagonal P0P3 ≥ θ) are both ≥ π − 25°. Together with the definitions of regions a, b and c (`docs/certificate-format.md`, `kisscrit/core/model.py`), this shows the three regions cover all pentagons.
+**L10. Lemma P** (computer: `scripts/completeness/lemmas.py P`, proved in 1319 boxes). No two adjacent corners of a face pentagon (θ ∈ [60°, 63.435°], corners ≥ α(θ), diagonal P0P3 ≥ θ) are both ≥ L, where **L is the double `LSTRAIGHT` = `math.pi - math.radians(25.0)`** (about 155°). The computation tests the corners, as intervals, against this double, and every region inequality below is against the same double; the real number π − 25° never enters.
 
-**L11. A corner ≥ π − 25° sits at a vertex of degree ≤ 3** (proved). Otherwise the other three or more corners at that vertex are each ≥ α(θ) > 70.52°, and 155° + 3·70.52° > 360°. This is used to skip regions b and c (`kisscrit/completeness/runner.py:charts_of`).
+**L10′. The three pentagon regions and their cover** (proved, from L10 and L3). Label the corners of a face pentagon c0 … c4 in boundary order (the order of the face cycle in the certificate). The regions are
+
+| region | defining inequalities | parameters (`p` entries) | clamped apex corner |
+|---|---|---|---|
+| a | c4 ≤ L | c1, c2 | c4 (formula position 4 = boundary 4) |
+| b | c4 ≥ L and c1 ≤ L | c3, c4 | c1 (boundary 1) |
+| c | c4 ≥ L and c1 ≥ L | c4, c0 | c2 (boundary 2) |
+
+In the code, the "≥ L" inequalities are lower bounds of the a-priori box (`kisscrit/core/checker.py:apriori_box`: the parameter at boundary position 4 in regions b and c has lower end L), the "c1 ≥ L" of region c is the box condition `kisscrit/core/model.py:Graph.corners` (`mode == 'c'`: invalid if c1 is certainly < L), and the "≤ L" inequalities are the clamp of the apex corner at `LSTRAIGHT` in `model.py:pentagon` (through `hmax`).
+
+*Cover.* Let P be a valid face pentagon. If c4 ≤ L it lies in region a. Otherwise c4 ≥ L; if c1 ≤ L it lies in region b, and if c1 ≥ L it lies in region c. So every valid pentagon lies in at least one region.
+
+*The clamp is harmless.* In region a the clamped corner c4 is ≤ L by definition; in region b, c1 ≤ L by definition; in region c, c1 ≥ L and c2 is adjacent to c1, so c2 < L by Lemma P. So on each region the clamped pentagon formulas agree with the true corner functions, and `ok = False` (a box certainly containing no point of the region that is a valid pentagon) is a valid exclusion for that region's chart: a configuration whose parameters lie in the box but outside the region is covered by the chart of another region, and every required region's chart (L11′) covers that region's whole a-priori box.
+
+*Degree-2 vertices.* By L4 a corner at a degree-2 vertex is exactly π. If the vertex at boundary position 4 has degree 2, region a is empty (c4 = π > L) and is not required; the coordinate for c4 is then the point π, which the certificate must store as an interval containing π (`[π⁻, π⁺]` in doubles), and the checker's a-priori box for it is `[down(π), up(π)]`.
+
+**L11. A corner ≥ L sits at a vertex of degree ≤ 3** (proved). Otherwise the other three or more corners at that vertex are each ≥ α(θ) > 70.52°, and 155° + 3·70.52° > 360°.
+
+**L11′. Required regions** (proved, from L10′, L11, L4). Let d4, d1 be the degrees of the vertices at boundary positions 4 and 1. If d4 ≥ 4 then c4 < L (L11), so region a alone covers; if d4 = 3 and d1 ≥ 4 then c1 < L, so regions a and b cover; if d4 = 3 and d1 ≤ 3 all three are needed. If d4 = 2 (c4 = π, L4) region a is empty: if d1 ≥ 4 region b alone covers, if d1 = 2 region c alone (c1 = π), otherwise b and c. The checker recomputes this list from the certificate's faces (`kisscrit/core/checker.py:required_modes`) and requires every listed chart to be present and complete (V2). The list may include a region that is in fact empty (for example d4 = 3, d1 = 2 lists region b although c1 = π ≥ L); an extra chart only adds work, never removes a case. The search's own list (`kisscrit/completeness/runner.py:charts_of`, untrusted) is the same rule.
 
 ## C. Candidate generation (`kisscrit/completeness/candidates.py`)
 
@@ -197,7 +215,7 @@ The script proves "all five vertices within 70°" as (n·P_m)² > cos²70°·|n|
 
 ## D. The branch and bound
 
-**L15. Necessary conditions** (proved). Every critical configuration with stressed graph G gives a parameter point in one of the pentagon regions of `charts_of(oriented(G))` at which:
+**L15. Necessary conditions** (proved). Every critical configuration with stressed graph G gives a parameter point in one of the required pentagon regions of G (L11′, `kisscrit/core/checker.py:required_modes`) at which:
 - the vertex sums are 2π;
 - all corners satisfy L3;
 - the face conditions L7 and L8 hold;
@@ -206,10 +224,11 @@ The script proves "all five vertices within 70°" as (n·P_m)² > cos²70°·|n|
 Only these necessary conditions are used to exclude boxes. Realizability, which needs the cone-metric argument, is not needed for exclusion.
 
 **L16. Exclusion tests are sound** (proved; see `kisscrit/core/checker.py`).
-- *Mean-value inclusion:* used for the clamped corner functions, which are Lipschitz with interval Clarke Jacobian enclosures.
+- *Mean-value inclusion:* for a function F that is Lipschitz on a box B with an interval enclosure J(B) of its Clarke generalized Jacobian, F(p) ∈ F(m) + J(B)(p − m) for all p, m ∈ B (Lebourg's mean value theorem). The clamped corner functions of `kisscrit/core/model.py` are Lipschitz on every box except at the degenerate boundary of the pentagon formulas where cos d3 → 1 (the diagonal P0P3 collapses); there the code's derivative enclosure is (−∞, ∞), the inclusion is vacuous, and the linear test proves nothing (it never accepts on an unbounded enclosure). Infinite endpoints in the arithmetic always mean "unbounded range of finite reals".
 - *Gordan alternative:* Ax > 0 solvable ⟺ there is no nonzero y ≥ 0 with Aᵀy = 0 (standard).
-- *Motzkin alternative:* for strictly positive stresses (standard).
-- *Monotonicity tightening:* a sign of a partial-derivative enclosure implies monotonicity on the box.
+- *Motzkin alternative:* for strictly positive stresses (standard). The checker demands every nonzero edge term to be > 0 on the box, which is a strengthening of the alternative (≥ 0 with one > 0 would do); sound, and simpler.
+- *Edge directions and frames.* At each vertex v the checker places the first neighbour of v in the rotation system at direction 0 and the following neighbours at the cumulative corner sums (`model.py:Graph.directions`). By L2 and L5 the rotation system of the realization at v is the combinatorial one, so these are the true directions of the edges at v in some orthonormal frame of T_v S². The balance condition "Σ_e w_e t_v(e) = 0 at every v" is invariant under the choice of frame at each vertex, and so are the Gordan and Motzkin alternatives, since y_v ranges over all of R².
+- *Monotonicity tightening:* if a partial derivative enclosure of a Lipschitz function has a sign on the box, the function is monotone in that variable there (Lebourg again), so its extreme values over the box are attained on the corresponding faces of the box. The tightening evaluates the clamped formulas on those faces; those evaluations enclose the clamped function whether or not the face contains valid pentagons, so the tightened interval encloses the corner on every valid point of the box.
 
 ## E. Assumptions (listed in `STATUS.md`)
 

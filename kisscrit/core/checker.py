@@ -95,7 +95,7 @@ class Checker:
         return C, ok
 
     def test_invalid_vsum(self, C, ok):
-        """Claim: returns 'invalid' only if no point of the box describes valid faces in this chart (the model's ok flag, L3/L6-L8/L10), and 'vsum' only if some vertex angle sum differs from 2 pi on the whole box (the interval s = sum - 2 pi excludes 0), so no realization exists there (L14/L15: the vertex sums of a realization are exactly 2 pi)."""
+        """Claim: returns 'invalid' only if no point of the box describes valid faces in this chart (the model's ok flag, L3/L6-L8/L10), and 'vsum' only if some vertex angle sum differs from 2 pi on the whole box (the interval s = sum - 2 pi excludes 0), so no realization exists there (L15: the vertex sums of a realization are exactly 2 pi; L3, L6-L8 for the face conditions)."""
         if not ok: return 'invalid'
         for s, g in self.G.vertex_sums(C):
             if s.lo > 0 or s.hi < 0: return 'vsum'
@@ -200,7 +200,7 @@ class Checker:
         return s.lo > 0 or s.hi < 0
 
     def _edge_terms(self, C, y):
-        """For each edge e = uw and a vector y (2 components per vertex), the interval enclosure of y_u . t_u(e) + y_w . t_w(e), with t_v(e) the unit tangent at v towards the other end, computed from the edge directions of the box; `zero` marks edges whose two end vectors are exactly 0."""
+        """For each edge e = uw and a vector y (2 components per vertex), the interval enclosure of y_u . t_u(e) + y_w . t_w(e), with t_v(e) the unit tangent at v towards the other end, computed from the edge directions of the box in the per-vertex frames of model.Graph.directions (first neighbour at angle 0; the balance condition and both alternatives are invariant under the frame choice at each vertex, L16); `zero` marks edges whose two end vectors are exactly 0."""
         G = self.G; d = G.directions(C); out = []
         for (u, w) in G.edges:
             t = Iv(0.0); zero = True
@@ -312,7 +312,10 @@ def _alpha(t):
 
 
 def theta_claim_ok(theta, r_min=R_MIN):
-    """V3: [theta_lo, theta_hi] covers the claimed range, decided in Arb."""
+    """V3: [theta_lo, theta_hi] covers the claimed range, decided in Arb.  Two spheres of radius r touching a
+    unit sphere have centres at angular distance 2 asin(r / (1 + r)) when they touch each other, so r >= r_min
+    is theta >= 2 asin(r_min / (1 + r_min)); the icosahedral angle arctan 2 is the largest minimum distance of
+    12 points (L9, uniqueness at theta_max)."""
     tlo, thi = theta
     r = arb(r_min)
     tmin = 2 * (r / (1 + r)).asin()
@@ -321,8 +324,12 @@ def theta_claim_ok(theta, r_min=R_MIN):
 
 
 def apriori_box(G, theta):
-    """V1: the a-priori box of a chart, from the lemmas (docs/lemmas.md L3, L4, L7, L10), rounded outward.
-    Returns (lo, hi, fixed) with fixed the set of coordinates that are straight corners at degree-2 vertices."""
+    """V1: the a-priori box of a chart, from the lemmas, rounded outward: theta in [theta_lo, theta_hi]; a
+    rhombus corner in [alpha(theta_lo), 2 alpha(theta_hi)] (L7); a pentagon corner in [alpha(theta_lo), pi]
+    (L3); in regions b and c the corner at boundary position 4 is >= LSTRAIGHT (L10'); at a degree-2 vertex
+    that corner is exactly pi, enclosed by [down(pi), up(pi)] (L4).  Returns (lo, hi, fixed) with fixed the
+    set of coordinates that are straight corners at degree-2 vertices.  The certificate's box must contain
+    this box coordinatewise, so every valid configuration of the region lies in the chart's starting box."""
     tlo, thi = float(theta[0]), float(theta[1])
     a_lo = down(_alpha(tlo))
     lo = [tlo]; hi = [thi]; fixed = set()
@@ -343,10 +350,13 @@ def apriori_box(G, theta):
 
 
 def required_modes(G):
-    """V2: the pentagon regions that must be present (Lemma P: no two adjacent corners >= LSTRAIGHT; L11: a
-    corner >= LSTRAIGHT sits at a vertex of degree <= 3).  Region a clamps the corner at boundary position 4,
-    region b asserts it is >= LSTRAIGHT and clamps position 1, region c asserts position 4 >= LSTRAIGHT and
-    clamps position 2.  Returns the list of mode dicts {face index: mode}."""
+    """V2: the pentagon regions that must be present (docs/lemmas.md L10', L11').  With c_i the corner at
+    boundary position i and L = LSTRAIGHT: region a is c4 <= L; region b is c4 >= L and c1 <= L; region c is
+    c4 >= L and c1 >= L (then c2 < L by Lemma P).  Which regions can be nonempty follows from the degrees d4,
+    d1 of the vertices at positions 4 and 1: a corner >= L sits at a vertex of degree <= 3 (L11), and a
+    degree-2 vertex has a straight corner (L4).  The returned list is a superset of the nonempty regions (for
+    d4 = 3, d1 = 2 it lists region b although c1 = pi makes it empty); an extra chart adds work, never removes
+    a case.  Returns the list of mode dicts {face index: mode}."""
     import itertools
     pents = [fi for fi, k in enumerate(G.sizes) if k == 5]
     opts = []
@@ -364,7 +374,10 @@ def canonical_code(faces):
     canon module's docstring (and independently of it): for every directed start edge (u, w) and both
     orientations, number the vertices breadth-first, visiting the neighbours of each vertex in rotation order
     from the edge by which it was first reached; the code lists, per vertex, its degree and its neighbours'
-    numbers; the canonical code is the lexicographic minimum."""
+    numbers; the canonical code is the lexicographic minimum.  Purpose: tie the certificate to the candidate
+    list of L12-L13, whose entries are these codes.  Minimizing over both orientations identifies a plane graph
+    with its mirror image on purpose: the reflection of a critical configuration is critical, so one
+    certificate covers both."""
     nv = 1 + max(v for f in faces for v in f)
     nxt = [dict() for _ in range(nv)]            # nxt[v][b] = a for a corner (a, v, b): a follows b at v
     for f in faces:
@@ -436,17 +449,18 @@ def structural_check(cert, code=None, gen_faces=None, r_min=R_MIN):
             if not (float(ch['lo0'][j]) <= lo[j] and float(ch['hi0'][j]) >= hi[j]):
                 problems.append('V1: chart %s coordinate %d box [%r, %r] does not contain the a-priori box [%r, %r]'
                                 % (ch['modes'], j, ch['lo0'][j], ch['hi0'][j], lo[j], hi[j]))
-        for j in range(1, G.npar):
-            if float(ch['lo0'][j]) == float(ch['hi0'][j]) and j not in fixed:
-                problems.append('V1: chart %s coordinate %d is fixed but is not a straight corner at a degree-2 vertex'
-                                % (ch['modes'], j))
     return problems
 
 
 def check_certificate(cert, code=None, gen_faces=None, r_min=R_MIN, structural=True):
     """Check one certificate.  Returns a dict: verified (bool), structural problems, per-reason counts,
     failed boxes, terminal boxes, number of open leaves and of charts not run.  `code` and `gen_faces` are
-    the candidate's code and gen faces (V4); without them the code identity is not checked."""
+    the candidate's code and gen faces (V4); without them the code identity is not checked.
+    Claim: verified is True only if every structural check passes, every removed slab and every excluded leaf
+    of every required chart is proved to contain no critical configuration, and every terminal leaf is no
+    wider than the stated tolerance.  Terminal leaves are NOT excluded: a certificate with terminal boxes
+    proves completeness only once each terminal box is identified with a census configuration (checklist C4,
+    the manifest's terminal_unidentified count)."""
     out = dict(verified=True, structural=[], failed=[], terminal=[], open=0, not_run=0, counts={}, leaves=0)
     if cert.get('version') not in (1, 2): raise ValueError('unknown certificate version')
     if structural:
@@ -476,6 +490,10 @@ def check_certificate(cert, code=None, gen_faces=None, r_min=R_MIN, structural=T
                 continue
             out['leaves'] += 1
             if kind == 'terminal':
+                # a terminal box is not an exclusion: it is recorded for identification (checklist C4) and its
+                # width must not exceed the stated tolerance, so that the search cannot park a large region here
+                if max(b - a for a, b in zip(lo, hi)) > float(cert['tol']):
+                    out['failed'].append(dict(kind='terminal-too-wide', lo=lo, hi=hi)); out['verified'] = False
                 out['terminal'].append(dict(modes=ch['modes'], lo=lo, hi=hi)); continue
             if kind == 'open':
                 out['open'] += 1; out['verified'] = False; continue

@@ -11,7 +11,10 @@ products and quotients of wide intervals are much tighter in inf-sup form, and t
 
 Conventions shared with the search (kisscrit/completeness/fast.py):
   * division by an interval containing 0 gives (-inf, inf), unless the numerator is exactly [0, 0];
-  * a product with an exactly-zero factor [0, 0] is exactly [0, 0] (structural zeros of gradients);
+  * a product with an exactly-zero factor [0, 0] is exactly [0, 0] (structural zeros of gradients).  Exact
+    zeros arise only from the seeds Iv(0.0) and model.var (a gradient component that is identically zero);
+    they are never produced by subtraction or by any rounded operation (_op_down steps an exact 0 down to
+    -5e-324), so the rule never shortens an enclosure of a quantity that can be nonzero;
   * sin, cos are evaluated at the endpoints, and the interval is widened to +-1 where an extremum
     2 k pi or (2k+1) pi may lie inside (decided with Arb's pi, conservatively).
 """
@@ -168,22 +171,29 @@ def atan(a):
 
 
 def asin(a):
-    """asin on [a.lo, a.hi] clamped to [-1, 1] (callers check validity separately)."""
+    """asin on [a.lo, a.hi] clamped to [-1, 1].  The clamp is silent: the only callers are model.asin_angle,
+    which raises its own validity flag when the argument box is certainly outside [-1, 1]."""
     return _mono(lambda t: t.asin(), clamp(a, -1.0, 1.0), True)
 
 
 def acos(a):
-    """Enclosure of arccos on the interval a clamped to [-1, 1]: arccos is decreasing, so the range lies between arccos(a.hi) rounded down and arccos(a.lo) rounded up."""
+    """Enclosure of arccos on the interval a clamped to [-1, 1]: arccos is decreasing, so the range lies between
+    arccos(a.hi) rounded down and arccos(a.lo) rounded up.  The clamp is silent; the only caller, model.acos_,
+    raises its own validity flag when the argument box is certainly outside [-1, 1]."""
     return _mono(lambda t: t.acos(), clamp(a, -1.0, 1.0), False)
 
 
 def cos(a):
     """Enclosure of cos on the interval a: the values at the endpoints (Arb, rounded outward), widened to 1 where an even multiple of pi may lie inside and to -1 where an odd multiple may (decided conservatively with Arb's pi). A non-finite or very wide interval gives [-1, 1]."""
-    if not a.finite() or not (a.hi - a.lo < 6.0):
+    if not a.finite() or not (a.hi - a.lo < 6.0):        # wider than 6 > 2 pi always contains both extremes
         return Iv(-1.0, 1.0)
     ca, cb = arb(a.lo).cos(), arb(a.hi).cos()
     lo = min(down(ca), down(cb)); hi = max(up(ca), up(cb))
-    # an even multiple of pi inside -> max 1; an odd multiple -> min -1 (conservative where undecidable)
+    # an even multiple of pi inside -> max 1; an odd multiple -> min -1.  The candidate multiples k are
+    # enumerated with the float math.pi, starting one below floor(a.lo / pi) and ending one unit past a.hi:
+    # these margins exceed any rounding error of the float seed, so no multiple of the real pi inside the
+    # interval is skipped.  Whether a candidate is inside is decided only by the Arb comparison below,
+    # conservatively (undecidable counts as inside).
     k = math.floor(a.lo / math.pi) - 1
     while k * math.pi <= a.hi + 1.0:
         p = k * _PI
@@ -213,7 +223,8 @@ def square(a):
 
 def sqrt(a):
     """Range of the square root on [max(a.lo, 0), a.hi]; the caller checks a.hi >= 0.  IEEE sqrt is correctly
-    rounded, so one ulp outward is rigorous."""
+    rounded, so one ulp outward is rigorous.  Not used by the trusted base at present (kept for the lemma
+    scripts and tests)."""
     lo = max(a.lo, 0.0)
     l = 0.0 if lo == 0.0 else _nx(math.sqrt(lo), -INF)
     h = INF if math.isinf(a.hi) else _nx(math.sqrt(max(a.hi, 0.0)), INF)
