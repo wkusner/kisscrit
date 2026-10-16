@@ -1,5 +1,8 @@
 """Reading certificates written by the completeness branch and bound (format: docs/certificate-format.md).
 
+Status: trusted. Part of the trusted base (transfer prompt v1.2, code standards).
+Implements: the certificate replay of docs/certificate-format.md section 3 (bisection and grid contraction, reproduced bit for bit).
+
 This module only decodes and replays the proof tree; it uses no floating-point computation except the two
 box operations the format defines (midpoint bisection and grid contraction), which are reproduced exactly.
 """
@@ -13,6 +16,7 @@ EV_ROUND, EV_SPLIT, EV_CONTRACT = 15, 16, 64
 
 
 def unpack(s, dtype):
+    """Decode a base64 + zlib stream into a little-endian numpy array of the given dtype."""
     return np.frombuffer(zlib.decompress(base64.b64decode(s)), dtype=np.dtype(dtype).newbyteorder('<'))
 
 

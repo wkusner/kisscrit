@@ -1,5 +1,8 @@
 """Independent checker for completeness certificates (format: docs/certificate-format.md).
 
+Status: trusted. Part of the trusted base (transfer prompt v1.2, code standards).
+Implements: the exclusion tests of docs/lemmas.md L15-L16 (necessary conditions, Gordan and Motzkin alternatives, mean-value inclusion) and the structural checks V1-V4 of the checker spec v0.2; paper Appendix A (candidate list) and Appendix D (certification).
+
 For each chart of a certificate the checker replays the proof tree (kisscrit.core.certificate.replay) and proves,
 with its own interval evaluation of the model (kisscrit.core.model), that every excluded leaf and every region
 removed by a contraction contains no critical configuration of the candidate graph.  It never trusts the
@@ -24,13 +27,28 @@ strictly positive balanced stress):
 
 Floating point enters only through linear programs that choose mu and y; the inequalities themselves are
 checked in ball arithmetic.
+
+Structural checks (spec v0.2, V1-V4), done before any box is examined:
+  V1  the checker derives its own a-priori starting box per chart (Arb, outward rounded) from the lemmas and
+      requires the certificate's box to contain it;
+  V2  the checker recomputes which pentagon regions are required (Lemma P and L11) and requires each to be
+      present and complete;
+  V3  the theta range is tied to the claim: theta_lo <= 2 asin(r_min / (1 + r_min)), theta_hi >= arctan 2;
+  V4  a checker-owned canonical code of the faces' rotation system equals the certificate's code, and the
+      faces match the gen record up to cyclic rotation when the gen faces are supplied.
+Dependencies: kisscrit.completeness is imported only inside test_linear_bound, as a source of multipliers
+(any real mu is admissible in the interval inclusion); tests/test_checker_imports.py enforces this.
 """
+import math
 import numpy as np
 from scipy.optimize import linprog
+from flint import arb, fmpq
 from . import model as am
 from . import interval as I
-from .interval import Iv
+from .interval import Iv, down, up
 from .certificate import replay
+
+R_MIN = fmpq(10001, 10000)      # the route constant r_min = 1.0001, exactly
 
 MAX_DEPTH = 40          # bisection depth allowed below a certificate leaf
 MAX_PIECES = 400        # bisection pieces allowed per certificate leaf or slab before it is reported as failed
@@ -41,7 +59,9 @@ def _f(x):
     return 0.5 * (x.lo + x.hi)
 
 
-def _r(x): return 0.5 * (x.hi - x.lo)
+def _r(x):
+    """Float radius of an interval (used only to set up linear programs)."""
+    return 0.5 * (x.hi - x.lo)
 
 
 def combination(mu, Fm, JB, Y):
@@ -60,17 +80,22 @@ def combination(mu, Fm, JB, Y):
 
 class Checker:
     def __init__(self, graph):
+        """A checker for one candidate graph (a kisscrit.core.model.Graph) with per-reason counters."""
         self.G = graph
         self.stats = {}
 
-    def bump(self, k): self.stats[k] = self.stats.get(k, 0) + 1
+    def bump(self, k):
+        """Count one exclusion of kind k."""
+        self.stats[k] = self.stats.get(k, 0) + 1
 
     # ------------------------------------------------------------------ the tests
     def evaluate(self, lo, hi, blo=None, bhi=None):
+        """Corner values with gradients on the box [lo, hi] (clamp bounds from [blo, bhi]), with monotonicity tightening."""
         C, ok = self.G.corners(lo, hi, blo, bhi)
         return C, ok
 
     def test_invalid_vsum(self, C, ok):
+        """Claim: returns 'invalid' only if no point of the box describes valid faces in this chart (the model's ok flag, L3/L6-L8/L10), and 'vsum' only if some vertex angle sum differs from 2 pi on the whole box (the interval s = sum - 2 pi excludes 0), so no realization exists there (L14/L15: the vertex sums of a realization are exactly 2 pi)."""
         if not ok: return 'invalid'
         for s, g in self.G.vertex_sums(C):
             if s.lo > 0 or s.hi < 0: return 'vsum'
@@ -104,12 +129,41 @@ class Checker:
         b = np.concatenate([R - fc, R + fc])
         c = np.zeros(n + 1); c[-1] = 1
         res = linprog(c, A_ub=A, b_ub=b, bounds=list(zip(ylo, yhi)) + [(0, None)], method='highs')
-        if res.status != 0 or res.fun <= 0: return False
-        lam = -res.ineqlin.marginals
-        mu = lam[:V] - lam[V:]
-        if not np.any(mu): return False
-        s = combination([(v, mu[i]) for i, v in enumerate(rows) if mu[i] != 0], Fm, JB, Y)
-        return s.lo > 0 or s.hi < 0
+        if res.status == 0 and res.fun > 0:
+            lam = -res.ineqlin.marginals
+            mu = lam[:V] - lam[V:]
+            if np.any(mu):
+                s = combination([(v, mu[i]) for i, v in enumerate(rows) if mu[i] != 0], Fm, JB, Y)
+                if s.lo > 0 or s.hi < 0: return True
+        return self.test_linear_combo(rows, Fm, JB, Y, Jc, Jr, fc, fr, ylo, yhi)
+
+    def test_linear_combo(self, rows, Fm, JB, Y, Jc, Jr, fc, fr, ylo, yhi):
+        """A second choice of mu, by the 'sum first, then multiply' form the search uses: maximize over mu
+        (with sum |mu_v| <= 1) the floating-point margin
+            sign * sum_v mu_v fc_v - sum_j |sum_v mu_v Jc_vj| ymax_j - sum_v |mu_v| (fr_v + sum_j Jr_vj ymax_j),
+        for both signs, and verify the result with the exact interval combination.  This exploits cancellation
+        in sum_v mu_v J_vj across rows, which the row-wise LP of test_linear cannot."""
+        V = len(rows); n = Jc.shape[1]
+        ymax = np.maximum(np.abs(ylo), np.abs(yhi))
+        # variables: mu+ (V), mu- (V), s (n) ; mu = mu+ - mu-, |mu| <= mu+ + mu-, s_j >= |sum_v mu_v Jc_vj|
+        nv = 2 * V + n
+        A_ub = []; b_ub = []
+        for j in range(n):
+            row = np.zeros(nv); row[:V] = Jc[:, j]; row[V:2 * V] = -Jc[:, j]; row[2 * V + j] = -1; A_ub.append(row); b_ub.append(0.0)
+            row = np.zeros(nv); row[:V] = -Jc[:, j]; row[V:2 * V] = Jc[:, j]; row[2 * V + j] = -1; A_ub.append(row); b_ub.append(0.0)
+        row = np.zeros(nv); row[:2 * V] = 1; A_ub.append(row); b_ub.append(1.0)
+        pen = fr + Jr @ ymax                                   # per-row radius cost of |mu_v|
+        for sign in (1.0, -1.0):
+            c = np.zeros(nv)
+            c[:V] = -(sign * fc) + pen; c[V:2 * V] = (sign * fc) + pen; c[2 * V:] = ymax
+            res = linprog(c, A_ub=np.array(A_ub), b_ub=np.array(b_ub), bounds=[(0, None)] * nv, method='highs')
+            if res.status != 0 or -res.fun <= 0: continue
+            mu = res.x[:V] - res.x[V:2 * V]
+            mu[np.abs(mu) < 1e-12 * np.abs(mu).max()] = 0.0
+            if not np.any(mu): continue
+            s = combination([(v, mu[i]) for i, v in enumerate(rows) if mu[i] != 0], Fm, JB, Y)
+            if s.lo > 0 or s.hi < 0: return True
+        return False
 
     def test_linear_bound(self, lo, hi, cut_lo, cut_hi, k, side, Blo, Bhi, CB, lctx=None):
         """Slab [lo, hi] = part of the box [cut_lo, cut_hi] (inside B) beyond the new bound of coordinate k.
@@ -146,6 +200,7 @@ class Checker:
         return s.lo > 0 or s.hi < 0
 
     def _edge_terms(self, C, y):
+        """For each edge e = uw and a vector y (2 components per vertex), the interval enclosure of y_u . t_u(e) + y_w . t_w(e), with t_v(e) the unit tangent at v towards the other end, computed from the edge directions of the box; `zero` marks edges whose two end vectors are exactly 0."""
         G = self.G; d = G.directions(C); out = []
         for (u, w) in G.edges:
             t = Iv(0.0); zero = True
@@ -159,6 +214,7 @@ class Checker:
         return out
 
     def _lp_vector(self, lo, hi, motzkin):
+        """A floating-point choice of y for the Gordan (motzkin=False) or Motzkin test at the centre of the box; None if the LP finds no candidate. Only a choice: the proof is the interval test that follows."""
         G = self.G
         m = [0.5 * (a + b) for a, b in zip(lo, hi)]
         Cm, _ = G.corners(m, m, lo, hi)
@@ -182,11 +238,13 @@ class Checker:
         return y
 
     def test_gordan(self, lo, hi, C):
+        """Claim: returns True only if some y has y_u . t_u(e) + y_w . t_w(e) > 0 for every edge on the whole box, so by Gordan's alternative (L16) no nonzero nonnegative balanced stress exists at any point of the box."""
         y = self._lp_vector(lo, hi, False)
         if y is None: return False
         return all((not z) and t.lo > 0 for z, t in self._edge_terms(C, y))
 
     def test_motzkin(self, lo, hi, C):
+        """Claim: returns True only if some y makes every edge term either exactly 0 (both end vectors zero) or > 0 on the whole box, with at least one > 0; by Motzkin's alternative (L16) no strictly positive balanced stress exists at any point of the box."""
         y = self._lp_vector(lo, hi, True)
         if y is None: return False
         terms = self._edge_terms(C, y); npos = 0
@@ -221,13 +279,19 @@ class Checker:
         if depth == 0: self.pieces = 0
         self.pieces += 1
         if self.pieces > MAX_PIECES: return False
-        C, ok = self.evaluate(lo, hi)
+        # cheap pass: corners without monotonicity tightening (gradients are unaffected, values are wider)
+        C, ok = self.G.corners(lo, hi, tighten=False)
         r = self.test_invalid_vsum(C, ok)
         if r: self.bump(r); return True
         if parent is not None:
             Blo, Bhi, CB, lctx = parent
             if self.test_linear(lo, hi, Blo, Bhi, CB, lctx): self.bump('linear-parent'); return True
         if self.test_linear(lo, hi, lo, hi, C): self.bump('linear'); return True
+        # full pass: tightened corner values for the tests that use them
+        if any(k == 5 for k in self.G.sizes):
+            C, ok = self.evaluate(lo, hi)
+            r = self.test_invalid_vsum(C, ok)
+            if r: self.bump(r + '-tight'); return True
         if self.test_gordan(lo, hi, C): self.bump('gordan'); return True
         if self.test_motzkin(lo, hi, C): self.bump('motzkin'); return True
         if depth >= MAX_DEPTH: return False
@@ -240,11 +304,154 @@ class Checker:
         return self.exclude(lo1, hi1, None, depth + 1) and self.exclude(lo2, hi2, None, depth + 1)
 
 
-def check_certificate(cert):
-    """Check one certificate.  Returns a dict: verified (bool), per-reason counts, failed boxes, terminal boxes,
-    number of open leaves and of charts not run."""
-    out = dict(verified=True, failed=[], terminal=[], open=0, not_run=0, counts={}, leaves=0)
+# ---------------------------------------------------------------------- structural checks (V1-V4)
+def _alpha(t):
+    """alpha(t) = arccos(cos t / (1 + cos t)) as an Arb ball (the equilateral corner, docs/lemmas.md)."""
+    c = arb(t).cos()
+    return (c / (1 + c)).acos()
+
+
+def theta_claim_ok(theta, r_min=R_MIN):
+    """V3: [theta_lo, theta_hi] covers the claimed range, decided in Arb."""
+    tlo, thi = theta
+    r = arb(r_min)
+    tmin = 2 * (r / (1 + r)).asin()
+    tmax = arb(2).atan()
+    return bool(arb(float(tlo)) <= tmin) and bool(arb(float(thi)) >= tmax)
+
+
+def apriori_box(G, theta):
+    """V1: the a-priori box of a chart, from the lemmas (docs/lemmas.md L3, L4, L7, L10), rounded outward.
+    Returns (lo, hi, fixed) with fixed the set of coordinates that are straight corners at degree-2 vertices."""
+    tlo, thi = float(theta[0]), float(theta[1])
+    a_lo = down(_alpha(tlo))
+    lo = [tlo]; hi = [thi]; fixed = set()
+    for fi, k in enumerate(G.sizes):
+        if k == 3: continue
+        if k == 4:
+            lo.append(a_lo); hi.append(up(2 * _alpha(thi))); continue
+        i1, i2 = G.pidx[fi]
+        lo += [a_lo, a_lo]; hi += [up(I._PI), up(I._PI)]
+        mode = G.modes[fi]; f = G.faces[fi]
+        # the parameter at boundary position 4: formula position 2 in region b, formula position 1 in region c
+        p4 = i2 if mode == 'b' else (i1 if mode == 'c' else None)
+        if p4 is not None:
+            lo[p4] = am.LSTRAIGHT                        # the region threshold, the same double as the clamp
+            if len(G.rot[f[4]]) == 2:                    # L4: a degree-2 vertex has two straight corners
+                lo[p4] = down(I._PI); fixed.add(p4)
+    return lo, hi, fixed
+
+
+def required_modes(G):
+    """V2: the pentagon regions that must be present (Lemma P: no two adjacent corners >= LSTRAIGHT; L11: a
+    corner >= LSTRAIGHT sits at a vertex of degree <= 3).  Region a clamps the corner at boundary position 4,
+    region b asserts it is >= LSTRAIGHT and clamps position 1, region c asserts position 4 >= LSTRAIGHT and
+    clamps position 2.  Returns the list of mode dicts {face index: mode}."""
+    import itertools
+    pents = [fi for fi, k in enumerate(G.sizes) if k == 5]
+    opts = []
+    for fi in pents:
+        f = G.faces[fi]; d4 = len(G.rot[f[4]]); d1 = len(G.rot[f[1]])
+        if d4 == 2:
+            opts.append('c' if d1 == 2 else ('b' if d1 >= 4 else 'bc'))
+        else:
+            opts.append('a' if d4 >= 4 else ('ab' if d1 >= 4 else 'abc'))
+    return [dict(zip(pents, combo)) for combo in itertools.product(*opts)]
+
+
+def canonical_code(faces):
+    """V4: canonical code of the rotation system of the oriented faces, written from the definition in the
+    canon module's docstring (and independently of it): for every directed start edge (u, w) and both
+    orientations, number the vertices breadth-first, visiting the neighbours of each vertex in rotation order
+    from the edge by which it was first reached; the code lists, per vertex, its degree and its neighbours'
+    numbers; the canonical code is the lexicographic minimum."""
+    nv = 1 + max(v for f in faces for v in f)
+    nxt = [dict() for _ in range(nv)]            # nxt[v][b] = a for a corner (a, v, b): a follows b at v
+    for f in faces:
+        k = len(f)
+        for pos in range(k):
+            nxt[f[pos]][f[(pos + 1) % k]] = f[pos - 1]
+    rot = []
+    for v in range(nv):
+        start = min(nxt[v]); seq = [start]
+        while True:
+            w = nxt[v][seq[-1]]
+            if w == start: break
+            seq.append(w)
+        rot.append(seq)
+    best = None
+    for u in range(nv):
+        for w in rot[u]:
+            for rev in (False, True):
+                num = {u: 0}; queue = [u]; via = {u: w}; code = []; head = 0
+                while head < len(queue):
+                    v = queue[head]; head += 1
+                    r = rot[v][::-1] if rev else rot[v]
+                    i = r.index(via[v]); r = r[i:] + r[:i]
+                    code.append(len(r))
+                    for x in r:
+                        if x not in num:
+                            num[x] = len(queue); queue.append(x); via[x] = v
+                        code.append(num[x])
+                if len(queue) == nv and (best is None or code < best): best = code
+    return '.'.join(map(str, best))
+
+
+def faces_match(cert_faces, gen_faces):
+    """V4(b): every gen face is a cyclic rotation (same orientation) of exactly one certificate face."""
+    def key(f):
+        """Cyclic normal form of a face: rotated to start at its smallest vertex (orientation kept)."""
+        k = len(f); i = f.index(min(f)); return tuple(f[i:] + f[:i])
+    return sorted(key(list(f)) for f in cert_faces) == sorted(key(list(f)) for f in gen_faces)
+
+
+def structural_check(cert, code=None, gen_faces=None, r_min=R_MIN):
+    """V1-V4 on a whole certificate; `code` is the candidate's canonical code from the record that carries the
+    certificate, `gen_faces` the faces of its gen record.  Returns a list of problems (empty when all pass)."""
+    problems = []
+    if cert.get('version') not in (1, 2): return ['unknown certificate version']
+    if not theta_claim_ok(cert['theta'], r_min): problems.append('V3: theta range does not cover the claim')
+    try:
+        own = canonical_code(cert['faces'])
+        if code is not None and own != code: problems.append('V4: canonical code mismatch')
+    except Exception as e:
+        problems.append('V4: faces are not a rotation system (%r)' % (e,))
+    if gen_faces is not None and not faces_match(cert['faces'], gen_faces):
+        problems.append('V4: faces differ from the gen record')
+    G0 = am.Graph(cert['faces'], {})
+    present = {}
+    for ch in cert['charts']:
+        present[tuple(sorted((int(k), v) for k, v in ch['modes'].items()))] = ch
+    for req in required_modes(G0):
+        ch = present.get(tuple(sorted(req.items())))
+        if ch is None or ch.get('not_run') or not ch.get('complete', False):
+            problems.append('V2: required chart %s missing or incomplete' % (req,))
+    for ch in cert['charts']:
+        if ch.get('not_run'): continue
+        G = am.Graph(cert['faces'], ch['modes'])
+        if G.npar != len(ch['lo0']) or G.npar != len(ch['hi0']):
+            problems.append('V1: parameter count mismatch'); continue
+        lo, hi, fixed = apriori_box(G, cert['theta'])
+        for j in range(G.npar):
+            if not (float(ch['lo0'][j]) <= lo[j] and float(ch['hi0'][j]) >= hi[j]):
+                problems.append('V1: chart %s coordinate %d box [%r, %r] does not contain the a-priori box [%r, %r]'
+                                % (ch['modes'], j, ch['lo0'][j], ch['hi0'][j], lo[j], hi[j]))
+        for j in range(1, G.npar):
+            if float(ch['lo0'][j]) == float(ch['hi0'][j]) and j not in fixed:
+                problems.append('V1: chart %s coordinate %d is fixed but is not a straight corner at a degree-2 vertex'
+                                % (ch['modes'], j))
+    return problems
+
+
+def check_certificate(cert, code=None, gen_faces=None, r_min=R_MIN, structural=True):
+    """Check one certificate.  Returns a dict: verified (bool), structural problems, per-reason counts,
+    failed boxes, terminal boxes, number of open leaves and of charts not run.  `code` and `gen_faces` are
+    the candidate's code and gen faces (V4); without them the code identity is not checked."""
+    out = dict(verified=True, structural=[], failed=[], terminal=[], open=0, not_run=0, counts={}, leaves=0)
     if cert.get('version') not in (1, 2): raise ValueError('unknown certificate version')
+    if structural:
+        out['structural'] = structural_check(cert, code, gen_faces, r_min)
+        if out['structural']: out['verified'] = False
     for ch in cert['charts']:
         if ch.get('not_run'):
             out['not_run'] += 1; out['verified'] = False; continue
@@ -258,7 +465,7 @@ def check_certificate(cert):
             if kind == 'split': continue
             if kind == 'contract':
                 removed, _ = extra
-                CB, _ = G.corners(lo, hi)
+                CB, _ = G.corners(lo, hi, tighten=False)           # only its gradients are used
                 lctx = K.linear_context(lo, hi, CB)
                 for sl in removed:
                     slo, shi, clo, chi, k, side, mu = sl
@@ -273,7 +480,7 @@ def check_certificate(cert):
             if kind == 'open':
                 out['open'] += 1; out['verified'] = False; continue
             if kind == 'linear' and extra:
-                C_, _ = G.corners(lo, hi)
+                C_, _ = G.corners(lo, hi, tighten=False)
                 if K.test_linear_mu(lo, hi, lo, hi, C_, extra):
                     K.bump('linear-hint'); continue
             if not K.exclude(lo, hi):

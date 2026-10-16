@@ -1,5 +1,8 @@
 """Inf-sup interval arithmetic with float endpoints and rigorous rounding through Arb (python-flint).
 
+Status: trusted. Part of the trusted base (transfer prompt v1.2, code standards).
+Implements: the interval arithmetic of the checker: IEEE basic operations stepped outward and Arb for the elementary functions (spec v0.3 section 1.2; paper Appendix D, certification).
+
 An interval is a pair of doubles [lo, hi] (possibly infinite).  The basic operations (+, -, *, /) use IEEE 754
 double arithmetic, which is correctly rounded, and step one ulp outward.  Elementary functions (sin, cos, atan,
 asin, acos) are evaluated as Arb balls at 64-bit precision and rounded outward to doubles (`down`, `up`).  So
@@ -29,6 +32,7 @@ def down(x):
 
 
 def up(x):
+    """Smallest double >= every point of the ball x (x finite): the outward-rounded upper endpoint."""
     u = x.upper()
     f = float(u)
     while arb(f) < u: f = math.nextafter(f, INF)
@@ -39,28 +43,46 @@ class Iv:
     __slots__ = ('lo', 'hi')
 
     def __init__(self, lo, hi=None):
+        """An interval [lo, hi] of doubles; a single argument gives the point interval [lo, lo]."""
         self.lo = float(lo); self.hi = float(lo if hi is None else hi)
 
-    def __repr__(self): return '[%r, %r]' % (self.lo, self.hi)
-    def is_zero(self): return self.lo == 0.0 and self.hi == 0.0
-    def finite(self): return math.isfinite(self.lo) and math.isfinite(self.hi)
-    def contains0(self): return self.lo <= 0.0 <= self.hi
-    def width(self): return self.hi - self.lo
+    def __repr__(self):
+        """Text form [lo, hi]."""
+        return '[%r, %r]' % (self.lo, self.hi)
+    def is_zero(self):
+        """True iff the interval is exactly [0, 0] (a structural zero, kept exact by the arithmetic)."""
+        return self.lo == 0.0 and self.hi == 0.0
+    def finite(self):
+        """True iff both endpoints are finite."""
+        return math.isfinite(self.lo) and math.isfinite(self.hi)
+    def contains0(self):
+        """True iff 0 lies in [lo, hi]."""
+        return self.lo <= 0.0 <= self.hi
+    def width(self):
+        """hi - lo (a double; only used to choose split coordinates, never in a verdict)."""
+        return self.hi - self.lo
 
     # arithmetic --------------------------------------------------------
     def __add__(self, o):
+        """Enclosure of x + y: [lo + lo rounded down, hi + hi rounded up]."""
         o = _iv(o)
         return Iv(_op_down(lambda a, b: a + b, self.lo, o.lo), _op_up(lambda a, b: a + b, self.hi, o.hi))
     __radd__ = __add__
 
     def __sub__(self, o):
+        """Enclosure of x - y: [x.lo - y.hi rounded down, x.hi - y.lo rounded up]."""
         o = _iv(o)
         return Iv(_op_down(lambda a, b: a - b, self.lo, o.hi), _op_up(lambda a, b: a - b, self.hi, o.lo))
 
-    def __rsub__(self, o): return _iv(o) - self
-    def __neg__(self): return Iv(-self.hi, -self.lo)
+    def __rsub__(self, o):
+        """Enclosure of o - x for a number o."""
+        return _iv(o) - self
+    def __neg__(self):
+        """Enclosure of -x (exact)."""
+        return Iv(-self.hi, -self.lo)
 
     def __mul__(self, o):
+        """Enclosure of x * y: the outward-rounded extremes of the four endpoint products; a factor that is exactly [0, 0] gives exactly [0, 0] (structural zeros of gradients, as in the search)."""
         o = _iv(o)
         if self.is_zero() or o.is_zero(): return Iv(0.0)
         los = []; his = []
@@ -73,16 +95,21 @@ class Iv:
     __rmul__ = __mul__
 
     def __truediv__(self, o):
+        """Enclosure of x / y: (-inf, inf) if y may be 0 (unless x is exactly [0, 0]), else the outward-rounded extremes of the endpoint quotients."""
         o = _iv(o)
         if self.is_zero(): return Iv(0.0)
         if o.lo <= 0.0 <= o.hi: return Iv(-INF, INF)
         inv = Iv(_op_down(lambda a, b: a / b, 1.0, o.hi), _op_up(lambda a, b: a / b, 1.0, o.lo))
         return self * inv
 
-    def __rtruediv__(self, o): return _iv(o) / self
+    def __rtruediv__(self, o):
+        """Enclosure of o / x for a number o."""
+        return _iv(o) / self
 
 
-def _iv(x): return x if isinstance(x, Iv) else Iv(x)
+def _iv(x):
+    """Coerce a number to an interval [x, x] (exact: a double is its own enclosure)."""
+    return x if isinstance(x, Iv) else Iv(x)
 
 
 # The four basic operations on doubles are correctly rounded (IEEE 754), so the exact result lies within one
@@ -95,6 +122,7 @@ _MAX = 1.7976931348623157e308
 
 
 def _op_down(f, a, b):
+    """Lower endpoint of f(a, b) for a basic IEEE operation f: the computed double is correctly rounded, so the exact result is within one ulp; stepping one ulp down is a rigorous lower bound (spec v0.3 section 1.2). NaN (undefined) widens to -inf; a finite overflow is bounded by the largest double."""
     r = f(a, b)
     if math.isnan(r): return -INF
     if r == INF: return INF if (math.isinf(a) or math.isinf(b)) else _MAX     # finite overflow
@@ -103,6 +131,7 @@ def _op_down(f, a, b):
 
 
 def _op_up(f, a, b):
+    """Upper endpoint of f(a, b), the mirror image of _op_down: one ulp up is a rigorous upper bound."""
     r = f(a, b)
     if math.isnan(r): return INF
     if r == -INF: return -INF if (math.isinf(a) or math.isinf(b)) else -_MAX
@@ -111,6 +140,7 @@ def _op_up(f, a, b):
 
 
 def hull(*xs):
+    """Smallest interval containing all the given intervals."""
     return Iv(min(x.lo for x in xs), max(x.hi for x in xs))
 
 
@@ -122,6 +152,7 @@ def clamp(x, lo, hi):
 def _mono(fun, a, increasing=True, lo_lim=-INF, hi_lim=INF):
     """Rigorous range of a monotone function on [a.lo, a.hi] from its values at the endpoints."""
     def ev(t, d):
+        """Value of fun at the endpoint t, rounded down (d=True) or up; an infinite endpoint maps to the limit value."""
         if math.isinf(t):
             return hi_lim if (t > 0) == increasing else lo_lim
         v = fun(arb(t))
@@ -131,7 +162,9 @@ def _mono(fun, a, increasing=True, lo_lim=-INF, hi_lim=INF):
     return Iv(max(ev(a.hi, True), lo_lim), min(ev(a.lo, False), hi_lim))
 
 
-def atan(a): return _mono(lambda t: t.atan(), a, True, down(-_PI / 2), up(_PI / 2))
+def atan(a):
+    """Enclosure of arctan on the interval a: arctan is increasing, so the endpoint values (Arb, rounded outward) enclose the range, within [-pi/2, pi/2]."""
+    return _mono(lambda t: t.atan(), a, True, down(-_PI / 2), up(_PI / 2))
 
 
 def asin(a):
@@ -140,10 +173,12 @@ def asin(a):
 
 
 def acos(a):
+    """Enclosure of arccos on the interval a clamped to [-1, 1]: arccos is decreasing, so the range lies between arccos(a.hi) rounded down and arccos(a.lo) rounded up."""
     return _mono(lambda t: t.acos(), clamp(a, -1.0, 1.0), False)
 
 
 def cos(a):
+    """Enclosure of cos on the interval a: the values at the endpoints (Arb, rounded outward), widened to 1 where an even multiple of pi may lie inside and to -1 where an odd multiple may (decided conservatively with Arb's pi). A non-finite or very wide interval gives [-1, 1]."""
     if not a.finite() or not (a.hi - a.lo < 6.0):
         return Iv(-1.0, 1.0)
     ca, cb = arb(a.lo).cos(), arb(a.hi).cos()
@@ -161,6 +196,7 @@ def cos(a):
 
 
 def sin(a):
+    """Enclosure of sin on the interval a, as cos(a - pi/2) on the outward-rounded shifted interval."""
     if not a.finite(): return Iv(-1.0, 1.0)
     # sin t = cos(t - pi/2), computed on the shifted interval with outward rounding
     s = Iv(down(arb(a.lo) - _PI / 2), up(arb(a.hi) - _PI / 2))
