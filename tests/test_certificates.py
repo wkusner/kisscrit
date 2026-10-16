@@ -1,15 +1,30 @@
-"""Certificates: the search's proof tree replays exactly, the independent checker accepts an honest certificate
-for the local maximum M, and rejects certificates in which the box around M is relabelled as excluded."""
-import base64, json, zlib, collections
+"""Certificates: the search's proof tree replays exactly; the independent checker accepts an honest certificate
+for the local maximum M and rejects every mutation of it (spec v0.2 section 4, gaps V1-V5); the manifest step
+detects a missing line.  Each test names the gap it covers."""
+import base64, json, zlib, collections, os, gzip
 import numpy as np
 import pytest
 import kisscrit as kc
 from kisscrit.completeness.structure import Structure, from_configuration
 from kisscrit.completeness import runner
 from kisscrit.core.certificate import replay, unpack
+from kisscrit.core import checker as ck
 from kisscrit.core.checker import check_certificate
+from kisscrit.completeness.canon import canonical_code as search_code, rotation_of, code_string
 
 THETA = (np.radians(60.0033), np.radians(63.4349489))
+
+
+def _pack(arr):
+    return base64.b64encode(zlib.compress(np.ascontiguousarray(arr).tobytes(), 9)).decode()
+
+
+def _rejected(cert, code):
+    try:
+        r = check_certificate(cert, code=code)
+    except ValueError:
+        return True
+    return not r['verified']
 
 
 @pytest.fixture(scope='module')
@@ -21,11 +36,12 @@ def m_certificate():
     sup = [tuple(p) for p, w in zip(a['pairs'], a['support']) if w]
     S = Structure(from_configuration(X, sup))
     term, st, cert = runner.run(S, *THETA, tol=1e-6, certificate=True)
-    return term, st, json.loads(json.dumps(cert))
+    code = code_string(search_code(rotation_of(runner.oriented(S))))
+    return term, st, json.loads(json.dumps(cert)), code
 
 
 def test_replay_matches_search(m_certificate):
-    term, st, cert = m_certificate
+    term, st, cert, code = m_certificate
     cnt = collections.Counter(); tb = []
     for ch in cert['charts']:
         for kind, lo, hi, extra in replay(ch):
@@ -37,19 +53,185 @@ def test_replay_matches_search(m_certificate):
 
 
 def test_checker_accepts_honest_certificate(m_certificate):
-    r = check_certificate(m_certificate[2])
-    assert r['verified'] and not r['failed'] and len(r['terminal']) >= 1
+    term, st, cert, code = m_certificate
+    r = check_certificate(cert, code=code, gen_faces=cert['faces'])
+    assert r['verified'] and not r['structural'] and not r['failed'] and len(r['terminal']) >= 1
+
+
+# ---------------------------------------------------------------- mutations
+def test_v1_shrunk_starting_box(m_certificate):
+    cert = json.loads(json.dumps(m_certificate[2])); code = m_certificate[3]
+    ch = cert['charts'][0]
+    j = next(j for j in range(1, len(ch['lo0'])) if ch['lo0'][j] != ch['hi0'][j])
+    from kisscrit.core import model as am
+    own_lo, own_hi, fixed = ck.apriori_box(am.Graph(cert['faces'], ch['modes']), cert['theta'])
+    assert ch['lo0'][j] <= own_lo[j] and ch['hi0'][j] >= own_hi[j]
+    ch['lo0'][j] = float(np.nextafter(own_lo[j], 10))          # one ulp inside the a-priori box
+    assert _rejected(cert, code)
+    cert = json.loads(json.dumps(m_certificate[2])); ch = cert['charts'][0]
+    ch['hi0'][j] = float(np.nextafter(own_hi[j], -10))
+    assert _rejected(cert, code)
+
+
+def test_v1_fixed_coordinate_must_be_a_straight_corner(m_certificate):
+    cert = json.loads(json.dumps(m_certificate[2])); code = m_certificate[3]
+    ch = cert['charts'][0]
+    j = next(j for j in range(1, len(ch['lo0'])) if ch['lo0'][j] != ch['hi0'][j])
+    ch['lo0'][j] = ch['hi0'][j] = 0.5 * (ch['lo0'][j] + ch['hi0'][j])
+    assert _rejected(cert, code)
+
+
+def test_v2_missing_required_chart(m_certificate):
+    cert = json.loads(json.dumps(m_certificate[2])); code = m_certificate[3]
+    assert len(cert['charts']) >= 1
+    cert['charts'] = cert['charts'][1:]
+    assert _rejected(cert, code)
+    cert = json.loads(json.dumps(m_certificate[2]))
+    cert['charts'][0]['complete'] = False
+    assert _rejected(cert, code)
+
+
+def test_v3_theta_range(m_certificate):
+    cert = json.loads(json.dumps(m_certificate[2])); code = m_certificate[3]
+    hi = float(np.nextafter(ck.up(ck.arb(2).atan()), 0))           # just below arctan 2
+    cert['theta'][1] = hi
+    for ch in cert['charts']: ch['hi0'][0] = hi
+    assert _rejected(cert, code)
+    cert = json.loads(json.dumps(m_certificate[2]))
+    lo = float(ck.down(2 * (ck.arb(ck.R_MIN) / (1 + ck.arb(ck.R_MIN))).asin())) + 1e-12
+    cert['theta'][0] = lo
+    for ch in cert['charts']: ch['lo0'][0] = lo
+    assert _rejected(cert, code)
+
+
+def test_v4_code_and_faces(m_certificate):
+    cert = json.loads(json.dumps(m_certificate[2])); code = m_certificate[3]
+    assert _rejected(cert, code[:-1] + ('1' if code[-1] != '1' else '2'))
+    cert['faces'][0] = cert['faces'][0][::-1]                 # reversed cycle: not the same rotation system
+    assert _rejected(cert, code)
+    cert = json.loads(json.dumps(m_certificate[2]))
+    other = json.loads(json.dumps(cert['faces'])); other[0], other[1] = other[1], other[0]
+    r = check_certificate(cert, code=code, gen_faces=other)   # a permutation of the face list is the same graph
+    assert not r['structural']
+    other[0] = other[0][::-1]
+    r = check_certificate(cert, code=code, gen_faces=other, structural=True)
+    assert any(p.startswith('V4') for p in r['structural'])
+
+
+def test_v4_checker_code_matches_search_code_on_gen_records():
+    """The checker's canonical code agrees with the search's on 50 stored gen records (and with their codes)."""
+    f = sorted(__import__('glob').glob('results/completeness/gen/gen-cond-*.jsonl.gz'))
+    if not f: pytest.skip('no gen records in the repository')
+    n = 0
+    with gzip.open(f[0], 'rt') as fh:
+        for line in fh:
+            d = json.loads(line)
+            if 'code' not in d: continue
+            S = Structure(d['faces'])
+            assert ck.canonical_code(d['faces']) == code_string(search_code(rotation_of(S))) == d['code']
+            n += 1
+            if n >= 50: break
+    assert n == 50
+
+
+def test_v5_event_stream_truncated_or_extended(m_certificate):
+    cert = json.loads(json.dumps(m_certificate[2])); code = m_certificate[3]
+    ch = cert['charts'][0]; ev = unpack(ch['events'], np.uint8).copy()
+    ch['events'] = _pack(ev[:-1]); assert _rejected(cert, code)
+    ch['events'] = _pack(np.concatenate([ev, np.array([2], np.uint8)])); assert _rejected(cert, code)
 
 
 @pytest.mark.parametrize('code', [1, 2, 5])
-def test_checker_rejects_relabelled_terminal(m_certificate, code):
-    cert = json.loads(json.dumps(m_certificate[2]))
+def test_forged_terminal_leaf(m_certificate, code):
+    """Gap 6: a terminal leaf on the census point relabelled as excluded."""
+    cert = json.loads(json.dumps(m_certificate[2])); ccode = m_certificate[3]
     for ch in cert['charts']:
         ev = unpack(ch['events'], np.uint8).copy()
         idx = np.nonzero(ev == 7)[0]
         if len(idx):
-            ev[idx[0]] = code
-            ch['events'] = base64.b64encode(zlib.compress(ev.tobytes(), 9)).decode()
+            ev[idx[0]] = code; ch['events'] = _pack(ev); break
+    assert _rejected(cert, ccode)
+
+
+def test_forged_open_leaf_and_linear_hint(m_certificate):
+    """Gap 6: an open leaf (budget run) relabelled vsum; a terminal leaf relabelled linear with a forged hint."""
+    D = json.load(open('data/n12_above1.json'))['types']
+    t = D[1]
+    X, c, s, nf = kc.solve_kkt(np.array(t['X']), [tuple(p) for p in t['pairs']])
+    a = kc.analyze(X)
+    sup = [tuple(p) for p, w in zip(a['pairs'], a['support']) if w]
+    S = Structure(from_configuration(X, sup))
+    term, st, cert = runner.run(S, *THETA, tol=1e-6, max_boxes=30, certificate=True)
+    cert = json.loads(json.dumps(cert)); code = m_certificate[3]
+    assert st['aborted']
+    r = check_certificate(cert, code=code)
+    assert not r['verified'] and (r['open'] > 0 or r['not_run'] > 0)
+    changed = False
+    for ch in cert['charts']:
+        if ch.get('not_run'): continue
+        ev = unpack(ch['events'], np.uint8).copy(); idx = np.nonzero(ev == 8)[0]
+        if len(idx): ev[idx[0]] = 2; ch['events'] = _pack(ev); changed = True; break
+    if changed:
+        assert _rejected(cert, code)
+    # a terminal leaf turned into 'linear' with a forged hint: the hint must be rejected and the fallback too
+    cert = json.loads(json.dumps(m_certificate[2]))
+    for ch in cert['charts']:
+        ev = unpack(ch['events'], np.uint8).copy(); idx = np.nonzero(ev == 7)[0]
+        if len(idx):
+            ev[idx[0]] = 3; ch['events'] = _pack(ev)
+            q = unpack(ch['q'], np.uint16).copy(); mu = unpack(ch['mu'], np.float32).copy()
+            # the hint is read after the leaf: count 1, vertex 0, value 1.0 appended at the end of the streams
+            # is only correct if this leaf is the last hint consumer; so instead give it count 0 (no rows)
+            # by inserting a zero count at the right position is involved; use an empty-mu hint via count 0
+            pos = _hint_position(ch, idx[0])
+            q = np.concatenate([q[:pos], np.array([0], np.uint16), q[pos:]]); ch['q'] = _pack(q)
             break
-    r = check_certificate(cert)
-    assert not r['verified'] and len(r['failed']) >= 1
+    assert _rejected(cert, code)
+
+
+def _hint_position(ch, leaf_index):
+    """Position in the q stream where the hint of the leaf at event index `leaf_index` would be read."""
+    ev = unpack(ch['events'], np.uint8); q = unpack(ch['q'], np.uint16)
+    pos = 0; i = 0
+    while i < leaf_index:
+        e = int(ev[i]); i += 1
+        if e == 15: continue
+        if e >= 64:
+            qlo = int(q[pos]); qhi = 65536 - int(q[pos + 1]); pos += 2
+            for present in (qlo > 0, qhi < 65536):
+                if present:
+                    cnt = int(q[pos]); pos += 1 + cnt
+        elif e == 3:
+            cnt = int(q[pos]); pos += 1 + cnt
+    return pos
+
+
+def test_perturbed_hint_keeps_verdict(m_certificate):
+    """Gap 8: scaling or perturbing a multiplier hint may move a leaf to the fallback test, never flip it."""
+    cert = json.loads(json.dumps(m_certificate[2])); code = m_certificate[3]
+    for ch in cert['charts']:
+        mu = unpack(ch['mu'], np.float32).copy()
+        if len(mu):
+            mu = (mu * 0.37 + 0.01).astype(np.float32); ch['mu'] = _pack(mu)
+    r = check_certificate(cert, code=code)
+    assert r['verified']
+
+
+def test_v5_manifest_detects_missing_line(tmp_path, m_certificate):
+    from scripts.completeness import check_certificates as cc
+    base = tmp_path; (base / 'gen').mkdir(); (base / 'cert').mkdir(); (base / 'certificates').mkdir(); (base / 'checks').mkdir()
+    codes = ['a.1', 'b.2', 'c.3']
+    with gzip.open(base / 'gen' / 'gen-t-0-of-1.jsonl.gz', 'wt') as f:
+        for c in codes: f.write(json.dumps(dict(code=c, faces=[])) + '\n')
+    with open(base / 'cert' / 'cert-t-0-of-1.jsonl', 'w') as f:
+        for c in codes: f.write(json.dumps(dict(code=c, status='excluded')) + '\n')
+    with open(base / 'certificates' / 'certificates-t-0-of-1.jsonl', 'w') as f:
+        for c in codes[:-1]: f.write(json.dumps(dict(code=c, certificate={})) + '\n')      # one line removed
+    with open(base / 'checks' / ('%s-certificates-t-0-of-1.jsonl' % cc.CHECKER_VERSION), 'w') as f:
+        for c in codes: f.write(json.dumps(dict(code=c, verified=True, terminal=[])) + '\n')
+    m = cc.manifest('t', base=str(base))
+    assert m['missing_from_certificates'] == 1 and not m['sets_equal_no_duplicates'] and not m['complete']
+    with open(base / 'certificates' / 'certificates-t-0-of-1.jsonl', 'a') as f:
+        f.write(json.dumps(dict(code=codes[-1], certificate={})) + '\n')
+    m = cc.manifest('t', base=str(base))
+    assert m['sets_equal_no_duplicates'] and m['complete']
