@@ -18,3 +18,13 @@ One dated entry per checkpoint of a controlled session (commit hash, what change
 - Test power (computed): with the exact-zero rule of `sum0` disabled, the test reports 9,008 mismatches on 200 boxes; restored, 0.
 - Full suite: 59 passed, 1 failed: `tests/test_code_standards.py::test_c_files_have_status_headers`, because its list `TRUSTED_C` names only `kc_arith.{c,h}` and the new trusted files are not on it. That file is not on this session's allowlist: stop rule. F3a is not ticked.
 - Deviations: none. Seeds: none.
+
+### 20:28 CT, scope change by Wöden (verbatim)
+> SCOPE CHANGE: you may edit tests/test_code_standards.py, only to add csrc/kc_model.c and csrc/kc_model.h to TRUSTED_C. Change nothing else in that file and do not alter the check logic. Make it a separate commit with the "Control: F3" trailer, run the full suite, record the result in docs/session-log.md, then deliver one patch set for 1fe331f..HEAD (both commits) and send a new report block. F3a is done only when the suite is fully green and the F3a line is ticked.
+
+### 20:32 CT, F3a done
+- Commits: f6385e9 (the model, test and docs), f371d08 (`TRUSTED_C` gains `csrc/kc_model.c`, `csrc/kc_model.h`; nothing else in that file changed), and the commit that adds this entry (F3a ticked).
+- Full suite after a clean rebuild (computed, HEAD f371d08): `python3 -m pytest -q` 60 passed (baseline 55 + 5 new); `make -C csrc test` 0 containment failures.
+- F3a ticked in `docs/checklist.md`; F3b unticked (a separate session).
+- Deviation: three commits rather than two. The tick and this entry can only be committed after the green run.
+- Seeds: none.
