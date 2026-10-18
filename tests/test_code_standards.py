@@ -65,7 +65,7 @@ def test_shell_scripts_have_headers():
         assert any(l.startswith('#') and len(l) > 10 for l in lines[1:]), p
 
 
-TRUSTED_C = ['csrc/kc_arith.c', 'csrc/kc_arith.h']
+TRUSTED_C = ['csrc/kc_arith.c', 'csrc/kc_arith.h', 'csrc/kc_model.c', 'csrc/kc_model.h']
 
 
 def test_c_files_have_status_headers():
