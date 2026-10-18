@@ -9,7 +9,7 @@ Version 1, 2026-10-16 (checklist F9). Update this file in the same commit as any
 | Component | Files | Status |
 |---|---|---|
 | Interval arithmetic of the checker | `kisscrit/core/interval.py` (Python reference), `csrc/kc_arith.c` (C kernel) | trusted |
-| Face model (corners, vertex sums, Jacobians) | `kisscrit/core/model.py` | trusted |
+| Face model (corners, vertex sums, Jacobians) | `kisscrit/core/model.py` (Python reference), `csrc/kc_model.c` (C kernel) | trusted |
 | Certificate replay | `kisscrit/core/certificate.py` | trusted |
 | Exclusion tests and structural checks | `kisscrit/core/checker.py` | trusted |
 | Front end: manifest and summary | `scripts/completeness/check_certificates.py` | trusted |
@@ -46,6 +46,7 @@ Two implementations, bit-for-bit identical on every tested input (`tests/test_ca
   - `_tighten`: monotonicity tightening of pentagon corners (optional; `tighten=False` skips it);
   - `Graph.corners`: all corners on a box with the validity flag `ok` (false only when the box certainly contains no valid configuration: corners outside [α, π], invalid faces);
   - `Graph.vertex_sums`: Σ corners − 2π per vertex with gradients; `Graph.directions`: edge directions at each vertex.
+- `csrc/kc_model.c`, `csrc/kc_model.h` (checklist F3a): the same model in C11 on `kc_arith`, a line-for-line reimplementation of `model.py` (same function names, same interval operations in the same order, so the same doubles). `kc_graph_new` rebuilds the rotation systems and edges from the oriented faces (`Graph.__init__`, with the same errors); `kc_corners`, `kc_vertex_sums`, `kc_directions` are `Graph.corners`, `Graph.vertex_sums`, `Graph.directions`; `alpha_arb` and `beta_pt` repeat the Arb operations of `_alpha_arb` and `_beta_pt` at 64 bits; `KC_LSTRAIGHT` is the reference's double. Fixed sizes: at most 64 vertices, 128 faces, degree 32, faces of size 3–5 (outside these, `KC_ERR_LIMIT`). `tests/test_cmodel.py` compares the IEEE bit patterns of every corner value and gradient, the validity flag, the vertex sums with their Jacobian rows and the edge directions, on charts of the `cond` certificates: the a-priori boxes, random sub-boxes, point boxes with the clamp bound from an enclosing box, and the first replay boxes. The replay itself in C is checklist F3b.
 
 ## 3. Certificates (`docs/certificate-format.md`)
 
