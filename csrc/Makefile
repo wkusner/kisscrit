@@ -16,8 +16,8 @@ all: $(BUILD)/libkisscheck.so $(BUILD)/test_arith
 $(BUILD):
 	mkdir -p $(BUILD)
 
-$(BUILD)/libkisscheck.so: kc_arith.c kc_arith.h kc_model.c kc_model.h | $(BUILD)
-	$(CC) $(CFLAGS) -shared -o $@ kc_arith.c kc_model.c $(LDFLAGS) $(LDLIBS)
+$(BUILD)/libkisscheck.so: kc_arith.c kc_arith.h kc_model.c kc_model.h kc_replay.c kc_replay.h | $(BUILD)
+	$(CC) $(CFLAGS) -shared -o $@ kc_arith.c kc_model.c kc_replay.c $(LDFLAGS) $(LDLIBS)
 
 $(BUILD)/test_arith: test_arith.c kc_arith.c kc_arith.h | $(BUILD)
 	$(CC) $(CFLAGS) -o $@ test_arith.c kc_arith.c $(LDFLAGS) $(LDLIBS)
