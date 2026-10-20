@@ -1,15 +1,20 @@
 """Front end of the C checker kernel (csrc/kc_leaf.c, checklist F4): a ctypes wrapper that runs the kernel
 on every chart of a certificate and hands every box the kernel cannot close to the Python reference checker.
 
-Status: untrusted.  The trusted parts are the C kernel (csrc/kc_*.c) and the Python reference
-(kisscrit/core/checker.py, unchanged); this file only moves arrays between them and keeps the reference's
-bookkeeping.  Spec v0.3 section 4.1: the front end decodes the streams, the kernel returns per chart a verdict
+Status: untrusted, for now.  The trusted parts are the C kernel (csrc/kc_*.c) and the Python reference
+(kisscrit/core/checker.py, unchanged).  This file is not only plumbing: it runs the structural checks and the
+starting-box checks (by calling the reference), aggregates `verified`, matches the kernel's units to the
+reference's units by position, and decides which units go to the fallback.  A bug here could accept a
+certificate.  It is not used by check_certificates.py; before a later checklist item wires it in, it must enter
+the trusted base (the TRUSTED list of tests/test_code_standards.py) or its aggregation must be re-derived by
+trusted code.  Spec v0.3 section 4.1: the front end decodes the streams, the kernel returns per chart a verdict
 per unit and counts per rule, and the Python reference handles the fallback boxes; a box that neither can
 close is reported as failed, never accepted.
-Implements: nothing mathematical.  The claim of `check_certificate` here is only that it returns what
-kisscrit/core/checker.py:check_certificate returns, with the work divided differently; scripts/completeness/
-diff_kernel.py and tests/test_ckernel.py compare the two.  It is not yet used by check_certificates.py (a
-later checklist item).
+Implements: nothing mathematical.  The claim of `check_certificate` here is that it returns what
+kisscrit/core/checker.py:check_certificate returns (verified, structural, failed, terminal, open, not_run,
+leaves), with the work divided differently; `counts` are the exception (the kernel's own attribution for the
+units it closes, the reference's for the fallback; informational only).  scripts/completeness/diff_kernel.py
+and tests/test_ckernel.py compare the two (computed, not proved).
 
 Units.  A unit is one leaf or one contraction slab of a chart's proof tree, in the order of
 kisscrit/core/certificate.py:replay: for each node in preorder, a contraction's slabs in order, or the leaf.
@@ -224,7 +229,8 @@ def _fallback(cert, ch, G, res, out, kstats):
             kstats['fallback_closed'] += 1
         else:
             out['failed'].append(dict(kind=kind, lo=lo, hi=hi)); out['verified'] = False
-    assert u == len(verdict), 'kernel and reference disagree on the number of units'
+    if u != len(verdict):                       # never `assert`: it would vanish under python -O
+        raise RuntimeError('kernel and reference disagree on the number of units (%d, %d)' % (len(verdict), u))
     _merge_counts(out['counts'], K.stats)
 
 
