@@ -91,6 +91,7 @@ Mutation tests: `tests/test_certificates.py` (each named for its gap); `tests/te
 
 - `scripts/r1/exact_lambda.py`: Proposition B.5 — rank 20 contact graphs, one nontrivial flex, per-edge second-order values along the flex: 1/6 at FCC (λ = 1/6), {1/12, 8/33, 3/22} at HCP (λ ≥ 1/12), exactly in Q(√2) and Q(√2, √3). Test: `tests/test_r1.py`.
 - `scripts/r1/exact_lambda_stress_space.py` (untrusted, control item C5a): an independent exact check of the Proposition B.5 sentence on the whole self-stress space. Everything is decided in K = Q(√2, √3) (sympy `QQ.algebraic_field`, DomainMatrix; no `simplify`). It recomputes the contact graph, R (24 × 24), a basis of the self-stresses (left null space of R) and the unit flex; gets the per-edge values q_e two ways (the stress Laplacian of Lemma B.2(b), and the second t-derivative of the closed form of φ_e(exp(t f))); and exhibits a witness y with R y = q − λ(1, …, 1), verified by exact multiplication, so q − λ·1 is orthogonal to every self-stress. It also enumerates the extreme rays of the nonnegative stress cone, with an exact sign test. Part D holds the mpmath cross-checks (floating point, not proof). Test: `tests/test_r1_stress_space.py` (exact claims at FCC and HCP, the uniform weight is a stress at FCC and not at HCP, a strictly positive HCP stress, five mutants that must fail).
+- The rest of Appendix B (constants, δ per stratum, the band run) is checklist F7 and not yet in code.
 
 ## 8. What the search is for
 

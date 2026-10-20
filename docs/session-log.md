@@ -80,3 +80,8 @@ One dated entry per checkpoint of a controlled session (commit hash, what change
 - Tests: `python3 -m pytest -q tests/test_r1_stress_space.py` 14 passed. Full suite 130 passed (baseline 116 + 14). `make -C csrc test` all containment tests passed.
 - Mutants (5 run, 5 detected): (1) HCP point 6, x + 1/7, fails the set-up; (2) per-edge value on edge (0,6) + 1/1000 fails both the route comparison and the stress claim; (3) basis stress 0 replaced by e_0 fails both the set-up and the stress claim; (4) lambda = 1/12 fails the stress claim; (5) route 2 with the linear chart c + tF disagrees with route 1.
 - Deviations: the new script and its tests are marked untrusted (see the milestone entry). Seeds: none.
+
+### 2026-10-20, control note on the C5a hashes
+- The hashes cited in the C5a entries above (8faad96, 91b9e88, 59e39ef, 87335e7) are those of the session's clone; after `git am` and the push they are f339a3b (script), b824ff9 (session log, start and milestone), 05ecc23 (tests) and 5e749ec (checklist and log). Use the origin hashes. The `docs/checklist.md` C5 sentence now cites f339a3b.
+- Restored in `docs/code-tour.md`: the sentence "The rest of Appendix B (constants, δ per stratum, the band run) is checklist F7 and not yet in code.", which the C5a patch had replaced.
+
