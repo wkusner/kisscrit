@@ -52,3 +52,20 @@ One dated entry per checkpoint of a controlled session (commit hash, what change
 - F3b ticked in `docs/checklist.md`; `docs/code-tour.md` sections 0, 2 and 3 updated.
 - Correction: the milestone report block sent in chat was stamped 10:24 CT; the clock shows the milestone at 09:56 CT and this entry at 10:09 CT.
 - Deviations: none. Seeds: none.
+
+## 2026-10-20, C5a code session (Opus 5.5, cloud clone), prompt v1.0
+
+### 12:48 CT, start
+- The repo was not attached when the session began; it was attached (read access) and cloned from origin (depth 50). Paused by Wöden 12:39 CT before the clone; resumed 12:41 CT on his message that the control chat approved.
+- START_HEAD 77711f5. `git merge-base --is-ancestor 77711f5 HEAD` succeeded; no change since 77711f5 to scripts/r1, tests/test_r1.py, docs/checklist.md, docs/code-tour.md.
+- Baseline: `python3 -m pytest -q` 116 passed (after installing `libflint-dev`; without it 42 passed, 74 skipped); `make -C csrc test` all containment tests passed.
+- Commit 3f917fb: not found (`git cat-file -t`, `git fetch origin 3f917fb`, `git log --all --oneline | grep`).
+- Versions: Python 3.13.16, sympy 1.14.0, mpmath 1.3.0, numpy 2.5.3, python-flint 0.9.0, gcc 13.3.0, FLINT 3.0.1.
+- Noted: the prompt header says v1.0 of 11:35 CT; the message that carried it was sent at 11:17 CT.
+
+### 12:58 CT, milestone: parts A-D computed, routes agree (commit 8faad96)
+- New `scripts/r1/exact_lambda_stress_space.py` (untrusted: `tests/test_code_standards.py` rejects "Status: trusted" on files outside its list, which this session may not edit). Code tour section 7 entry in the same commit.
+- Computed (script at 8faad96, exact in QQ<sqrt2+sqrt3>): FCC and HCP each have 24 contacts, rank R = 20, a 4-dimensional self-stress space and a 1-dimensional flex space in V. Route 1 (stress Laplacian) and route 2 (closed-form second derivative) agree on all 24 edges. FCC: all values are 1/6. HCP: 3/22 on the 6 equator edges, 1/12 on the 12 equator-triangle edges, 8/33 on the 6 triangle edges. At HCP the witness y with R y = q - (3/22)1 exists and is verified exactly, so f^T Q_w f = (3/22) sum w for every self-stress w. Each basis stress has ratio 3/22; HCP has 5 extreme rays, each with ratio 3/22.
+- Finding (computed, three checks): at HCP the uniform weight is NOT a self-stress. Exact `is_stress` gives False. By hand, c1 + c5 + c6 + c9 = (2, sqrt3/3, 0) is not parallel to c0 = (1, 0, 0). A float cross product gives the same. A strictly positive self-stress does exist: the sum of the extreme rays, verified exactly. This contradicts `scripts/r1/exact_lambda.py` lines 16, 132 and 135 (which call the uniform weight at HCP a stress) and the Proposition B.5 sentence "K(C) is 4-dimensional and contains the uniform stress" for HCP. The uniform weight still gives 3/22, because q - (3/22)1 sums to 0. Off-limits file: stop rule; not fixed.
+- Tests: `tests/test_code_standards.py` 6 passed. Full suite not rerun at this checkpoint. `tests/test_r1_stress_space.py` not yet written.
+- Deviations: the new script is marked untrusted (see above). Seeds: none.
