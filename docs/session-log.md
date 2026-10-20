@@ -85,3 +85,18 @@ One dated entry per checkpoint of a controlled session (commit hash, what change
 - The hashes cited in the C5a entries above (8faad96, 91b9e88, 59e39ef, 87335e7) are those of the session's clone; after `git am` and the push they are f339a3b (script), b824ff9 (session log, start and milestone), 05ecc23 (tests) and 5e749ec (checklist and log). Use the origin hashes. The `docs/checklist.md` C5 sentence now cites f339a3b.
 - Restored in `docs/code-tour.md`: the sentence "The rest of Appendix B (constants, δ per stratum, the band run) is checklist F7 and not yet in code.", which the C5a patch had replaced.
 
+
+## 2026-10-20, F4 code session (Opus 5.5, cloud clone), prompt v1.0
+
+### 11:01 CT, start
+- The repo was not attached when the session began; it was attached (read access) and cloned fresh from origin.
+- Start state: START_HEAD 77711f5 (= origin/main). `git merge-base --is-ancestor 77711f5 HEAD` succeeded; no change since 77711f5 to the read-first files.
+- Baseline: `python3 -m pytest -q` 116 passed; `make -C csrc test` 0 containment failures.
+- Versions: gcc 13.3.0, FLINT 3.0.1 (Ubuntu `libflint-dev`, installed this session), Python 3.13.16, python-flint 0.9.0, numpy 2.5.3, numba 0.68.0, sympy 1.14.0; flags `-O2 -std=c11 -Wall -Wextra -fno-fast-math -ffp-contract=off -fPIC`.
+- Pipeline spec read from Project knowledge (`code-completeness-compiled-pipeline-spec-v0.3`, header 0.3.1), not pasted.
+- Plan: sample (a) seed 20261021; fresh sample (b) seed 20261022 picks shard 174 of `--of 200` (242 candidates; the iMac's recorded search time for them is 59.6 s).
+
+### 11:24 CT, stopped before M1 coding (stop rule: a bug in a file outside the allowlist)
+- Finding: `csrc/kc_arith.c` lines 161-165, `kc_hull`, is not bit-for-bit `kisscrit/core/interval.py:hull` (lines 145-147), contrary to the contract in `csrc/kc_arith.h`. Python's `min`/`max` keep the first argument on a tie or a NaN comparison; `kc_hull` keeps the second. Failing inputs (computed, `carith.binary('hull', ...)` against `interval.hull`, HEAD 77711f5): hull([-0.0, 1], [0.0, 1]) gives lo -0.0 in Python and 0.0 in C; hull([-1, 0.0], [-1, -0.0]) gives hi 0.0 and -0.0; hull([nan, 1], [0.5, 1]) gives lo nan and 0.5; hull([0.5, 1], [nan, 2]) gives lo 0.5 and nan.
+- Impact: no C code calls `kc_hull` at 77711f5 (grep); `tests/test_carith.py::test_clamp_and_hull` uses a strictly wider second argument, so no tie occurs. F4's linear-hint test is the first caller (the `Y` of `checker.test_linear_mu`, line 263). There its arguments come from `kc_sub`, whose endpoints are never exactly ±0 or NaN (`op_down`/`op_up` map 0 to ∓5e-324 and NaN to ∓inf), so the divergence cannot reach an F4 verdict (inferred from the code, not tested). Mathematically both results enclose the same set for the ±0 cases.
+- Not changed. Waiting for Wöden.
