@@ -3,16 +3,17 @@
  * Status: trusted.
  * Implements: checklist F4; docs/lemmas.md L15 (at a realization every vertex angle sum is exactly 2 pi), L16
  * (the mean-value inclusion with a given multiplier vector mu), the model's validity flag (L3, L6-L8, L10'),
- * and bisection; paper Appendix D (certification); spec v0.3 section 4.2 (the order of the tests).  A
- * bit-for-bit reimplementation of the non-LP tests of kisscrit/core/checker.py: the same calls of the model
- * (kc_model, which is bit-for-bit kisscrit/core/model.py, checklist F3a), the same interval operations in the
- * same order, the same endpoint comparisons.  Comments of the form "checker.py: ..." name the reference line
- * that the code below them mirrors.
+ * the monotonicity tightening of L16 (through kc_corners), and bisection; paper Appendix D (certification); the
+ * order of the tests in docs/code-tour.md section 0.1.  The non-LP tests of kisscrit/core/checker.py, written
+ * with the same calls of the model (kc_model, checklist F3a), the same interval operations in the same order and
+ * the same endpoint comparisons; that the results are equal bit for bit is computed (tests/test_ckernel.py,
+ * scripts/completeness/diff_kernel.py), not proved.  Comments of the form "checker.py: ..." name the reference
+ * line that the code below them mirrors.
  *
  * Arithmetic: only kc_arith (IEEE operations stepped one ulp outward; Arb for elementary functions, rounded
  * outward) and kc_model.  Outside those, plain double operations appear only where the reference has them, as
- * separate statements in the reference's order: the centre m = 0.5 (a + b) (two roundings: the sum, then an
- * exact halving), the widths b - a and the bisection midpoint 0.5 (lo + hi) (which only choose boxes, never
+ * separate statements in the reference's order: the centre m = 0.5 (a + b) (one rounding, of the sum; the
+ * halving is exact), the widths b - a and the bisection midpoint 0.5 (lo + hi) (which only choose boxes, never
  * decide a verdict), and the terminal width test.  A verdict is decided only by comparing interval endpoints
  * with 0, or by the model's validity flag.
  * Build with -O2 -fno-fast-math -ffp-contract=off (csrc/Makefile); kc_init asserts round-to-nearest and the
@@ -109,6 +110,9 @@ int kc_leaf_context(kc_leaf_ws *w, const double *Blo, const double *Bhi)
     int ok = 0;
     int rc = kc_corners(w->g, Blo, Bhi, NULL, 0, w->C, &ok);     /* CB = G.corners(lo, hi, tighten=False) */
     if (rc != KC_OK) return rc;
+    /* m lies in B, as the mean-value inclusion needs: for finite a <= b without overflow of a + b (the
+     * coordinates are angles, |a|, |b| < 4), 2a <= a + b <= 2b exactly, rounding to nearest is monotone and
+     * maps 2a and 2b to themselves, so 2a <= fl(a + b) <= 2b, and halving a double is exact. */
     for (int j = 0; j < w->npar; j++) {                          /* m = [0.5 * (a + b) for a, b in zip(Blo, Bhi)] */
         double t = Blo[j] + Bhi[j];
         w->m[j] = 0.5 * t;
@@ -123,12 +127,24 @@ int kc_leaf_context(kc_leaf_ws *w, const double *Blo, const double *Bhi)
 int kc_leaf_hint(kc_leaf_ws *w, const double *lo, const double *hi, const uint16_t *rows, const float *vals,
                  int64_t count, int *closed, kc_iv *s_out)
 {   /* checker.py test_linear_mu(lo, hi, Blo, Bhi, CB, mu, lctx) and combination(sorted(mu.items()), Fm, JB, Y).
-     * Claim: *closed = 1 only if no point p of [lo, hi] (a sub-box of the context's B) has F(p) = 0.  Proof
-     * (L16, the mean-value inclusion): for p in [lo, hi] and the centre m of B, F_v(p) lies in
-     * F_v(m) + sum_j J_vj(B) (p_j - m_j) (Lebourg's mean value theorem for the clamped, Lipschitz model), so
-     * for any real multipliers mu, mu.F(p) lies in s = sum_v mu_v Fm_v + sum_j (sum_v mu_v J_vj) Y_j with Y_j
-     * enclosing p_j - m_j; if s excludes 0 then mu.F(p) != 0, hence F(p) != 0.  Any mu is admissible, so the
-     * hint needs no trust.  Where J is unbounded (the collapsing diagonal) s is unbounded and proves nothing. */
+     * Here F is the clamped vertex-sum map of the model (vertex sums minus 2 pi), which agrees with the true one
+     * at every valid point of the chart's region (model.py docstring, "Clamped functions"; L10').
+     * Claim: *closed = 1 only if no point p of [lo, hi] (a sub-box of the context's B) has F(p) = 0.
+     * Argument (L16, the mean-value inclusion, in the "sum first" form that checker.combination evaluates):
+     * fix real multipliers mu and let phi = mu.F, a scalar Lipschitz function on B (where the clamped model is
+     * Lipschitz).  By Lebourg's mean value theorem, phi(p) - phi(m) = g.(p - m) for some g in the Clarke
+     * generalized gradient of phi at a point of the segment [m, p], which lies in B (m is in B, see
+     * kc_leaf_context, and B is convex).  By the chain rule for a linear functional of a Lipschitz map, that
+     * gradient is contained in { mu^T A : A in the Clarke generalized Jacobian of F there }, and every such A
+     * lies entrywise in J(B) (kc_model.h contract).  So g_j = sum_v mu_v A_vj lies in the interval
+     * r_j = sum_v mu_v J_vj(B) computed below, phi(m) lies in sum_v mu_v Fm_v, p_j - m_j lies in Y_j, and
+     * phi(p) lies in s.  If s excludes 0, phi(p) != 0, hence F(p) != 0.  (A row-by-row inclusion would give
+     * the wider interval sum_v mu_v (Fm_v + sum_j J_vj Y_j); interval arithmetic is only subdistributive, so
+     * the sum-first form needs the scalar argument above.  Precise references for the two theorems belong in
+     * docs/lemmas.md L16; they are not restated here.)  Any mu is admissible, so the hint needs no trust.
+     * Soundness does not need more; for information: where J has an unbounded entry (the collapsing diagonal,
+     * where kc_model returns (-inf, inf)), the product with Y_j (never exactly [0, 0], since kc_sub steps
+     * outward) is unbounded, so s cannot exclude 0. */
     *closed = 0;
     if (count <= 0) return KC_OK;                                /* checker.py: if not mu: return False */
     for (int64_t i = 0; i < count; i++)
@@ -162,7 +178,8 @@ int kc_leaf_hint(kc_leaf_ws *w, const double *lo, const double *hi, const uint16
 
 static int argmax_first(const double *x, int len)
 {   /* int(np.argmax(w)) for a list of doubles: the first index of the maximum; a NaN counts as the maximum,
-     * so the first NaN wins (numpy's documented behaviour).  Only chooses the split coordinate. */
+     * so the first NaN wins (computed with numpy 2.5.3: argmax([1, nan, 2, nan]) = 1, argmax([3, 1, 3]) = 0,
+     * argmax([nan, 5]) = 0).  Only chooses the split coordinate. */
     int k = 0;
     for (int j = 0; j < len; j++) {
         if (isnan(x[j])) return j;
@@ -175,9 +192,14 @@ static int exclude_rec(kc_leaf_ws *w, const double *lo, const double *hi, int de
                        int *verdict, int64_t *cnt)
 {   /* checker.py exclude(lo, hi, parent, depth) without test_linear (both calls), test_gordan, test_motzkin.
      * Claim: *verdict != KC_V_UNCLOSED only if [lo, hi] contains no critical configuration: either one of the
-     * tests of kc_leaf_invalid_vsum proves it on the whole box, or the box is the union of the two halves of
-     * its widest coordinate (lower [lo_k, mid], upper [mid, hi_k], together the whole box since
-     * lo_k <= mid <= hi_k) and each half is proved the same way, recursively. */
+     * tests of kc_leaf_invalid_vsum proves it on the whole box, or the box is covered by the two halves of
+     * its widest coordinate (lower [lo_k, mid], upper [mid, hi_k]) and each half is proved the same way,
+     * recursively.  Cover: for finite lo_k <= hi_k without overflow of lo_k + hi_k, lo_k <= mid <= hi_k (as for
+     * m in kc_leaf_context), so the halves cover the box; if the sum overflowed to +inf, mid = +inf >= hi_k and
+     * the lower half alone contains the box.  The argument assumes finite endpoints; with an infinite endpoint
+     * the widths and midpoint can be inf or NaN and the cover is not claimed here (boxes of the format come
+     * from a finite starting box by grid contraction and midpoint splits; a finiteness check on lo0, hi0 is
+     * an open proposal for the front end and the reference together). */
     *verdict = KC_V_UNCLOSED;
     w->pieces += 1;                                              /* self.pieces += 1 */
     if (w->pieces > max_pieces) return KC_OK;                    /* if self.pieces > MAX_PIECES: return False */
@@ -271,7 +293,9 @@ static int check_unit(kc_leaf_ws *w, const double *lo, const double *hi, const k
 {   /* One leaf (events 1-6) or one slab.  checker.py check_certificate (linear leaf): if kind == 'linear' and
      * extra: C_ = corners(lo, hi, tighten=False); if test_linear_mu(lo, hi, lo, hi, C_, extra): continue; then
      * exclude(lo, hi).  exclude_slab: if test_linear_mu(lo, hi, Blo, Bhi, CB, mu, lctx): return True; (the LP
-     * test_linear_bound, left out); return exclude(lo, hi, parent).  own_context = 1 for the leaf (B is the
+     * test_linear_bound, left out); return exclude(lo, hi, parent).  A leaf's hint is present only for a linear
+     * leaf (event 3) of a chart with a mu stream (kc_replay.h, kc_node), as the reference's
+     * `kind == 'linear' and extra` requires.  own_context = 1 for the leaf (B is the
      * leaf's own box), 0 for a slab (the context of the contraction's box is already in the workspace).
      * Claim: *verdict != KC_V_UNCLOSED only if the box contains no critical configuration (the claims of
      * kc_leaf_hint and kc_leaf_exclude). */

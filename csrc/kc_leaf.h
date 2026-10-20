@@ -4,8 +4,13 @@
  * Status: trusted.  Part of the trusted base (transfer prompt v1.2, code standards; spec v0.3 sections 4.1-4.2).
  * Implements: checklist item F4 (the kernel's leaf tests): the exclusion tests of docs/lemmas.md L15 (vertex
  * sums equal 2 pi at a realization) and L16 (mean-value inclusion with given multipliers), the model's validity
- * flag (L3, L6-L8, L10'), and bisection; paper Appendix D (certification).  Each test is a bit-for-bit
- * reimplementation of the matching function of kisscrit/core/checker.py (the Python reference):
+ * flag (L3, L6-L8, L10'), the monotonicity tightening of L16 (through kc_corners), and bisection; paper
+ * Appendix D (certification).  Each test is written to perform the same operations, in the same order, as
+ * the matching function of kisscrit/core/checker.py (the Python reference); that the results are equal bit for
+ * bit is computed, not proved (tests/test_ckernel.py and scripts/completeness/diff_kernel.py, on `cond`
+ * certificates; see docs/session-log.md for samples and commits).  The soundness of every closed verdict rests
+ * on the enclosure properties of kc_model and kc_arith, which a referee reads from csrc/kc_model.c and
+ * csrc/kc_arith.c directly (their equality with the Python reference is likewise computed):
  *   kc_leaf_invalid_vsum   Checker.test_invalid_vsum on G.corners(lo, hi, tighten=0 or 1);
  *   kc_leaf_context        Checker.linear_context (the centre m, F(m), J(B));
  *   kc_leaf_hint           Checker.test_linear_mu and checker.combination;
@@ -18,20 +23,34 @@
  * them: certificate format v2 carries no Gordan or Motzkin witness (that is format v3, checklist F5), and a
  * linear program is outside the kernel's arithmetic.  A box that the kernel's own tests cannot exclude is
  * returned as KC_V_UNCLOSED, and the front end (kisscrit/ckernel.py, untrusted) hands it to the unchanged
- * Python reference.  So the kernel never rejects a box for good: it either proves the exclusion, or defers.
+ * Python reference.  So the kernel never rejects an excludable leaf or slab: it either proves the exclusion,
+ * or defers.  (Terminal leaves wider than the tolerance and open leaves are failures in the reference too, and
+ * the kernel reports them as such.)
  *
- * Order of the tests (spec v0.3 section 4.2).  For format v2 the only witness is the multiplier hint, so step 1
- * ("the witness test, without tightening") is the hint test, run exactly where the reference runs it: on a
- * linear leaf with its own box as B, and on a slab with the contraction's box as B.  Then step 2 (invalid and
- * vertex sums, without tightening), step 4 (the same with monotonicity tightening, when the chart has a
- * pentagon), step 6 (bisection with the reference's depth and piece limits), step 7 (unclosed).  Steps 3 and 5
- * need a linear program in format v2 and are left to the fallback.
+ * Order of the tests (the order of docs/code-tour.md section 0.1).  For format v2 the only witness is the
+ * multiplier hint, so the first test is the hint test, run exactly where the reference runs it: on a linear
+ * leaf with its own box as B, and on a slab with the contraction's box as B.  Then invalid and vertex sums
+ * without tightening, the same with monotonicity tightening (when the chart has a pentagon), bisection with
+ * the reference's depth and piece limits, and finally "unclosed".  The linear test with an LP-chosen mu and the
+ * Gordan and Motzkin tests need a linear program in format v2 and are left to the fallback.
  *
  * Soundness does not depend on the order or on the limits: every closed box is closed by an interval proof
- * (an enclosure that excludes 0, or a validity flag that is 0 only when no valid point exists).  The order and
- * the limits only make the kernel close a subset of what the reference closes: on any box, the reference runs
- * the kernel's tests in the same order with other tests interleaved, and its bisection tree is the kernel's
- * tree with some nodes closed earlier, so it never needs more pieces than the kernel.
+ * (an enclosure that excludes 0, or a validity flag that is 0 only when no valid point exists).
+ *
+ * Relation to the reference (an argument about the code, not a test).  On a box where the reference returns
+ * without raising, the kernel closes it only if the reference does.  The reference runs the kernel's tests
+ * in the same order with other tests interleaved, on the same inputs, so a test that closes the box in the
+ * kernel closes it in the reference unless an earlier interleaved test already has.  For bisection: the
+ * reference visits a subset of the kernel's nodes, in the same depth-first order, with the same split
+ * coordinate and midpoint (it stops early at nodes its extra tests close), so its piece counter at each node
+ * it visits is at most the kernel's, and it reaches neither limit where the kernel does not.  The proviso
+ * matters: the reference also evaluates the model at the centre of every box it tests (in test_linear and
+ * test_gordan's set-up, G.corners(m, m, lo, hi)), and that evaluation can raise (model.intersect's
+ * ArithmeticError, which signals a bug in an enclosure), as can its linear-program code.  The kernel performs no
+ * such evaluation, so it can close a box on which the reference raises, and would not see that signal.
+ * scripts/completeness/diff_kernel.py runs the reference on every chart it compares and counts a chart on which
+ * the reference raises as rejecting all its units, so such a case shows up there as "C accepts, reference
+ * rejects".
  */
 #ifndef KC_LEAF_H
 #define KC_LEAF_H
@@ -56,7 +75,9 @@
 #define KC_V_TERM_WIDE    8   /* a terminal leaf wider than the tolerance: a failure, as in the reference */
 #define KC_V_OPEN         9   /* an open leaf: a failure, as in the reference */
 
-/* Counters per chart, indexed by these constants (the reference's Checker.stats keys) */
+/* Counters per chart, indexed by these constants and named by the reference's Checker.stats keys.  They are
+ * the kernel's own attribution: where the reference closes a node earlier by a test the kernel leaves out (an
+ * LP-chosen linear test), its counters differ.  Informational only (V7); no verdict reads them. */
 #define KC_C_INVALID      0   /* 'invalid' */
 #define KC_C_VSUM         1   /* 'vsum' */
 #define KC_C_HINT         2   /* 'linear-hint' */
@@ -103,7 +124,8 @@ int kc_leaf_hint(kc_leaf_ws *w, const double *lo, const double *hi, const uint16
  * invalid/vsum (when the graph has a pentagon), then bisection of the widest coordinate at its midpoint, the
  * lower half first, down to max_depth and max_pieces (each at most the reference's).  *verdict receives
  * KC_V_INVALID, KC_V_VSUM, KC_V_INVALID_T, KC_V_VSUM_T, KC_V_BISECT or KC_V_UNCLOSED; counts (KC_NCOUNT
- * entries, may be NULL) are incremented as the reference's Checker.bump would be, for a closed box only.
+ * entries, may be NULL) are incremented, per piece, by the kernel's own attribution (see the counters
+ * above), for a closed box only.
  * Returns KC_OK, a kc_corners error code, or KC_LERR_ARG. */
 int kc_leaf_exclude(kc_leaf_ws *w, const double *lo, const double *hi, int max_depth, int max_pieces,
                     int *verdict, int64_t *counts);
