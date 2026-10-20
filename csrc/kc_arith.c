@@ -159,8 +159,11 @@ kc_iv kc_clamp(kc_iv a, double lo, double hi)
 }
 
 kc_iv kc_hull(kc_iv a, kc_iv b)
-{
-    kc_iv r = { a.lo < b.lo ? a.lo : b.lo, a.hi > b.hi ? a.hi : b.hi };
+{   /* interval.py hull(a, b) = Iv(min(a.lo, b.lo), max(a.hi, b.hi)).  Python's min and max keep the first
+     * argument unless the second compares strictly smaller (larger), so on a tie (including 0.0 against -0.0)
+     * or a comparison with a NaN the first argument's endpoint is kept.  The conditionals below are exactly
+     * that rule; the result contains both intervals whenever their endpoints are not NaN. */
+    kc_iv r = { b.lo < a.lo ? b.lo : a.lo, b.hi > a.hi ? b.hi : a.hi };
     return r;
 }
 

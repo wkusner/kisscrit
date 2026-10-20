@@ -68,3 +68,24 @@ def test_clamp_and_hull():
         assert _same(I.clamp(a, -1.0, 1.0), C.clamp(a, -1.0, 1.0))
         b = Iv(a.lo - 1, a.hi + 0.5)
         assert _same(I.hull(a, b), C.binary('hull', a, b))
+
+
+def _bits(x):
+    """The IEEE bit patterns of both endpoints (so 0.0 and -0.0 differ, and NaNs compare by payload)."""
+    import struct
+    return struct.pack('<dd', x.lo, x.hi)
+
+
+def test_hull_ties_and_nan():
+    """kc_hull follows Python's min and max exactly (interval.hull): on a tie or a NaN comparison the first
+    argument is kept.  The first four pairs are the failing inputs found in the F4 session (2026-10-20); the
+    rest are every ordered pair of endpoints drawn from {-1, -0.0, 0.0, 1, nan, -inf, inf}, compared by bit
+    pattern."""
+    nan, inf = math.nan, math.inf
+    found = [(Iv(-0.0, 1.0), Iv(0.0, 1.0)), (Iv(-1.0, 0.0), Iv(-1.0, -0.0)),
+             (Iv(nan, 1.0), Iv(0.5, 1.0)), (Iv(0.5, 1.0), Iv(nan, 2.0))]
+    vals = [-1.0, -0.0, 0.0, 1.0, nan, -inf, inf]
+    grid = [(Iv(a, c), Iv(b, d)) for a in vals for b in vals for c in vals for d in vals]
+    bad = [(a, b, I.hull(a, b), C.binary('hull', a, b)) for a, b in found + grid
+           if _bits(I.hull(a, b)) != _bits(C.binary('hull', a, b))]
+    assert not bad, '%d mismatches, first %r' % (len(bad), bad[:3])

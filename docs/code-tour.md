@@ -22,7 +22,7 @@ Every Python file says which in its module docstring (`Status:` line, enforced b
 
 ## 0.1 The arithmetic contract and the structural checks (restated from the specifications, which are Project documents outside this repository)
 
-Arithmetic: `+ − × ÷ √` on doubles are IEEE correctly rounded and are stepped one ulp outward; `sin, cos, atan, asin, acos` and π are evaluated as Arb balls at 64 bits and rounded outward to doubles; no verdict depends on the system libm, on `-ffast-math`, on FMA contraction, on a floating-point LP result, or on the search's rounding.
+Arithmetic: `+ − × ÷ √` on doubles are IEEE correctly rounded and are stepped one ulp outward; `sin, cos, atan, asin, acos` and π are evaluated as Arb balls at 64 bits and rounded outward to doubles; no verdict depends on the system libm, on `-ffast-math`, on FMA contraction, on a floating-point LP result, or on the search's rounding. Minima and maxima of endpoints follow Python's `min` and `max`: the first argument is kept unless the next one compares strictly smaller (larger), so ties between 0.0 and −0.0 and comparisons with a NaN give the same bits in C as in the reference. Read for `kc_hull`, `kc_mul` and the model's `intersect` (2026-10-20, F4 session); `kc_hull` was brought in line then, and `tests/test_carith.py::test_hull_ties_and_nan` compares it by bit pattern on ties and NaNs.
 
 Structural checks V1–V5 are listed in `docs/certificate-format.md` §4; V6 (the checker imports search code only as an untrusted oracle) is `tests/test_checker_imports.py`; V7 (the checker reports its own bisections and fallbacks) is `check_certificates.py --summary`; V8 (check results are pushed incrementally) is `scripts/completeness/mac_run.sh` phase C.
 
