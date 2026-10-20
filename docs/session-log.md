@@ -109,3 +109,10 @@ One dated entry per checkpoint of a controlled session (commit hash, what change
 - `tests/test_carith.py`: new `test_hull_ties_and_nan`, comparing bit patterns (the existing `_same` treats 0.0 and -0.0 as equal) on the four failing inputs and all 2,401 interval pairs with endpoints in {-1, -0.0, 0.0, 1, nan, -inf, inf}. On the old `kc_hull` it failed with 1,180 mismatches (computed, HEAD 323dbd8 plus the test); on the new one it passes.
 - F2 tests rerun (computed): `make -C csrc test` 0 containment failures; `python3 -m pytest -q tests/test_carith.py` 14 passed; `objdump -d build/libkisscheck.so` shows no FMA instruction.
 - `docs/code-tour.md` section 0.1: the min/max tie rule, read for `kc_hull`, `kc_mul` and the model's `intersect`.
+
+### 13:05 CT, milestone M1: C leaf tests compile and agree on a trial
+- Correction: the previous entry is stamped 12:40 CT; the clock read 12:35 CT when it was committed (76dd5d4).
+- Commit: the one that adds this entry. `csrc/kc_leaf.{c,h}` (new: `kc_leaf_invalid_vsum`, `kc_leaf_context`, `kc_leaf_hint`, `kc_leaf_exclude`, `kc_check_chart`); `csrc/Makefile` builds it into `libkisscheck.so` (nothing else changed); `TRUSTED_C` gains the two files (nothing else changed); `docs/code-tour.md` sections 0 and 4.
+- Build: `make -C csrc` without warnings; `objdump -d build/libkisscheck.so` shows no FMA instruction.
+- Order of tests (spec v0.3 §4.2, read from Project knowledge): the hint test is step 1 (the only witness in format v2), where `check_certificate` runs it; then untightened invalid/vsum, tightened (charts with a pentagon), bisection with the reference's limits; LP tests left to the fallback.
+- Trial differential (computed with the working-tree `scripts/completeness/diff_kernel.py` and `kisscrit/ckernel.py`, committed later; a check, not a reported result): 30 certificates, seed 1, 12,580 units; C closed 12,579, the reference accepted all of them; 1 unclosed (a Gordan leaf), which the reference accepts; C accepts where the reference rejects: 0; per-test comparisons 36,574 (invalid/vsum untightened 12,580, tightened 12,540, hint interval s as bit patterns 11,454), 0 mismatches.

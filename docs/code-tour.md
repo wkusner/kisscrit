@@ -12,6 +12,8 @@ Version 1, 2026-10-16 (checklist F9). Update this file in the same commit as any
 | Face model (corners, vertex sums, Jacobians) | `kisscrit/core/model.py` (Python reference), `csrc/kc_model.c` (C kernel) | trusted |
 | Certificate replay | `kisscrit/core/certificate.py` (Python reference), `csrc/kc_replay.c` (C kernel) | trusted |
 | Exclusion tests and structural checks | `kisscrit/core/checker.py` | trusted |
+| Leaf tests of the C kernel (non-LP exclusions, per-chart driver) | `csrc/kc_leaf.c`, `csrc/kc_leaf.h` | trusted |
+| Front end of the C kernel (ctypes, Python fallback) | `kisscrit/ckernel.py` | untrusted (moves arrays; the verdicts come from the C kernel and from `checker.py`) |
 | Front end: manifest and summary | `scripts/completeness/check_certificates.py` | trusted |
 | Computer-assisted lemmas P, R, U | `scripts/completeness/lemmas.py` | trusted |
 | Candidate generation and its pruning | `kisscrit/completeness/candidates.py`, `canon.py` | trusted, with the known gap G1 (floating-point LP discard; checklist F6) |
@@ -70,6 +72,13 @@ Two implementations, bit-for-bit identical on every tested input (`tests/test_ca
    - One import from untrusted code: `test_linear_bound` imports `kisscrit.completeness.fast` and uses its simplex only to propose a multiplier vector μ for a contraction slab; the proof is the interval `combination` with that μ, and any real μ is admissible there, so a wrong μ can only make the test fail (`tests/test_checker_imports.py` keeps this the only such import).
    - Terminal leaves are not exclusions: `check_certificate` records them and checks that they are no wider than the certificate's `tol`; completeness needs them identified (checklist C4).
 4. `scripts/completeness/check_certificates.py`: `manifest` (V5: gen = cert = certificates = checks, no duplicates, every code verified or terminal-and-identified) and `summary` (V7: the checker's own bisections and fallbacks).
+
+5. `csrc/kc_leaf.c`, `csrc/kc_leaf.h` (checklist F4, spec v0.3 §4.2): the exclusion tests of `Checker` that need no linear program, in C, bit for bit:
+   - `kc_leaf_invalid_vsum` is `test_invalid_vsum` on `G.corners(lo, hi, tighten=0|1)`;
+   - `kc_leaf_context` and `kc_leaf_hint` are `linear_context` and `test_linear_mu` with `combination` (the hint μ from the certificate, rows in increasing order, the same `Y` and summation order);
+   - `kc_leaf_exclude` is `exclude` without `test_linear`, `test_gordan`, `test_motzkin`: untightened and tightened invalid/vsum, then bisection with the same `MAX_DEPTH`, `MAX_PIECES`, split coordinate (first maximum width) and order of the halves;
+   - `kc_check_chart` is the per-chart loop of `check_certificate`: it replays the chart with `kc_replay` and gives every leaf and slab a verdict (closed by a named test, unclosed, terminal within or beyond `tol`, open).
+   The left-out tests choose μ or y by a floating-point LP (HiGHS, or the search's simplex) and format v2 has no Gordan/Motzkin witness, so a box they would be needed for is returned unclosed; `kisscrit/ckernel.py` (untrusted) hands it to the unchanged reference calls. The kernel's closures are a subset of the reference's: the reference runs the same tests in the same order with others interleaved, and its bisection tree is the kernel's with some nodes closed earlier. `scripts/completeness/diff_kernel.py` compares kernel and reference unit by unit (verdicts, and each test's result as bit patterns), and `tests/test_ckernel.py` runs a small sample of it plus compiled mutants of `kc_leaf.c`.
 
 Mutation tests: `tests/test_certificates.py` (each named for its gap); `tests/test_checker_imports.py` (V6).
 
