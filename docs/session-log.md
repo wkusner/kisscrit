@@ -28,3 +28,27 @@ One dated entry per checkpoint of a controlled session (commit hash, what change
 - F3a ticked in `docs/checklist.md`; F3b unticked (a separate session).
 - Deviation: three commits rather than two. The tick and this entry can only be committed after the green run.
 - Seeds: none.
+
+## 2026-10-20, F3b code session (Opus 5.5, cloud clone), prompt v1.1
+
+### 09:37 CT, start
+- The repo was not attached when the session began; it was attached (read access) and cloned fresh from origin.
+- Start state: START_HEAD c318385 ("gen cond", iMac; the three commits after 2ef4b4c touch only `results/`). `git merge-base --is-ancestor 2ef4b4c HEAD` succeeded; no change since 2ef4b4c to the read-first files.
+- Baseline: `python3 -m pytest -q` 60 passed; `make -C csrc test` 0 containment failures.
+- Versions: gcc 13.3.0, FLINT 3.0.1 (Ubuntu `libflint-dev`), Python 3.13.16, numpy 2.5.3, numba 0.68.0, python-flint 0.9.0, sympy 1.14.0; flags `-O2 -std=c11 -Wall -Wextra -fno-fast-math -ffp-contract=off -fPIC`.
+- Measured on all 45,260 `cond` certificates (70,235 run charts): box dimension n from 1 to 14; largest chart 1,387,325 events (cond 39-of-40), q stream up to 5,198,740 entries, mu up to 2,501,465; proof-tree stack at most 85 entries; every run chart has a mu stream.
+- Finding: `certificate.replay`'s docstring says it raises ValueError, but a q read past the end of q, or a coordinate k >= n, raises IndexError. `scripts/completeness/check_certificates.py` treats any exception as a failed certificate, so a malformed chart is still rejected. Not changed (off the allowlist); the C replay reports both, as `KC_RERR_INDEX` for the IndexError sites.
+
+### 09:56 CT, milestone: replay compiles and matches
+- Commits: a975fa4 (`csrc/kc_replay.{c,h}`; `csrc/Makefile` builds it into `libkisscheck.so`; `TRUSTED_C` gains the two files, nothing else in that file changed), 4c3fc6c (`tests/test_creplay.py`).
+- `objdump -d build/libkisscheck.so` shows no FMA instruction.
+
+### 10:09 CT, F3b done
+- Replay test (computed, `tests/test_creplay.py`, tolerance 0, IEEE bit patterns): 1,000 certificates drawn with seed 20261020, 1,560 charts, 550,688 nodes, 0 mismatches, all complete.
+- Extra runs, not in the suite (computed with the same functions): 5,000 certificates, seed 7: 7,746 charts, 6,360,896 nodes, 5,051,007 slabs, 0 mismatches; the heaviest chart (1,387,325 events, 503,007 nodes): 0 mismatches.
+- Malformed streams: 47 hand-made charts reach each of the 5 `raise ValueError` lines and 8 IndexError reads, plus edge cases (no mu stream, empty, short and repeated hints, a coordinate contracted twice in a round, point boxes, -0.0, infinities, NaN, subnormals, n = 0); truncated and extended events, q and mu on 12 real charts (72 cases); 720 random edits of real charts (every end occurs). C and Python agree on every node and on where and how the replay ends.
+- Test power (computed, mutant copies of `kc_replay.c` compiled with the same flags; hand-made cases plus 60 certificates): `fma()` grid value 985 mismatching nodes; grid as (1 - t) lo + t hi 1,047; midpoint one ulp low 1,159; upper slab before lower 124; midpoint lo + 0.5 (hi - lo) 2, only on the wide-box case (it equals 0.5 (lo + hi) whenever hi - lo is exact).
+- Full suite after a clean rebuild: `python3 -m pytest -q` 116 passed (baseline 60 + 56 new); `make -C csrc test` 0 containment failures.
+- F3b ticked in `docs/checklist.md`; `docs/code-tour.md` sections 0, 2 and 3 updated.
+- Correction: the milestone report block sent in chat was stamped 10:24 CT; the clock shows the milestone at 09:56 CT and this entry at 10:09 CT.
+- Deviations: none. Seeds: none.
