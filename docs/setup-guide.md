@@ -60,18 +60,36 @@ The sandbox is a separate test copy of Zenodo. Its DOIs are fake (prefix 10.5072
 The server runs Ubuntu 26.04 and you have no admin rights. So the first step is to find out what the sysadmin must do. `scripts/full/kisscrit-preflight.sh` (also in the Meta inbox and the Project) does that:
 - it tests everything the run needs, without sudo;
 - it saves a report;
-- it ends with a ready-to-send email to the sysadmin that lists only what is missing.
+- it ends with a ready-to-send email to the sysadmin that lists only what is missing;
+- with `--try-install`, it also builds the repo's C kernel with the server's compiler and runs its tests (below).
+
+This version was tested only in a cloud container (Ubuntu 24.04), not on the server: the first run on the server is yours.
 
 From your Mac:
 
 ```
 scp ~/Meta_Inbox/kisscrit-preflight.sh you@server:~/
+# for --try-install only (the repository is private): from your laptop, inside your clone of kisscrit; about 360 MB, mostly the certificates
+git archive HEAD csrc kisscrit tests scripts/completeness pyproject.toml results/completeness/certificates | ssh you@server 'mkdir -p ~/kisscrit-src && tar -x -C ~/kisscrit-src'
 ssh you@server
 bash kisscrit-preflight.sh                  # quick checks, about a minute
-bash kisscrit-preflight.sh --try-install    # optional: also installs FLINT and a C compiler into ~/kisscrit-preflight and compiles a test
+bash kisscrit-preflight.sh --try-install --repo ~/kisscrit-src    # optional: also installs FLINT and a C compiler into ~/kisscrit-preflight, builds and tests the C kernel
 ```
 
-`--try-install` needs conda-forge to be reachable. It answers the two open questions: whether the toolchain installs without root, and whether conda-forge's `libflint` ships its headers. Delete its test install afterwards with `rm -rf ~/kisscrit-preflight`.
+Options (all optional):
+- `--need-disk-gb N`: the free space the run needs (default 50; an estimate, to be revised after milestone F5/F6). The report lists free space for your home, `/tmp` and the filesystem of the results directory, and the sysadmin request uses N.
+- `--results-dir DIR`: where the run will keep its files (default `~/kisscrit-run`). The disk requirement is checked on its filesystem; nothing is created there.
+- `--repo DIR`: the copy of the repository for `--try-install` (above). Without it, the script uses the repository it sits in, if it is run from one; otherwise the build and tests are reported as not run.
+
+`--try-install` needs GitHub and conda-forge to be reachable. It answers the open questions: whether the toolchain installs without root, whether conda-forge's `libflint` ships its headers, and whether the C kernel builds and passes its tests with the server's compiler. After the environment is created it:
+- builds `csrc/` with the environment's compiler and the repo's flags (`-O2 -fno-fast-math -ffp-contract=off`) and runs `make -C csrc test`;
+- scans the built library for fused multiply-add instructions (there must be none; on a machine other than x86-64 or aarch64, or without `objdump`, it says "not checked");
+- runs `tests/test_carith.py`, `test_cmodel.py`, `test_creplay.py` and `test_ckernel.py`. The result is "ok" only if every test passes; skipped tests, or missing certificates, give a warning, never an "ok";
+- prints a build record for the report: machine, OS and glibc, compiler, FLINT, Python, numpy, numba and python-flint versions, cores and memory.
+
+In the cloud container it took 271 s (the four pytest files 163 s, 81 tests) and left 3.1 GB in `~/kisscrit-preflight`; the server may differ.
+
+Delete its test install afterwards with `rm -rf ~/kisscrit-preflight`.
 
 The report is saved to `~/kisscrit-preflight-report.txt`.
 - Send the "Draft request to the sysadmin" section to your sysadmin.
@@ -82,21 +100,22 @@ The rest of this section explains what the script checks, in case you want to do
 ```
 nproc                 # cores: 32 or 64 expected
 free -g               # memory in GB
-df -h ~               # free disk in your home directory
+df -h ~ /tmp          # free disk in your home directory and in /tmp
 which git tmux crontab curl
-curl -sI https://github.com | head -1
-curl -sI https://zenodo.org | head -1
-curl -sI https://sandbox.zenodo.org | head -1
+curl -s -o /dev/null -w '%{http_code}\n' "https://github.com/conda-forge/miniforge/info/refs?service=git-upload-pack"
+curl -s -o /dev/null -w '%{http_code}\n' "https://zenodo.org/api/records?size=1"
+curl -s -o /dev/null -w '%{http_code}\n' "https://sandbox.zenodo.org/api/records?size=1"
 loginctl show-user "$USER" -p Linger
 ```
 
 What you want to see:
-- **Disk:** at least 50 GB free in `~`. Certificates are written locally before they upload. The code session revises this figure after its pilot (milestone F5).
+- **Disk:** at least 50 GB free in `~` (or where `--results-dir` points). Certificates are written locally before they upload. This figure is an estimate; the code session revises it after milestones F5/F6.
 - **`which`:** prints a path for each of git, tmux, crontab and curl.
   - Missing ones go in the sysadmin request (`sudo apt install tmux cron curl`).
   - git and gh also come with the run environment, so tmux and cron are the ones that matter.
-- **The three `curl` lines:** each prints a line starting with `HTTP/` (any status code).
-  - If one hangs or errors, the server cannot reach that site. Ask IT to allow outbound HTTPS to github.com, zenodo.org and sandbox.zenodo.org.
+- **The three `curl` lines:** each prints an HTTP status code. The script classifies them the same way: 2xx and 3xx are fine; 4xx and 5xx mean the host answered but not with success (a proxy or firewall often answers 403 or 407 for a blocked host), and the script warns with the code; `000`, an error or a hang means the server cannot reach that site, and the script reports a failure.
+  - The first line goes to github.com through the git protocol's own address, because the bare `https://github.com` returned 400 in the cloud container, where it was wrongly counted as reachable.
+  - If one hangs or errors, ask IT to allow outbound HTTPS to github.com, zenodo.org and sandbox.zenodo.org.
   - This is the one thing that would block the run.
 - **`Linger=yes`:** lets the run continue as a background service after you log out.
   - If it says `no`: you have no root, so this goes in the sysadmin request (`sudo loginctl enable-linger <you>`).
