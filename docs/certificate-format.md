@@ -85,7 +85,7 @@ Evaluated exactly as stated, the splits and contractions leave no gaps or overla
 Before any box (structural checks; `kisscrit/core/checker.py:structural_check`):
 - **V1.** The checker derives its own a-priori starting box per chart from L3, L4, L7 and L10′ in Arb, rounded outward, and requires the certificate's box to contain it coordinatewise.
 - **V2.** The checker recomputes the required pentagon regions from the faces (L11′) and requires each to be present and complete.
-- **V3.** θ_lo ≤ 2 arcsin(r_min/(1 + r_min)) (the contact angle of two spheres of radius r_min on a unit sphere) and θ_hi ≥ arctan 2 (the icosahedral angle), decided in Arb.
+- **V3.** θ_lo ≤ 2 arcsin(r_min/(1 + r_min)) (the contact angle of two spheres of radius r_min on a unit sphere) and θ_hi ≥ arctan 2 (the icosahedral angle), decided in Arb; and θ_lo, θ_hi are finite with THETA_FLOOR ≤ θ_lo < θ_hi ≤ THETA_CEIL (1.0 and 1.5, `kisscrit/core/model.py`), the domain on which the model's enclosures are valid (`docs/lemmas.md` L17).
 - **V4.** A checker-owned canonical code of the faces' rotation system equals the record's `code`, and the faces equal the gen record's faces up to cyclic rotation. Mirror images share a code by construction (the reflection of a critical configuration is critical).
 - **V5.** The manifest step (`scripts/completeness/check_certificates.py --manifest`): the sets of codes in gen, cert, certificates and checks are equal and duplicate-free, every code is verified, and every terminal box is identified (C4) before completeness is reported.
 
@@ -93,7 +93,7 @@ Then, for every leaf and every removed slab:
 
 For every leaf and every removed slab, the checker re-derives the stated exclusion from its own interval evaluation of the model. It recomputes Gordan and Motzkin vectors itself. Multiplier hints are used as given and checked: any real vector μ is admissible in the interval inclusion, so a hint can make a check succeed but never makes a false exclusion pass. A hint that does not work leads to the checker's own tests.
 
-The checker may replace an exclusion with a different one, or subdivide a box and exclude the pieces. It may not accept a box without an interval proof. Contraction slabs carry no reason code. Any exclusion is acceptable for them, typically the linear test on the parent box, which the search used.
+The checker may replace an exclusion with a different one, or subdivide a box and exclude the pieces. It may not accept a box without an interval proof. Every interval proof is relative to the model's domain θ ∈ [THETA_FLOOR, THETA_CEIL] (L17), so a certificate whose θ range leaves that domain is rejected by V3 before any box is examined. Contraction slabs carry no reason code. Any exclusion is acceptable for them, typically the linear test on the parent box, which the search used.
 
 ## 5. Assumptions the tree does not record
 

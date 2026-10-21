@@ -34,6 +34,7 @@ Structural checks (spec v0.2, V1-V4), done before any box is examined:
   V2  the checker recomputes which pentagon regions are required (Lemma P and L11) and requires each to be
       present and complete;
   V3  the theta range is tied to the claim: theta_lo <= 2 asin(r_min / (1 + r_min)), theta_hi >= arctan 2;
+      and it lies in the model's domain: finite, THETA_FLOOR <= theta_lo < theta_hi <= THETA_CEIL (L17);
   V4  a checker-owned canonical code of the faces' rotation system equals the certificate's code, and the
       faces match the gen record up to cyclic rotation when the gen faces are supplied.
 Dependencies: kisscrit.completeness is imported only inside test_linear_bound, as a source of multipliers
@@ -311,11 +312,23 @@ def _alpha(t):
     return (c / (1 + c)).acos()
 
 
+def theta_domain_ok(theta):
+    """V3, domain part: theta_lo and theta_hi are finite and THETA_FLOOR <= theta_lo < theta_hi <= THETA_CEIL,
+    decided in Arb on the certificate's doubles.  Every enclosure of the model and every bound of apriori_box
+    is valid only for theta in [THETA_FLOOR, THETA_CEIL] (docs/lemmas.md L17, constants in model.py); outside
+    it alpha is not monotone, alpha_range can be inverted, and a box can be excluded on that."""
+    tlo, thi = (float(t) for t in theta)
+    if not (math.isfinite(tlo) and math.isfinite(thi)): return False
+    lo, hi = arb(tlo), arb(thi)
+    return bool(arb(am.THETA_FLOOR) <= lo) and bool(lo < hi) and bool(hi <= arb(am.THETA_CEIL))
+
+
 def theta_claim_ok(theta, r_min=R_MIN):
-    """V3: [theta_lo, theta_hi] covers the claimed range, decided in Arb.  Two spheres of radius r touching a
-    unit sphere have centres at angular distance 2 asin(r / (1 + r)) when they touch each other, so r >= r_min
-    is theta >= 2 asin(r_min / (1 + r_min)); the icosahedral angle arctan 2 is the largest minimum distance of
-    12 points (L9, uniqueness at theta_max)."""
+    """V3: [theta_lo, theta_hi] lies in the model's domain (theta_domain_ok, L17) and covers the claimed range,
+    decided in Arb.  Two spheres of radius r touching a unit sphere have centres at angular distance
+    2 asin(r / (1 + r)) when they touch each other, so r >= r_min is theta >= 2 asin(r_min / (1 + r_min)); the
+    icosahedral angle arctan 2 is the largest minimum distance of 12 points (L9, uniqueness at theta_max)."""
+    if not theta_domain_ok(theta): return False
     tlo, thi = theta
     r = arb(r_min)
     tmin = 2 * (r / (1 + r)).asin()
@@ -423,7 +436,10 @@ def structural_check(cert, code=None, gen_faces=None, r_min=R_MIN):
     certificate, `gen_faces` the faces of its gen record.  Returns a list of problems (empty when all pass)."""
     problems = []
     if cert.get('version') not in (1, 2): return ['unknown certificate version']
-    if not theta_claim_ok(cert['theta'], r_min): problems.append('V3: theta range does not cover the claim')
+    if not theta_domain_ok(cert['theta']):
+        problems.append('V3: theta range outside the model domain [%r, %r] (docs/lemmas.md L17)'
+                        % (am.THETA_FLOOR, am.THETA_CEIL))
+    elif not theta_claim_ok(cert['theta'], r_min): problems.append('V3: theta range does not cover the claim')
     try:
         own = canonical_code(cert['faces'])
         if code is not None and own != code: problems.append('V4: canonical code mismatch')

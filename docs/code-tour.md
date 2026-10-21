@@ -63,7 +63,7 @@ Two implementations, bit-for-bit identical on every tested input (`tests/test_ca
 `kisscrit/core/checker.py`, in the order of a check:
 
 1. `structural_check`:
-   - V3 `theta_claim_ok`: θ_lo ≤ 2 arcsin(r_min/(1 + r_min)), θ_hi ≥ arctan 2, decided in Arb;
+   - V3 `theta_domain_ok` and `theta_claim_ok`: θ_lo, θ_hi finite with THETA_FLOOR ≤ θ_lo < θ_hi ≤ THETA_CEIL, the model's domain (L17; outside it the a-priori box and `alpha_range` can be inverted and a box excluded on that), then θ_lo ≤ 2 arcsin(r_min/(1 + r_min)), θ_hi ≥ arctan 2, all decided in Arb;
    - V4 `canonical_code` (an independent reimplementation of the canonical code) and `faces_match`;
    - V2 `required_modes`: the pentagon regions that L10′ and L11′ require (the region definitions and the cover proof are L10′);
    - V1 `apriori_box`: the a-priori box of each chart from L3, L4, L7 and L10′, rounded outward; the certificate's box must contain it.
