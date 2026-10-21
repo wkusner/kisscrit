@@ -2,25 +2,35 @@
 # kisscrit-preflight.sh: check whether this Linux machine can run the kisscrit `full` completeness run
 # without admin rights, and draft a request to the sysadmin for anything missing.
 #
-# 2026-10-16, version 1 (repo copy of the Project doc claude/kisscrit-preflight.sh; untrusted tooling, no part
-# of the proof).  Read-only except --try-install, which installs a test toolchain in ~/kisscrit-preflight/
-# (about 2-3 GB; delete it afterwards with: rm -rf ~/kisscrit-preflight).  `run.sh setup` reuses these checks.
+# 2026-10-21, version 2 (revises version 1 of 2026-10-16; control P-preflight-v2; untrusted tooling, no part of
+# the proof).  Not yet run on the target server (Ubuntu 26.04).  Read-only by default: it writes only a temporary
+# file or two in $HOME (a write test and an exec test, removed at once) and the report.  --try-install also
+# installs a test toolchain in ~/kisscrit-preflight/ (about 3 GB; delete it afterwards with:
+# rm -rf ~/kisscrit-preflight) and builds and tests the repo's C kernel there.  `run.sh setup` reuses these checks.
 #
 # Usage:   bash kisscrit-preflight.sh                 (quick checks, about 1 minute)
-#          bash kisscrit-preflight.sh --try-install   (also installs Miniforge + FLINT and compiles a test)
+#          bash kisscrit-preflight.sh --try-install --repo DIR
+#                                                     (also installs Miniforge + FLINT, builds csrc/ with that
+#                                                      compiler and the repo's flags, runs make test, scans for
+#                                                      fused multiply-add, runs the C kernel's pytest files)
+#          Options: --need-disk-gb N, --results-dir DIR, --repo DIR (see --help).
 # Output:  printed, and saved to ~/kisscrit-preflight-report.txt.  It contains your user name and the host
 #          name, nothing secret.  Never needs sudo.
 
 set -u
 usage() {
   cat <<'EOF'
-Usage: bash kisscrit-preflight.sh [--try-install] [--need-disk-gb N] [--results-dir DIR]
-  --try-install       also install Miniforge + FLINT in ~/kisscrit-preflight (about 2-3 GB)
+Usage: bash kisscrit-preflight.sh [--try-install] [--need-disk-gb N] [--results-dir DIR] [--repo DIR]
+  --try-install       also install Miniforge + FLINT in ~/kisscrit-preflight (about 2-3 GB), then build the repo's
+                      csrc/ with that compiler and the repo's flags, run its C tests, look for fused multiply-add
+                      instructions in the built library, and run the C kernel's pytest files
+  --repo DIR          a copy of the kisscrit repo (csrc/, kisscrit/, tests/, scripts/completeness/) for --try-install; default: the repo this
+                      script sits in (scripts/full/), if it is run from one
   --need-disk-gb N    free space the run needs, in GB (default 50: an estimate, to be revised after milestone F5/F6)
   --results-dir DIR   where the run will keep its files (default ~/kisscrit-run); its filesystem is checked
 EOF
 }
-TRY_INSTALL=0; NEED_DISK_GB=50; RESDIR="$HOME/kisscrit-run"
+TRY_INSTALL=0; NEED_DISK_GB=50; RESDIR="$HOME/kisscrit-run"; REPO=""
 while [ $# -gt 0 ]; do
   case $1 in
     --try-install) TRY_INSTALL=1 ;;
@@ -31,6 +41,9 @@ while [ $# -gt 0 ]; do
     --results-dir)
       [ $# -ge 2 ] || { echo "--results-dir needs a directory" >&2; exit 2; }
       RESDIR=$2; shift ;;
+    --repo)
+      [ $# -ge 2 ] || { echo "--repo needs a directory" >&2; exit 2; }
+      REPO=$2; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "unknown option: $1" >&2; usage >&2; exit 2 ;;
   esac
@@ -175,36 +188,152 @@ probe "https://zenodo.org/api/records?size=1"                "Zenodo (certificat
 probe "https://sandbox.zenodo.org/api/records?size=1"        "Zenodo sandbox (tests)"
 probe "https://pypi.org/simple/"                             "PyPI (fallback for Python packages)"
 
+# ---------------------------------------------------------------------------------------------- build helpers
+# fma_check LIB LABEL [ENVDIR]: look for fused multiply-add instructions in a built library; the repo's flag
+# -ffp-contract=off must leave none.  x86-64: vfmadd*, vfmsub*, vfnmadd*, vfnmsub*.  aarch64: fmadd, fmsub, fnmadd,
+# fnmsub, and also the vector forms fmla and fmls (a superset of the four named in the task).  Any other
+# architecture, a missing objdump, or no disassembly: "not checked", as a warning.
+fma_check() {
+  local lib=$1 label=$2 e=${3:-} arch od pat mn total n
+  arch=$(uname -m); od=$(command -v objdump 2>/dev/null || true)
+  [ -z "$od" ] && [ -n "$e" ] && od=$(find "$e/bin" -name '*objdump' -type f 2>/dev/null | head -n 1)
+  case $arch in
+    x86_64|amd64)  pat='^vfn?m(add|sub)' ;;
+    aarch64|arm64) pat='^(fmadd|fmsub|fnmadd|fnmsub|fmla|fmls)' ;;
+    *) warn "$label: fused multiply-add check not checked (architecture $arch is not covered)"; return 0 ;;
+  esac
+  [ -n "$od" ] || { warn "$label: fused multiply-add check not checked (objdump missing; architecture $arch)"; return 0; }
+  mn=$("$od" -d "$lib" 2>/dev/null | awk -F'\t' 'NF>=3{split($3,a," "); print a[1]}')
+  total=$(printf '%s\n' "$mn" | grep -c .)
+  [ "$total" -gt 0 ] || { warn "$label: fused multiply-add check not checked (objdump printed no instructions for $lib)"; return 0; }
+  n=$(printf '%s\n' "$mn" | grep -Ec "$pat")
+  if [ "$n" -eq 0 ]; then ok "$label: no fused multiply-add instruction in $(basename "$lib") (arch $arch, $total instructions scanned)"
+  else bad "$label: $n fused multiply-add instructions in $(basename "$lib") (arch $arch); -ffp-contract=off was not honoured"; fi
+}
+
+# build_and_test LABEL CC FLINT_PREFIX PYTHON SRC [ENVDIR]: build SRC/csrc with CC and the repo's own flags, run
+# make test, look for fused multiply-add instructions, then run the four bit-for-bit pytest files with PYTHON
+# (empty: skip them).  FLINT_PREFIX is empty when FLINT is on the compiler's default path.  The result of the
+# pytest step is "ok" only when every test passed: a skipped test is a warning, never an ok.
+build_and_test() {
+  local label=$1 cc=$2 fp=$3 py=$4 src=$5 e=${6:-} blog="$5/build.log" plog="$5/pytest.log" t0 rc w np nf ne ns
+  local -a mk ev
+  mk=(env -u CFLAGS -u CPPFLAGS -u LDFLAGS -u LIBS "${MAKEBIN:-make}" -C "$src/csrc" "CC=$cc")
+  [ -n "$fp" ] && mk+=("FLINT_PREFIX=$fp")
+  : > "$blog"
+  if "${mk[@]}" all >>"$blog" 2>&1; then ok "$label: csrc built with $("$cc" --version 2>&1 | head -n 1)"
+  else bad "$label: csrc build failed (see $blog)"; tail -n 8 "$blog" | sed 's/^/    /'; return 1; fi
+  if grep -q -- ' -O2 ' "$blog" && grep -q -- '-fno-fast-math' "$blog" && grep -q -- '-ffp-contract=off' "$blog"
+  then ok "$label: build used the repo flags (-O2 -fno-fast-math -ffp-contract=off)"
+  else bad "$label: the build log does not show -O2 -fno-fast-math -ffp-contract=off (see $blog)"; fi
+  w=$(grep -c 'warning:' "$blog"); [ "$w" -eq 0 ] || warn "$label: the C build printed $w warnings (see $blog)"
+  if "${mk[@]}" test >>"$blog" 2>&1 && grep -q 'all containment tests passed' "$blog"
+  then ok "$label: make -C csrc test: all containment tests passed"
+  else bad "$label: make -C csrc test failed (see $blog)"; tail -n 8 "$blog" | sed 's/^/    /'; fi
+  fma_check "$src/build/libkisscheck.so" "$label" "$e"
+  if [ -z "$py" ]; then warn "$label: the pytest files were not run (no Python with pytest)"; return 0; fi
+  # test_cmodel, test_creplay and test_ckernel read the cond certificates; without them they skip or fail for a
+  # reason that has nothing to do with this machine, so say that instead of running them
+  if ! compgen -G "$src/results/completeness/certificates/certificates-cond-*-of-40.jsonl" >/dev/null; then
+    warn "$label: the pytest files were not run: no results/completeness/certificates/certificates-cond-*-of-40.jsonl in the repo copy (see docs/setup-guide.md A4)"
+    return 0
+  fi
+  # tests that compile their own copies of the C files look for cc/gcc, FLINT's headers and FLINT's library
+  mkdir -p "$TMPD/bin"
+  printf '#!/bin/sh\nexec "%s" "$@"\n' "$cc" > "$TMPD/bin/cc"; cp "$TMPD/bin/cc" "$TMPD/bin/gcc"; chmod +x "$TMPD/bin/cc" "$TMPD/bin/gcc"
+  ev=("PATH=$TMPD/bin:$(dirname "$py"):$PATH" "CC=$cc")
+  [ -n "$fp" ] && ev+=("CPATH=$fp/include${CPATH:+:$CPATH}" "LIBRARY_PATH=$fp/lib${LIBRARY_PATH:+:$LIBRARY_PATH}" "LD_LIBRARY_PATH=$fp/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}")
+  echo "  running tests/test_carith.py test_cmodel.py test_creplay.py test_ckernel.py (several minutes) ..."
+  t0=$(date +%s)
+  ( cd "$src" && env "${ev[@]}" "$py" -m pytest -q -p no:cacheprovider -rsfE \
+      tests/test_carith.py tests/test_cmodel.py tests/test_creplay.py tests/test_ckernel.py ) >"$plog" 2>&1; rc=$?
+  np=$(grep -Eo '[0-9]+ passed' "$plog" | tail -n 1 | cut -d' ' -f1);  np=${np:-0}
+  nf=$(grep -Eo '[0-9]+ failed' "$plog" | tail -n 1 | cut -d' ' -f1);  nf=${nf:-0}
+  ne=$(grep -Eo '[0-9]+ errors?' "$plog" | tail -n 1 | cut -d' ' -f1); ne=${ne:-0}
+  ns=$(grep -Eo '[0-9]+ skipped' "$plog" | tail -n 1 | cut -d' ' -f1); ns=${ns:-0}
+  echo "  pytest: exit $rc, $np passed, $nf failed, $ne errors, $ns skipped, $(( $(date +%s) - t0 )) s (log: $plog)"
+  if [ "$rc" -eq 0 ] && [ "$np" -gt 0 ] && [ "$ns" -eq 0 ]; then ok "$label: the four pytest files: all $np tests passed"
+  elif [ "$rc" -eq 0 ] && [ "$np" -gt 0 ]; then
+    warn "$label: the four pytest files: $np passed but $ns skipped, so not all pass (log: $plog)"
+    grep '^SKIPPED' "$plog" | sed -E 's/^SKIPPED \[[0-9]+\] //' | sort | uniq -c | head -n 6 | sed 's/^/    skipped: /'
+  else
+    bad "$label: the four pytest files did not pass (exit $rc; $np passed, $nf failed, $ne errors, $ns skipped; log: $plog)"
+    grep -E '^(FAILED|ERROR) ' "$plog" | sort -u | head -n 8 | sed 's/^/    /'
+    tail -n 2 "$plog" | sed 's/^/    /'
+  fi
+}
+
 # ---------------------------------------------------------------------------------------------- optional install test
 if [ $TRY_INSTALL -eq 1 ]; then
   hdr "Install test (Miniforge + FLINT + C compiler, in ~/kisscrit-preflight)"
   P="$HOME/kisscrit-preflight"; mkdir -p "$P"; T0=$(date +%s)
+  TMPD=$(mktemp -d "${TMPDIR:-/tmp}/kisscrit-preflight.XXXXXX") || TMPD="$P/tmp"
+  mkdir -p "$TMPD"; trap 'rm -rf "$TMPD"' EXIT
   if [ ! -x "$P/mf/bin/conda" ]; then
     curl -fsSL -o "$P/mf.sh" "$MF_URL" \
       && bash "$P/mf.sh" -b -p "$P/mf" >"$P/install.log" 2>&1 && ok "Miniforge installed" || bad "Miniforge install failed (see $P/install.log)"
   fi
   if [ -x "$P/mf/bin/conda" ]; then
+    # pytest, networkx, mpmath and sympy are what the repo's own tests import besides numpy, scipy, numba and python-flint
     "$P/mf/bin/conda" create -y -q -p "$P/env" -c conda-forge python=3.12 numpy scipy numba python-flint libflint c-compiler make git gh \
-      >>"$P/install.log" 2>&1 && ok "environment created (python-flint, libflint, compiler, numba, git, gh)" || bad "conda environment failed (see $P/install.log)"
+      pytest networkx mpmath sympy >>"$P/install.log" 2>&1 \
+      && ok "environment created (python-flint, libflint, compiler, numba, git, gh, pytest)" || bad "conda environment failed (see $P/install.log)"
   fi
   E="$P/env"
   if [ -f "$E/include/flint/arb.h" ]; then ok "FLINT headers present (libflint ships arb.h)"; else bad "FLINT headers missing from libflint"; fi
-  if [ -x "$E/bin/python" ]; then
-    "$E/bin/python" -c "import flint, numba, scipy; print('  python-flint', flint.__version__, ' numba', numba.__version__)" 2>&1
-  fi
   CC=$(ls "$E"/bin/*-gcc 2>/dev/null | head -1); [ -z "$CC" ] && CC="$E/bin/cc"
-  cat > "$P/t.c" <<'EOF'
+  cat > "$P/t.c" <<'CEOF'
 #include <stdio.h>
 #include <fenv.h>
 #include <flint/arb.h>
 int main(void){ arb_t x,s; arb_init(x); arb_init(s); arb_set_d(x,0.731); arb_sin(s,x,64);
+  printf("  FLINT header %s, library %s\n", FLINT_VERSION, flint_version);
   printf("  arb_sin(0.731) = "); arb_printd(s,20); printf("\n");
   return fegetround()==FE_TONEAREST ? 0 : 1; }
-EOF
+CEOF
+  FLINT_RUN=0
   if [ -x "$CC" ] && "$CC" -O2 -fno-fast-math -ffp-contract=off -I"$E/include" -L"$E/lib" -Wl,-rpath,"$E/lib" \
-       -o "$P/t" "$P/t.c" -lflint -lm >>"$P/install.log" 2>&1 && "$P/t"; then
-    ok "compiled and ran a FLINT/Arb test program with the conda compiler (no system gcc needed)"
+       -o "$P/t" "$P/t.c" -lflint -lm >>"$P/install.log" 2>&1 && "$P/t" >"$P/t.out" 2>&1; then
+    ok "compiled and ran a FLINT/Arb test program with the conda compiler (no system gcc needed)"; FLINT_RUN=1; sed -n 2p "$P/t.out"
   else bad "could not compile or run the FLINT test (see $P/install.log)"; fi
+
+  # --- the real thing: the repo's csrc/ built with this compiler and the repo's flags, and its tests
+  echo "  build record (this machine, for the report):"
+  echo "    machine $(uname -m);  OS ${PRETTY_NAME:-unknown};  $(getconf GNU_LIBC_VERSION 2>/dev/null || echo 'glibc ?');  cores $NCPU;  memory ${MEM_GB} GB"
+  [ -x "$CC" ] && echo "    compiler (the environment's): $("$CC" --version 2>&1 | head -n 1)"
+  SYSCC=$(command -v cc 2>/dev/null || command -v gcc 2>/dev/null || true)
+  [ -n "$SYSCC" ] && echo "    system compiler (not used): $SYSCC, $("$SYSCC" --version 2>&1 | head -n 1)"
+  [ "$FLINT_RUN" -eq 1 ] && sed -n 1p "$P/t.out"
+  if [ -x "$E/bin/python" ]; then
+    "$E/bin/python" -I - <<'PY' 2>&1
+import sys
+v = [('Python', sys.version.split()[0])]
+for mod, name in (('numpy', 'numpy'), ('numba', 'numba'), ('flint', 'python-flint'), ('scipy', 'scipy'), ('pytest', 'pytest')):
+    try: v.append((name, __import__(mod).__version__))
+    except Exception as ex: v.append((name, 'import failed (%s)' % type(ex).__name__))
+print('    ' + ';  '.join('%s %s' % kv for kv in v))
+PY
+  fi
+  if [ -z "$REPO" ]; then
+    d=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)
+    [ -f "$d/csrc/Makefile" ] && [ -f "$d/kisscrit/__init__.py" ] && REPO=$d
+  fi
+  if [ -z "$REPO" ] || [ ! -f "$REPO/csrc/Makefile" ] || [ ! -f "$REPO/kisscrit/__init__.py" ] || [ ! -d "$REPO/tests" ] \
+       || [ ! -f "$REPO/scripts/completeness/diff_kernel.py" ]; then
+    warn "C build and tests not run: no kisscrit repo copy found (give --repo DIR with csrc/, kisscrit/, tests/, scripts/completeness/; see docs/setup-guide.md A4)"
+  elif [ ! -x "$CC" ] || [ ! -f "$E/include/flint/arb.h" ]; then
+    warn "C build and tests not run: the environment has no compiler or no FLINT headers (see above)"
+  else
+    SRC="$P/src"; rm -rf "$SRC"; mkdir -p "$SRC"
+    echo "  repo copy: $REPO -> $SRC (csrc, kisscrit, tests, scripts/completeness, pyproject.toml; the certificates are linked, not copied)"
+    tar --exclude=__pycache__ -C "$REPO" -cf - csrc kisscrit tests scripts/completeness pyproject.toml | tar -C "$SRC" -xf -
+    if [ -d "$REPO/results/completeness/certificates" ]; then
+      mkdir -p "$SRC/results/completeness"; ln -s "$REPO/results/completeness/certificates" "$SRC/results/completeness/certificates"
+    fi
+    MAKEBIN=$(command -v make 2>/dev/null || true); [ -z "$MAKEBIN" ] && MAKEBIN="$E/bin/make"
+    PYT=""; [ -x "$E/bin/python" ] && "$E/bin/python" -c 'import pytest' 2>/dev/null && PYT="$E/bin/python"
+    build_and_test "conda compiler" "$CC" "$E" "$PYT" "$SRC" "$E"
+  fi
   echo "  install test took $(( $(date +%s) - T0 )) s;  size: $(du -sh "$P" 2>/dev/null | cut -f1)  (delete with: rm -rf $P)"
 fi
 
