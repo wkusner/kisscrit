@@ -223,3 +223,15 @@ One dated entry per checkpoint of a controlled session (commit hash, what change
 - Proposed checklist line (C4, not ticked): "BALL-KILL (2026-10-21, a56dfed, computed, exploratory): at all 9 nondegenerate census points with terminal boxes one Krawczyk cube covers the cluster (ratio >= 18); M and DOD (458 boxes) need D1(c)/D5."
 - Seeds: the open leaves around r = 1.0002111636 may fit inside its ball -> twelve (budget / C3); `results/completeness/checks/` holds two generations of check files for the same codes -> twelve.
 - Patches: `git format-patch e849da0..HEAD`, not pushed.
+## 2026-10-21, EXACT-1 code session (Opus 5.5, cloud clone), prompt v1.0
+
+### 18:46 CT, start
+- Start state: START_HEAD e849da0 (origin/main after `git fetch --depth=200`). `git merge-base --is-ancestor 712b1a0 HEAD` succeeded; `git diff --quiet 712b1a0 HEAD -- kisscrit/core csrc scripts/certify_n12.py scripts/certify_joins.py docs/lemmas.md` showed no change. The eight commits after 712b1a0 are the preflight-v2 session's.
+- Baseline (computed at e849da0): `python3 -m pytest -q` 137 passed, 3 warnings, 319 s, after `make -C csrc` (a first run without the C kernel built skipped the C tests and was stopped). `make -C csrc test` all containment tests passed. Versions: Python 3.13.16, python-flint 0.9.0, sympy 1.14.0, mpmath 1.3.0, FLINT 3.0.1 (Ubuntu `libflint-dev`), gcc 13.3.0.
+- Read: STATUS.md, docs/open-questions.md section 3, scripts/certify_n12.py, scripts/certify_joins.py, results/certified_n12.json, data/n12_above1.json, this log; TWELVE_CoWork/02_Census notes of 2026-10-01, 2026-10-02 (tex) and 2026-10-08 through the linked Mac (read only); the paper v6 and the r1 note in Project knowledge.
+
+### 19:10 CT, milestone E1: inventory (no new computation)
+- Inventory and plan sent to Wöden in the E1 report block; no script written, nothing computed beyond the baseline.
+- Found (seen): the exact work behind the 2026-10-02 note (stress_exact.py, coindex_cert.py, certificate_<r>.json) is in neither the repo nor TWELVE_CoWork; the paper source is not in the repo (Project knowledge holds v6); no data for the r = 1 contact graphs with 15-23 contacts, for the antiprism band, or for the KKLS M_5 stratum is stored anywhere I could read.
+- The three values near 1.0003063 are distinct critical configurations (interval enclosures of c in results/certified_n12.json are disjoint; 21, 20, 19 contacts; co-index 1, 2, 3); the 19-contact graph is the 20-contact graph minus (9,11) in the stored labels. Status: interval (untrusted script) and seen.
+- Deviations: none. Seeds: none.
