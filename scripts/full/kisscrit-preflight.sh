@@ -12,9 +12,31 @@
 #          name, nothing secret.  Never needs sudo.
 
 set -u
-TRY_INSTALL=0; [ "${1:-}" = "--try-install" ] && TRY_INSTALL=1
+usage() {
+  cat <<'EOF'
+Usage: bash kisscrit-preflight.sh [--try-install] [--need-disk-gb N] [--results-dir DIR]
+  --try-install       also install Miniforge + FLINT in ~/kisscrit-preflight (about 2-3 GB)
+  --need-disk-gb N    free space the run needs, in GB (default 50: an estimate, to be revised after milestone F5/F6)
+  --results-dir DIR   where the run will keep its files (default ~/kisscrit-run); its filesystem is checked
+EOF
+}
+TRY_INSTALL=0; NEED_DISK_GB=50; RESDIR="$HOME/kisscrit-run"
+while [ $# -gt 0 ]; do
+  case $1 in
+    --try-install) TRY_INSTALL=1 ;;
+    --need-disk-gb)
+      [ $# -ge 2 ] || { echo "--need-disk-gb needs a whole number of GB" >&2; exit 2; }
+      case $2 in ''|*[!0-9]*) echo "--need-disk-gb: not a whole number: $2" >&2; exit 2 ;; esac
+      NEED_DISK_GB=$2; shift ;;
+    --results-dir)
+      [ $# -ge 2 ] || { echo "--results-dir needs a directory" >&2; exit 2; }
+      RESDIR=$2; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "unknown option: $1" >&2; usage >&2; exit 2 ;;
+  esac
+  shift
+done
 REPORT="$HOME/kisscrit-preflight-report.txt"
-NEED_DISK_GB=50
 exec > >(tee "$REPORT") 2>&1
 
 PASS=(); WARN=(); FAIL=(); ASK=()
@@ -29,7 +51,7 @@ echo "kisscrit preflight, $(date -u +%Y-%m-%dT%H:%MZ), user $(id -un), host $(ho
 
 # ---------------------------------------------------------------------------------------------- system
 hdr "System"
-. /etc/os-release 2>/dev/null && echo "  OS: ${PRETTY_NAME:-unknown};  kernel $(uname -r);  arch $(uname -m)"
+. /etc/os-release 2>/dev/null && echo "  OS: ${PRETTY_NAME:-unknown};  kernel $(uname -r);  arch $(uname -m);  $(getconf GNU_LIBC_VERSION 2>/dev/null || echo 'glibc ?')"
 NCPU=$(nproc 2>/dev/null || echo 0); echo "  cores (nproc): $NCPU"
 # a cgroup CPU limit on this user would cap the run below nproc
 CG=$(awk -F: '$1=="0"{print $3}' /proc/self/cgroup 2>/dev/null)
@@ -48,12 +70,21 @@ echo "  memory: ${MEM_GB} GB total, ${AVAIL_GB} GB available"
 
 # ---------------------------------------------------------------------------------------------- disk
 hdr "Disk"
-FREE_GB=$(df -Pk "$HOME" | awk 'NR==2{printf "%d", $4/1048576}')
-echo "  home: $HOME, ${FREE_GB} GB free on $(df -P "$HOME" | awk 'NR==2{print $1}')"
-[ "$FREE_GB" -ge "$NEED_DISK_GB" ] && ok "at least $NEED_DISK_GB GB free in home" || { bad "only ${FREE_GB} GB free in home (want $NEED_DISK_GB+)"; ask "disk"; }
+# free space per filesystem; the results directory may not exist yet, so its nearest existing parent is measured
+# (nothing is created)
+nearest() { local p=$1; while [ ! -e "$p" ] && [ "$p" != "/" ] && [ "$p" != "." ]; do p=$(dirname "$p"); done; printf '%s' "$p"; }
+dfline()  { df -Pk "$(nearest "$1")" 2>/dev/null | awk 'NR==2'; }
+free_gb() { dfline "$1" | awk '{printf "%d", $4/1048576}'; }
+fs_desc() { dfline "$1" | awk '{m=$6; for(i=7;i<=NF;i++) m=m" "$i; printf "mount %s (%s)", m, $1}'; }
+HOME_FREE=$(free_gb "$HOME"); TMP_FREE=$(free_gb /tmp); RES_FREE=$(free_gb "$RESDIR")
+HOME_FREE=${HOME_FREE:-0}; TMP_FREE=${TMP_FREE:-0}; RES_FREE=${RES_FREE:-0}
+echo "  free space; the run needs ${NEED_DISK_GB} GB (an estimate, to be revised after milestone F5/F6):"
+echo "    home:        ${HOME_FREE} GB free, $HOME, $(fs_desc "$HOME")"
+echo "    /tmp:        ${TMP_FREE} GB free, $(fs_desc /tmp), type $(findmnt -n -o FSTYPE /tmp 2>/dev/null || echo '?')  (the run keeps its temporary files under ~/kisscrit-run, not /tmp)"
+echo "    results dir: ${RES_FREE} GB free, $RESDIR, $(fs_desc "$RESDIR")"
+if [ "$RES_FREE" -ge "$NEED_DISK_GB" ]; then ok "at least $NEED_DISK_GB GB free where the results go ($RESDIR)"
+else bad "only ${RES_FREE} GB free where the results go ($RESDIR; want $NEED_DISK_GB+)"; ask "disk"; fi
 if have quota; then Q=$(quota -s 2>/dev/null | tail -n +3); [ -n "$Q" ] && echo "  quota:" && echo "$Q" | sed 's/^/    /'; fi
-TMPT=$(findmnt -n -o FSTYPE /tmp 2>/dev/null); TMPS=$(df -Pk /tmp | awk 'NR==2{printf "%d", $2/1048576}')
-echo "  /tmp: ${TMPT:-?}, ${TMPS} GB  (the run keeps its temporary files under ~/kisscrit-run, not /tmp)"
 TF="$HOME/.kisscrit-preflight-write-test"; if echo x > "$TF" 2>/dev/null; then rm -f "$TF"; ok "home is writable"; else bad "cannot write to home"; fi
 # exec from home (noexec mounts would break the toolchain)
 TS="$HOME/.kisscrit-preflight-exec-test.sh"; printf '#!/bin/sh\nexit 0\n' > "$TS"; chmod +x "$TS"
@@ -204,7 +235,7 @@ for a in "${ASK[@]+"${ASK[@]}"}"; do
       add linger "- Enable lingering for my account, so a long computation keeps running after I log out and restarts after a reboot:  sudo loginctl enable-linger $(id -un)${ALT:+
     (If you prefer not to enable lingering, this alternative also works: ${ALT%; }.)}" ;;
     linger-optional) add linger "- (Optional but preferred) enable lingering for my account, so the computation can run as a systemd user service:  sudo loginctl enable-linger $(id -un)" ;;
-    disk) add disk "- About ${NEED_DISK_GB}-100 GB of disk space I can write to (home has ${FREE_GB} GB free), e.g. a directory on a data volume." ;;
+    disk) add disk "- About ${NEED_DISK_GB} GB of disk space I can write to (estimate, to be revised after milestone F5/F6; ${RES_FREE} GB free now where the results would go, ${RESDIR}), e.g. a directory on a data volume." ;;
     cpu) add cpu "- Lift or explain the CPU limit on my account (cgroup): the computation is meant to use all $NCPU cores for several days." ;;
     noexec) add noexec "- My home directory appears to be mounted noexec; I need a location where I can install and run programs." ;;
   esac
