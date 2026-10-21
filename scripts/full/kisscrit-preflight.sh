@@ -15,7 +15,7 @@
 #                                                      fused multiply-add, runs the C kernel's pytest files)
 #          Options: --need-disk-gb N, --results-dir DIR, --repo DIR (see --help).
 # Output:  printed, and saved to ~/kisscrit-preflight-report.txt.  It contains your user name and the host
-#          name, nothing secret.  Never needs sudo.
+#          name, nothing secret.  Never needs sudo.  Never reads or prints a token.
 
 set -u
 usage() {
@@ -143,7 +143,10 @@ echo "  tip: to test survival by hand: run 'nohup sleep 600 &', log out, log bac
 
 # ---------------------------------------------------------------------------------------------- network
 hdr "Outbound HTTPS"
-for v in https_proxy HTTPS_PROXY http_proxy no_proxy; do [ -n "${!v:-}" ] && echo "  proxy setting $v=${!v}"; done
+# a proxy URL can carry a user name and password (scheme://user:password@host): print it without them
+for v in https_proxy HTTPS_PROXY http_proxy no_proxy; do
+  [ -n "${!v:-}" ] && echo "  proxy setting $v=$(printf '%s' "${!v}" | sed -E 's#(://)[^/]*@#\1***@#')"
+done
 # probe URL WHAT [range]: 2xx and 3xx are ok; 4xx and 5xx are a warning with the code (the host answered, but not
 # with success: a proxy or firewall often answers 403 or 407 for a blocked host); no response at all is a FAIL and
 # goes into the sysadmin request.  "range" asks for the first byte only (Range: bytes=0-0), so a download URL is
