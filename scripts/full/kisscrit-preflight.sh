@@ -101,26 +101,56 @@ echo "  tip: to test survival by hand: run 'nohup sleep 600 &', log out, log bac
 # ---------------------------------------------------------------------------------------------- network
 hdr "Outbound HTTPS"
 for v in https_proxy HTTPS_PROXY http_proxy no_proxy; do [ -n "${!v:-}" ] && echo "  proxy setting $v=${!v}"; done
+# probe URL WHAT [range]: 2xx and 3xx are ok; 4xx and 5xx are a warning with the code (the host answered, but not
+# with success: a proxy or firewall often answers 403 or 407 for a blocked host); no response at all is a FAIL and
+# goes into the sysadmin request.  "range" asks for the first byte only (Range: bytes=0-0), so a download URL is
+# not downloaded.  Only the host name of the final URL is printed: the final URL of a release download is a signed
+# link, and it must not reach the report.
 probe() {
-  local url=$1 what=$2 code
-  if have curl; then code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 -L "$url" 2>/dev/null)
-  else code=$(wget -q --server-response --spider -T 20 "$url" 2>&1 | awk '/HTTP\//{c=$2} END{print c}'); fi
-  if [ -n "$code" ] && [ "$code" != "000" ]; then ok "$what ($url): HTTP $code"; else bad "$what ($url): unreachable"; ask "net:$url"; fi
+  local url=$1 what=$2 mode=${3:-get} out last code err="" rc=0 fhost="" uhost="" via="" hint=""
+  if have curl; then
+    local -a o=(-sS -o /dev/null -w '\n%{http_code} %{url_effective}' --max-time 20 -L)
+    [ "$mode" = range ] && o+=(-r 0-0)
+    out=$(curl "${o[@]}" "$url" 2>&1); rc=$?
+    last=${out##*$'\n'}; err=${out%$'\n'*}; err=${err//$'\n'/ }
+    code=${last%% *}; fhost=${last#* }; fhost=${fhost#*://}; fhost=${fhost%%[/?#]*}
+  else
+    local -a o=(-q -S -T 20 -O /dev/null)
+    [ "$mode" = range ] && o+=(--header='Range: bytes=0-0')
+    out=$(wget "${o[@]}" "$url" 2>&1); rc=$?
+    code=$(printf '%s\n' "$out" | awk '/^ *HTTP\//{c=$2} END{print c}')
+    fhost=$(printf '%s\n' "$out" | awk '/^ *[Ll]ocation:/{l=$2} END{print l}'); fhost=${fhost#*://}; fhost=${fhost%%[/?#]*}
+    err=$(printf '%s\n' "$out" | tail -n 1)
+  fi
+  uhost=${url#*://}; uhost=${uhost%%[/?#]*}
+  [ -n "$fhost" ] && [ "$fhost" != "$uhost" ] && via=", final host $fhost"
+  case $code in
+    2??|3??) ok "$what ($url): HTTP $code$via" ;;
+    4??|5??)
+      case $code in 403|407) hint=" (a proxy or firewall may be blocking this host)" ;; esac
+      warn "$what ($url): HTTP $code$via$hint" ;;
+    *) bad "$what ($url): no response (exit $rc${err:+: ${err:0:120}})"; ask "net:$url" ;;
+  esac
 }
-probe https://github.com                                   "GitHub (code, progress pushes)"
-probe https://api.github.com                               "GitHub API (gh login)"
-probe https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-$(uname -m).sh "Miniforge installer (GitHub release download)"
-probe https://conda.anaconda.org/conda-forge/noarch/current_repodata.json "conda-forge packages"
-probe https://zenodo.org/api/records?size=1                "Zenodo (certificate archive)"
-probe https://sandbox.zenodo.org/api/records?size=1        "Zenodo sandbox (tests)"
-probe https://pypi.org/simple/                             "PyPI (fallback for Python packages)"
+MF_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-$(uname -m).sh"
+# github.com itself is probed through the git smart-HTTP endpoint of a public repository, the path that git clone,
+# git fetch and git push use: a bare "https://github.com/" returned 400 in the cloud container (a response, so it
+# was counted as reachable), and a repository page returned 403 there; this endpoint returned 200.  It needs no
+# login, no git and no private repository.
+probe "https://github.com/conda-forge/miniforge/info/refs?service=git-upload-pack" "GitHub over HTTPS (the git protocol the run uses)"
+probe "https://api.github.com/"                              "GitHub API (gh login)"
+probe "$MF_URL"                                              "Miniforge installer (GitHub release; first byte only)" range
+probe "https://conda.anaconda.org/conda-forge/noarch/current_repodata.json" "conda-forge packages"
+probe "https://zenodo.org/api/records?size=1"                "Zenodo (certificate archive)"
+probe "https://sandbox.zenodo.org/api/records?size=1"        "Zenodo sandbox (tests)"
+probe "https://pypi.org/simple/"                             "PyPI (fallback for Python packages)"
 
 # ---------------------------------------------------------------------------------------------- optional install test
 if [ $TRY_INSTALL -eq 1 ]; then
   hdr "Install test (Miniforge + FLINT + C compiler, in ~/kisscrit-preflight)"
   P="$HOME/kisscrit-preflight"; mkdir -p "$P"; T0=$(date +%s)
   if [ ! -x "$P/mf/bin/conda" ]; then
-    curl -fsSL -o "$P/mf.sh" "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-$(uname -m).sh" \
+    curl -fsSL -o "$P/mf.sh" "$MF_URL" \
       && bash "$P/mf.sh" -b -p "$P/mf" >"$P/install.log" 2>&1 && ok "Miniforge installed" || bad "Miniforge install failed (see $P/install.log)"
   fi
   if [ -x "$P/mf/bin/conda" ]; then
