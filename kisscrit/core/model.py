@@ -28,6 +28,17 @@ test proves nothing (L16).  Elsewhere the interval Jacobian encloses the Clarke 
 inclusion holds for p, m in the box B (Lebourg's mean value theorem).  Infinite endpoints always mean
 "unbounded range of finite reals".
 
+Domain (docs/lemmas.md L17).  Every enclosure here is valid for theta in [THETA_FLOOR, THETA_CEIL] = [1.0, 1.5],
+inside (0, pi/2), and the checker's V3 requires the certificate's theta range to lie in it.  The facts used:
+sin theta, cos theta, 1 + cos theta > 0 (denominators of alpha', beta and the pentagon formulas); alpha is
+increasing in theta (`alpha_range`, the corner bound in `Graph.corners`, and V1's a-priori box); beta(theta, A)
+is increasing in theta for A in (0, pi] and decreasing in A for A in (0, 2 pi) (the rhombus range in
+`Graph.corners`); the clamp bound hmin = alpha(blo[0]) / 2 is below every valid half apex corner when
+theta >= blo[0] (L3 and alpha increasing); the d2 clamp at pi/2 does not act since d2/2 <= theta < pi/2.
+Outside the domain alpha is even in theta and not monotone, so `alpha_range` can be inverted and a box can be
+excluded on that.  The rhombus coordinate A of a box must also lie in (0, pi] for the rhombus range; that is a
+condition on A, not on theta, and this file does not check it.
+
 Every function returns intervals; `ok` is False only when the box certainly contains no point of the
 chart's region that is a valid configuration (an exclusion of kind `invalid`, L10').
 
@@ -51,6 +62,11 @@ from .interval import Iv, PI, HALF_PI, TWO_PI, down, up
 
 ZERO_ONE = Iv(0.0, 1.0)
 LSTRAIGHT = math.pi - math.radians(25.0)      # the same double as in the search: the region threshold
+# The model's domain (docs/lemmas.md L17): every enclosure in this file is valid for THETA_FLOOR <= theta <=
+# THETA_CEIL.  Both are exact doubles inside (0, pi/2), and the claimed range [theta_min, theta_max], about
+# [1.04726, 1.10715], lies inside.  kisscrit/core/checker.py:theta_domain_ok (V3) enforces it.
+THETA_FLOOR = 1.0
+THETA_CEIL = 1.5
 
 
 def hull(lo, hi):

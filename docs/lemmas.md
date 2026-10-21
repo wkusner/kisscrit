@@ -230,6 +230,32 @@ Only these necessary conditions are used to exclude boxes. Realizability, which 
 - *Edge directions and frames.* At each vertex v the checker places the first neighbour of v in the rotation system at direction 0 and the following neighbours at the cumulative corner sums (`model.py:Graph.directions`). By L2 and L5 the rotation system of the realization at v is the combinatorial one, so these are the true directions of the edges at v in some orthonormal frame of T_v S². The balance condition "Σ_e w_e t_v(e) = 0 at every v" is invariant under the choice of frame at each vertex, and so are the Gordan and Motzkin alternatives, since y_v ranges over all of R².
 - *Monotonicity tightening:* if a partial derivative enclosure of a Lipschitz function has a sign on the box, the function is monotone in that variable there (Lebourg again), so its extreme values over the box are attained on the corresponding faces of the box. The tightening evaluates the clamped formulas on those faces; those evaluations enclose the clamped function whether or not the face contains valid pentagons, so the tightened interval encloses the corner on every valid point of the box.
 
+**L17. Domain of the model's enclosures** (proved). Every enclosure of `kisscrit/core/model.py` and every bound of the V1 a-priori box is valid when θ ∈ [THETA_FLOOR, THETA_CEIL] = [1.0, 1.5] (radians; `model.py:THETA_FLOOR`, `THETA_CEIL`, both exact doubles, 0 < 1.0 < 1.5 < π/2). The claimed range [θ_min, θ_max] ≈ [1.04726, 1.10715] lies inside. The checker's V3 requires the certificate's θ_lo and θ_hi to be finite, θ_lo < θ_hi, and THETA_FLOOR ≤ θ_lo, θ_hi ≤ THETA_CEIL, decided in Arb on the certificate's doubles (`kisscrit/core/checker.py:theta_domain_ok`).
+
+*Facts used, each true on (0, π/2) and hence on the domain.*
+- (D1) *Positivity.* sin θ > 0, cos θ > 0 and 1 + cos θ > 0. These are the denominators of α′, of β (cos θ), and of the pentagon formulas (sin θ, in a0, a3 and the apex asin argument sin(d3/2)/sin θ).
+- (D2) *α is increasing.* With c = cos θ ∈ (0, 1), c/(1 + c) = 1 − 1/(1 + c) increases with c, and c decreases with θ; arccos is decreasing. So α(θ) = arccos(c/(1 + c)) increases with θ, with values in (π/3, π/2).
+- (D3) *β is increasing in θ.* For A ∈ (0, π), β(θ, A) = arctan(cot(A/2)/cos θ) with cot(A/2) > 0, and 1/cos θ increases with θ, so β increases with θ. (The rhombus range also uses that β decreases in A, which holds for A ∈ (0, 2π) because cot(A/2) decreases there and cos θ > 0 (D1). Both monotonicities together need A ∈ (0, π] on the box: a condition on the rhombus coordinate, not on θ; see below.)
+- (D4) *The clamp bound.* `Graph.corners` clamps the half apex corner h = f4/2 of a pentagon below at hmin = α(blo[0])/2, with blo[0] the lower θ end of the enclosing box. At a valid point with θ ≥ blo[0], f4 ≥ α(θ) ≥ α(blo[0]) by L3 and D2, so the clamp does not act there. Also hmin < π/4 < hmax = LSTRAIGHT/2, so [hmin, hmax] lies inside [−π/2, π/2), as `asin_angle` requires.
+- (D5) *The d2 clamp.* sin(d2/2) = sin θ sin(f1/2) ≤ sin θ, so d2/2 ≤ θ ≤ 1.5 < π/2 (rounded down) and the clamp of `pentagon` at π/2 does not act at valid points.
+
+*Where the domain is used.*
+
+| place | fact | covered by [1.0, 1.5] |
+|---|---|---|
+| `model.py:alpha_range` (exact range from the two ends) | D2 | yes |
+| `model.py:Graph.corners`, gradient of α (`acos_(ct/(1+ct))`) | D1 | yes |
+| `model.py:Graph.corners`, `hmin = α(blo[0])/2` | D2, D4 | yes |
+| `model.py:Graph.corners`, rhombus range `ex` from `_beta_pt` at two corners | D3 (in θ) | yes for θ; also needs A ∈ (0, π] on the box |
+| `model.py:beta`, `_beta_pt` (cos θ in the denominator) | D1 | yes |
+| `model.py:pentagon` (sin θ in denominators; d2 clamp) | D1, D5 | yes |
+| `model.py:Graph.corners`, "every corner ≥ α(θ)" against `alpha_range` | D2 | yes |
+| `checker.py:apriori_box`, a_lo = α(θ_lo), rhombus hi = 2α(θ_hi) (L3, L7) | D2 | yes |
+
+*Why this is needed.* Outside (0, π/2) the facts fail: α is even in θ, so for θ_lo < 0, α(θ_lo) can exceed α(θ_hi) and `alpha_range` is inverted; for θ_hi > π/2, α and β are not monotone. Before V3 was two-sided, a certificate with θ = [−5, θ_hi] or [1.0471975511965976, 7] and one excluded leaf was accepted for a candidate with a census critical configuration (computed, 2026-10-21, V3-FIX session; `tests/test_certificates.py::test_v3_theta_outside_model_domain`).
+
+*Not covered by this entry.* The certificate's boxes for the corner coordinates are bounded only from inside by V1; D3 needs the rhombus coordinate of the box in (0, π]. Whether a certificate box outside that range can be accepted is unchecked.
+
 ## E. Assumptions (listed in `STATUS.md`)
 
 - **H (hull conjecture, part a).** For θ > 60°, the hull triangulation is one of T0, T1, T5, T7. This is the conditional route. It is checklist item C1; until it is proved, the run's conclusion is conditional on it.
