@@ -274,7 +274,8 @@ if [ $TRY_INSTALL -eq 1 ]; then
   # (it is a tmpfs on Ubuntu 26.04) and the shims are programs; removed on exit
   TMPD="$P/tmp.$$"; mkdir -p "$TMPD"; trap 'rm -rf "$TMPD"' EXIT
   if [ ! -x "$P/mf/bin/conda" ]; then
-    curl -fsSL -o "$P/mf.sh" "$MF_URL" \
+    # download with curl, or with wget when curl is missing (the quick checks above accept either)
+    { if have curl; then curl -fsSL -o "$P/mf.sh" "$MF_URL"; elif have wget; then wget -q -O "$P/mf.sh" "$MF_URL"; else false; fi; } \
       && bash "$P/mf.sh" -b -p "$P/mf" >"$P/install.log" 2>&1 && ok "Miniforge installed" || bad "Miniforge install failed (see $P/install.log)"
   fi
   if [ -x "$P/mf/bin/conda" ]; then
