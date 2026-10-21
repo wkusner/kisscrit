@@ -292,3 +292,33 @@ def test_power(sample, tmp_path):
         D.LIBPATH = None
     assert all(detected.values()), detected
     assert len(detected) >= 5
+
+
+# ------------------------------------------------------------------- V3: theta outside the model's domain
+
+def test_v3_forged_theta_not_verified_by_kernel_front_end():
+    """V3-FIX (audit B-1): the forgeries (a)-(d) of tests/test_certificates.py, a one-leaf certificate over the
+    a-priori box at a theta range outside [THETA_FLOOR, THETA_CEIL] or not finite, are not verified by the
+    front end (C kernel plus fallback): it either raises as the reference does, or reports verified False with
+    the V3 domain problem.  Before the fix, (a) and (b) were verified True."""
+    path = CERTS / 'certificates-cond-21-of-40.jsonl'
+    if not path.exists(): pytest.skip('no certificates')
+    with open(path) as f: d = json.loads(f.readlines()[1074])
+    code, c0 = d['code'], d['certificate']
+    r = ck.arb(ck.R_MIN)
+    h = [ck.down(2 * (r / (1 + r)).asin()), ck.up(ck.arb(2).atan())]
+    inf, nan = float('inf'), float('nan')
+    pk = lambda a, dt: base64.b64encode(zlib.compress(np.asarray(a, dt).tobytes(), 9)).decode()
+    K = _kk()
+    for theta in ([-5.0, h[1]], [1.0471975511965976, 7.0], [-inf, h[1]], [nan, h[1]], [h[0], inf], [h[0], nan]):
+        lo, hi, _ = ck.apriori_box(am.Graph(c0['faces'], {}), theta)
+        lo = list(lo); hi = list(hi); lo[0], hi[0] = theta
+        ch = dict(modes={}, lo0=lo, hi0=hi, events=pk([2], np.uint8), q=pk([], np.uint16), mu=pk([], np.float32),
+                  n_events=1, complete=True)
+        cert = dict(version=2, theta=list(theta), tol=c0['tol'], faces=c0['faces'], complete=True, charts=[ch])
+        try:
+            out = K.check_certificate(cert, code=code, gen_faces=cert['faces'])
+        except ValueError:
+            continue
+        assert not out['verified'], theta
+        assert any(p.startswith('V3: theta range outside the model domain') for p in out['structural']), theta

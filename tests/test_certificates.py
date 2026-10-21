@@ -235,3 +235,88 @@ def test_v5_manifest_detects_missing_line(tmp_path, m_certificate):
         f.write(json.dumps(dict(code=codes[-1], certificate={})) + '\n')
     m = cc.manifest('t', base=str(base))
     assert m['sets_equal_no_duplicates'] and m['complete']
+
+
+# ---------------------------------------------------------------- V3: the model's domain (docs/lemmas.md L17)
+COND_RHOMBUS = ('results/completeness/certificates/certificates-cond-21-of-40.jsonl', 1074)   # 0-based line
+INF, NAN = float('inf'), float('nan')
+
+
+def _honest_theta():
+    """[theta_min rounded down, arctan 2 rounded up], the range real certificates write (decided in Arb)."""
+    r = ck.arb(ck.R_MIN)
+    return [ck.down(2 * (r / (1 + r)).asin()), ck.up(ck.arb(2).atan())]
+
+
+@pytest.fixture(scope='module')
+def rhombus_candidate():
+    """A real cond candidate: 18 triangles and one rhombus, one chart (theta, A).  Its terminal box contains the
+    icosahedron with one unstressed edge (A = 72 deg at theta = arctan 2), a census critical configuration."""
+    path, ln = COND_RHOMBUS
+    if not os.path.exists(path): pytest.skip('no cond certificates in the repository')
+    with open(path) as f: d = json.loads(f.readlines()[ln])
+    assert [len(f) for f in d['certificate']['faces']].count(4) == 1 and len(d['certificate']['charts']) == 1
+    return d['code'], d['certificate']
+
+
+def _one_leaf(cert0, theta):
+    """A forged certificate: cert0's faces, the stated theta, and one chart whose starting box is the checker's
+    own a-priori box at that theta (so V1 passes by construction) with a single excluded leaf (event 2), the
+    real tol and no terminal box.  It claims that the candidate has no critical configuration."""
+    from kisscrit.core import model as am
+    lo, hi, _ = ck.apriori_box(am.Graph(cert0['faces'], {}), theta)
+    lo = list(lo); hi = list(hi); lo[0], hi[0] = theta[0], theta[1]
+    ch = dict(modes={}, lo0=lo, hi0=hi, events=_pack(np.array([2], np.uint8)), q=_pack(np.zeros(0, np.uint16)),
+              mu=_pack(np.zeros(0, np.float32)), n_events=1, complete=True)
+    return dict(version=2, theta=list(theta), tol=cert0['tol'], faces=cert0['faces'], complete=True, charts=[ch])
+
+
+FORGED_THETA = {                              # Step 1 of V3-FIX: (a), (b), (c), (d)
+    'a-minus-5': lambda h: [-5.0, h[1]],
+    'b-up-to-7': lambda h: [1.0471975511965976, 7.0],
+    'c-minus-inf': lambda h: [-INF, h[1]],
+    'c-nan': lambda h: [NAN, h[1]],
+    'd-plus-inf': lambda h: [h[0], INF],
+    'd-nan': lambda h: [h[0], NAN],
+}
+
+
+def test_v3_one_leaf_rejected_at_honest_theta(rhombus_candidate):
+    """Control for the forgeries below: at the honest range the one-leaf certificate is rejected (its box
+    contains the census configuration), and V3 raises no domain problem."""
+    code, cert0 = rhombus_candidate
+    cert = _one_leaf(cert0, _honest_theta())
+    assert ck.theta_domain_ok(cert['theta'])
+    assert not any(p.startswith('V3') for p in ck.structural_check(cert, code, cert['faces']))
+    assert _rejected(cert, code)
+
+
+@pytest.mark.parametrize('which', sorted(FORGED_THETA))
+def test_v3_theta_outside_model_domain(rhombus_candidate, which):
+    """Gap V3 (audit B-1): a theta range outside [THETA_FLOOR, THETA_CEIL], or not finite, is a structural
+    problem.  Before the fix, (a) and (b) were accepted with verified True and no terminal box."""
+    code, cert0 = rhombus_candidate
+    cert = _one_leaf(cert0, FORGED_THETA[which](_honest_theta()))
+    probs = ck.structural_check(cert, code, cert['faces'])
+    assert any(p.startswith('V3: theta range outside the model domain') for p in probs), probs
+    assert _rejected(cert, code)
+
+
+def test_v3_domain_keeps_honest_certificate(m_certificate):
+    """The honest certificate of the fixture is still inside the domain and still verifies."""
+    term, st, cert, code = m_certificate
+    assert ck.theta_domain_ok(cert['theta']) and ck.theta_claim_ok(cert['theta'])
+    r = check_certificate(cert, code=code, gen_faces=cert['faces'])
+    assert r['verified'] and not r['structural']
+
+
+def test_v3_domain_boundary():
+    """theta_lo = THETA_FLOOR exactly passes V3 and the next double below fails; the same at THETA_CEIL; an
+    empty or reversed range fails."""
+    from kisscrit.core import model as am
+    h = _honest_theta()
+    assert ck.theta_claim_ok([am.THETA_FLOOR, h[1]])
+    assert not ck.theta_claim_ok([float(np.nextafter(am.THETA_FLOOR, -INF)), h[1]])
+    assert ck.theta_claim_ok([h[0], am.THETA_CEIL])
+    assert not ck.theta_claim_ok([h[0], float(np.nextafter(am.THETA_CEIL, INF))])
+    assert not ck.theta_domain_ok([1.2, 1.2]) and not ck.theta_domain_ok([1.3, 1.2])
