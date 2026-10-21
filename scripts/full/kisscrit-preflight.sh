@@ -60,10 +60,9 @@ if [ -n "$CG" ] && [ -r "/sys/fs/cgroup$CG/cpu.max" ]; then
   if [ "$Q" = "max" ]; then ok "no cgroup CPU limit on this session"
   else LIM=$(( Q / P )); warn "cgroup CPU limit: about $LIM cores (of $NCPU)"; ask "cpu"; fi
 fi
-for d in "/sys/fs/cgroup/user.slice/user-$(id -u).slice"; do
-  [ -r "$d/cpu.max" ] && { read -r Q P < "$d/cpu.max"; [ "$Q" != "max" ] && { warn "user slice CPU limit: about $((Q/P)) cores"; ask "cpu"; }; }
-  [ -r "$d/memory.max" ] && { M=$(cat "$d/memory.max"); [ "$M" != "max" ] && warn "user slice memory limit: $((M/1024/1024/1024)) GB"; }
-done
+SLICE="/sys/fs/cgroup/user.slice/user-$(id -u).slice"
+[ -r "$SLICE/cpu.max" ] && { read -r Q P < "$SLICE/cpu.max"; [ "$Q" != "max" ] && { warn "user slice CPU limit: about $((Q/P)) cores"; ask "cpu"; }; }
+[ -r "$SLICE/memory.max" ] && { M=$(cat "$SLICE/memory.max"); [ "$M" != "max" ] && warn "user slice memory limit: $((M/1024/1024/1024)) GB"; }
 MEM_GB=$(awk '/MemTotal/{printf "%d", $2/1048576}' /proc/meminfo); AVAIL_GB=$(awk '/MemAvailable/{printf "%d", $2/1048576}' /proc/meminfo)
 echo "  memory: ${MEM_GB} GB total, ${AVAIL_GB} GB available"
 [ "$MEM_GB" -ge $(( NCPU / 2 )) ] && ok "memory at least 0.5 GB per core" || warn "less than 0.5 GB of memory per core; the run may use fewer workers than cores"
@@ -223,9 +222,9 @@ for a in "${ASK[@]+"${ASK[@]}"}"; do
   case $a in
     net:*) NET+=("${a#net:}") ;;
     pkg:tmux) add tmux "- Install tmux:  sudo apt install tmux" ;;
-    pkg:cron) add cron "- Install and enable cron:  sudo apt install cron && sudo systemctl enable --now cron" ;;
     pkg:curl) add curl "- Install curl:  sudo apt install curl" ;;
-    cron-allow) add cronallow "- Allow my account to use crontab (it is denied now; /etc/cron.allow or /etc/cron.deny)." ;;
+    # cron needs no key of its own: a missing cron, a denied crontab and a stopped cron daemon matter only when
+    # lingering is not available, and the linger-required text below already lists all three as its alternative.
     linger-required)
       ALT=""
       have tmux || ALT="sudo apt install tmux; "
