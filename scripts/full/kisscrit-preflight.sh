@@ -270,8 +270,9 @@ build_and_test() {
 if [ $TRY_INSTALL -eq 1 ]; then
   hdr "Install test (Miniforge + FLINT + C compiler, in ~/kisscrit-preflight)"
   P="$HOME/kisscrit-preflight"; mkdir -p "$P"; T0=$(date +%s)
-  TMPD=$(mktemp -d "${TMPDIR:-/tmp}/kisscrit-preflight.XXXXXX") || TMPD="$P/tmp"
-  mkdir -p "$TMPD"; trap 'rm -rf "$TMPD"' EXIT
+  # scratch dir for the compiler shims the tests need: under $P, not /tmp, because /tmp may be mounted noexec
+  # (it is a tmpfs on Ubuntu 26.04) and the shims are programs; removed on exit
+  TMPD="$P/tmp.$$"; mkdir -p "$TMPD"; trap 'rm -rf "$TMPD"' EXIT
   if [ ! -x "$P/mf/bin/conda" ]; then
     curl -fsSL -o "$P/mf.sh" "$MF_URL" \
       && bash "$P/mf.sh" -b -p "$P/mf" >"$P/install.log" 2>&1 && ok "Miniforge installed" || bad "Miniforge install failed (see $P/install.log)"
