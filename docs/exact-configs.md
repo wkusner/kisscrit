@@ -91,7 +91,11 @@ Findings worth noting:
   1.0002374095, LLL at 8000 digits finds no integer relation of degree ≤ 150 with coefficients below about
   10^42 (high precision, not proof; details in `docs/session-log.md`). For 1.0002115891 and 1.0002111636 the
   known status is that of `docs/open-questions.md` section 3 (no relation of degree ≤ 90 at 1600 digits); the
-  same degree-150 probe was still running when this page was written, and its result goes to the session log.
+  same degree-150 probe was run afterwards: 1.0002115891 gives no relation; **1.0002111636** gives a relation
+  whose irreducible factor of degree 126 (coefficients of 40 digits) vanishes at c to about 10^-7985, where a
+  chance relation of that degree would need coefficients of about 63 digits. This is a high-precision
+  candidate for the minimal polynomial of c, stored under "high_precision_candidates" in the JSON file; it is
+  not exactly verified (no Gram matrix over Q(c) yet: LLL in dimension about 252 per entry).
   The next tier (degree 200 at 12,000 digits) is estimated at 2.7–3.4 hours
   per LLL. Elimination with msolve 0.11.0 on the symmetric-subspace KKT system exceeded 7 GB of memory even on
   saddle B (degree 13). A dedicated later search is reserved (Wöden, 2026-10-21).
