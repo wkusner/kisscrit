@@ -235,3 +235,6 @@ One dated entry per checkpoint of a controlled session (commit hash, what change
 - Found (seen): the exact work behind the 2026-10-02 note (stress_exact.py, coindex_cert.py, certificate_<r>.json) is in neither the repo nor TWELVE_CoWork; the paper source is not in the repo (Project knowledge holds v6); no data for the r = 1 contact graphs with 15-23 contacts, for the antiprism band, or for the KKLS M_5 stratum is stored anywhere I could read.
 - The three values near 1.0003063 are distinct critical configurations (interval enclosures of c in results/certified_n12.json are disjoint; 21, 20, 19 contacts; co-index 1, 2, 3); the 19-contact graph is the 20-contact graph minus (9,11) in the stored labels. Status: interval (untrusted script) and seen.
 - Deviations: none. Seeds: none.
+
+### 19:04 CT, correction to the E1 entry
+- The E1 heading above says 19:10 CT and the E1 report block said "As of 19:12 CT"; both were written without reading the clock and are wrong. The clock read 19:03:48 CT after E1; E1 closed at about 19:02 CT.
