@@ -8,9 +8,11 @@ three with a high-precision relation in the 2026-10-08 note (degrees 28, 46, 59)
 of degree <= 90 at 1600 digits (docs/open-questions.md section 3).
 
   python3 scripts/exact/build_e3.py LABEL [DPS]     build one configuration and merge it into the JSON file
-  python3 scripts/exact/build_e3.py --probe LABEL DPS DMAX
+  python3 scripts/exact/build_e3.py --probe LABEL DPS DMAX [--store]
         refine to DPS digits and run one LLL on 1, c, ..., c^DMAX (timing and a relation if one is found);
-        prints, writes nothing.
+        a relation is factored over Z and each factor is evaluated at c.  With --store, the factor that
+        vanishes at c is written to the JSON file under "high_precision_candidates" (labelled high
+        precision only: no exact verification).
 
 Labels are the ten-digit radii used as keys of results/certified_n12.json.
 """
@@ -146,13 +148,42 @@ def probe(label, dps, dmax):
     print('%s dps=%d newton %.1fs residual %s  LLL(dim %d) %.1fs  relation: %s' % (
         label, dps, t1 - t0, mp.nstr(res, 3), dmax + 1, t2 - t1,
         'none' if a is None else 'degree %d, height %d digits' % (max(i for i, x in enumerate(a) if x), len(str(max(abs(x) for x in a))))), flush=True)
-    return a
+    if a is None:
+        return None
+    from flint import fmpz_poly
+    _, fac = fmpz_poly(a).factor()
+    best = None
+    with mp.workdps(dps):
+        for f, m in fac:
+            v = abs(mp.polyval([int(x) for x in reversed(f.coeffs())], c))
+            lg = mp.log10(v) if v else -mp.inf
+            h = len(str(max(abs(int(x)) for x in f.coeffs())))
+            print('  factor degree %d (multiplicity %d), height %d digits, log10|f(c)| = %s' % (
+                f.degree(), m, h, mp.nstr(lg, 6)), flush=True)
+            if best is None or lg < best[1]:
+                best = (f, lg, h)
+    f, lg, h = best
+    # chance profile: a spurious relation of degree n at D digits has height about 10^(D/(n+1))
+    spurious = (dps - 10) / (f.degree() + 1)
+    return {'minpoly': [str(int(x)) for x in f.coeffs()] if f.leading_coefficient() > 0 else
+            [str(-int(x)) for x in f.coeffs()],
+            'degree': f.degree(), 'height_digits': h, 'log10_abs_value_at_c': mp.nstr(lg, 6),
+            'expected_height_digits_of_a_chance_relation': round(spurious), 'digits': dps, 'lll_dimension': dmax + 1,
+            'c_numerical': mp.nstr(c, 40)}
 
 
 def main():
     """Build one configuration (or probe) and merge it into data/exact/critical-configs-n12.json."""
     if sys.argv[1] == '--probe':
-        probe(sys.argv[2], int(sys.argv[3]), int(sys.argv[4]))
+        cand = probe(sys.argv[2], int(sys.argv[3]), int(sys.argv[4]))
+        if cand is not None and '--store' in sys.argv:
+            commit, dirty = B2.git_state()
+            cand['status'] = ('high precision only (LLL relation at %d digits; not exactly verified: no Gram matrix '
+                              'over Q(c) yet)' % cand['digits'])
+            cand['script'] = 'scripts/exact/build_e3.py --probe at %s%s' % (commit, ' (DIRTY)' if dirty else '')
+            data = json.load(open(B2.OUT))
+            data.setdefault('high_precision_candidates', {})[sys.argv[2]] = cand
+            json.dump(data, open(B2.OUT, 'w'), indent=1)
         return
     label = sys.argv[1]
     if len(sys.argv) > 2:
