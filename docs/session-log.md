@@ -258,3 +258,18 @@ One dated entry per checkpoint of a controlled session (commit hash, what change
 - Antiprism band: uniform weight not a stress; the D_6d-symmetric stress is positive, ring/cross ratio 2 + sqrt3 (exact); kernel 0, co-index 0. HCP: the six-edge equator stress is an exact nonnegative witness; FCC: uniform weight is a stress (agrees with C5a).
 - Tests (computed at bb9cd9b): `python3 -m pytest -q` 137 passed, 3 warnings, 323 s (baseline 137); no new tests yet (E5).
 - Deviations: stress-space dimensions, symmetric stresses and M's stored-stress ray were computed in E2 (needed for criticality); cones, extreme rays and edge orbits remain E4. Seeds: none new.
+
+### 21:00 CT, scope change by Wöden (verbatim)
+> approve msolve
+
+msolve is not on conda-forge (micromamba 2.9.0: "msolve does not exist"); with this approval it was built from source (github.com/algebraic-solving/msolve, commit 2ec27fb, version 0.11.0) in the container only (/opt/msolve), against GMP, MPFR and FLINT 3.0.1. Nothing was added to the repo or its dependencies.
+
+### 21:25 CT, milestone E3 (stop rule: the next LLL tier exceeds 2 h)
+- Commits: c329a7e and d60dd8f (`scripts/exact/build_e3.py`), 940ba51 (`scripts/exact/elim_system.py`), 29f5980 (data).
+- Computed (exact in K, `build_e3.py` at d60dd8f, clean tree): 1.0003062544 (d = 28, 1500 digits, 20 s), 1.0010073939 (d = 46, 3000 digits, 12 min), 1.0008452029 (d = 59, 4000 digits, 41 min) pass every check; their c polynomials equal the high-precision relations of the 2026-10-08 note up to sign. Unique stress, all weights > 0; co-index / descending index 3/0, 1/0, 1/0; kernels 3, 1, 1; symmetry C_s, C_2, C_2; r of degree 56, 92, 118. All eleven contact graphs done so far are pairwise non-isomorphic (canonical forms).
+- Method note: for d = 46 and 59 the Gram entries are quotients -a(c)/b(c) of elements with small coefficients in the integral basis w_k = a_d c^k + ... + a_(d-k+1) c; their power-basis coefficients run to hundreds of digits, which is why the power-basis LLL found nothing even at 12000 digits (scratch diagnostic, then the versioned ratio guess in build_e3.py). The JSON file is 8.6 MB for that reason.
+- Elimination (msolve 0.11.0): calibrated on saddle B (known answer, degree 13) with the symmetric-subspace KKT system from `elim_system.py` at 940ba51 (30 variables, 39 quadratic equations). msolve -P 1, one thread, was killed by the container's memory limit after 6.5 min (resident 5.9 GB of 7 GB) while still in degree-5 F4 steps. Not feasible in this container; not attempted on the four open values.
+- LLL (python-flint 0.9.0): 1.0002374095 refined to 8000 digits (Newton 119 s, residual 2.5e-8021); one LLL on 1, c, ..., c^150 (29 min): no relation accepted (acceptance: residual < 10^-3995 and height below about 10^42). So c has no integer relation of degree <= 150 with coefficients below about 10^42 (high precision, not proof). Next tier (degree 200, 12000 digits) estimated 2.7-3.4 h per LLL from the measured scaling: stopped by the 2-hour rule.
+- Running at this entry: the same degree-150 probe for 1.0003062547, 1.0002115891, 1.0002111636 (about 32 min each); results to follow.
+- Finding (computed from stored data, networkx 3.7): `data/n12_above1.json` gives 1.0003062547 |Sym| = 2 (sym_proper 1), but its stored contact graph has only the trivial automorphism; an isometry of the configuration permutes the points and preserves contacts, and the points span R^3, so |Sym| <= 1. The stored symmetry and the stored contact list cannot both be right.
+- Tests: not rerun since E2 (no test or core file changed; E5 adds the tests).
