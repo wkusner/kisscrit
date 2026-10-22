@@ -341,3 +341,24 @@ Repo attached mid-session; libflint-dev installed; `ball_kill_test.py` not chang
 - Module header of `checker.py` and code-tour section 4: add V1b -> twelve.
 - Proposed checklist line (not written): "DOM-1: V1b (L31-L33): start boxes finite, rhombus in (0, pi], pentagon in [0, 2 pi]; DES-F2 forgery rejected by the reference and the kernel front end; 45,260 cond lines scanned, 0 violations."
 - Patches: `git format-patch 5da4bba..HEAD`, not pushed.
+
+## 2026-10-21/22, F8 code session (Opus 5.5, cloud clone), prompt v1.0
+
+### 2026-10-21 21:42 CT, start (plan only)
+- Repo attached (read access) and cloned fresh; clock 21:12 CT. START_HEAD cc375bc (origin/main); `merge-base --is-ancestor cc375bc HEAD` ok.
+- Baseline at cc375bc (computed): `python3 -m pytest -q` 141 passed, 7 failed; with `--ignore=tests/test_ball_kill.py`, 147 passed; `test_ball_kill.py` alone, 1 passed. Cause: `test_ball_kill.py` sets `flint.ctx.dps = 80` globally, which changes later C/Arb bit comparisons in the same process. `make -C csrc test`: all containment tests passed. Versions: Ubuntu 24.04, gcc 13.3.0, FLINT 3.0.1 (apt), Python 3.13.16, numba 0.68.0, python-flint 0.9.0, shellcheck 0.9.0.
+- Pilot script `04_Compute/code-kisscrit-pilot-script-v1-2026-10-21.sh` read through the device bridge (read only).
+- Stop rule: checklist F8 says "check (C kernel + fallback)" and "on macOS from the Keychain"; the prompt says do not wire in the C kernel (B-8) and tokens only from `~/.config/kisscrit/`. Followed the prompt (reading; Wöden did not rule on it explicitly). Keychain left to M4.
+
+### 2026-10-22 08:17 CT, answers from Wöden (as given)
+- Q1 run branch `run/<route>-<run-id>` from the pinned commit, never `main`; Q2 `start` refuses existing route outputs unless `--fresh`, which acts only in the run branch's work tree in one logged commit; Q3 certificates stay on disk after upload, 50 GB estimate stands; resume risk: `run_repair.py` with quarantine, kill test decides, `run_shard.py` v2 proposed only; run record also names the checker commit and labels results "checker verdict at commit X; not certified" until DOM-1.
+- Base moved to origin/main 5da4bba (commits after cc375bc touch only docs/, scripts/exact/, data/exact/, tests/test_exact_configs.py, as the prompt allows).
+
+### 10:01 CT, milestone M1 (closing; M2-M4 not started)
+- Commits: af79868 (`run_state.py`, `run_repair.py`), 391d6e5 (`run.sh` v1 with `docs/setup-guide.md` v2.3 Part B and `docs/code-tour.md` section 10), 1d938ec (`tests/test_run_scripts.py`), and the one that adds this entry.
+- Tests (computed at 1d938ec): `pytest -q` in one process 208 passed, 7 failed (the same `test_ball_kill` interference as the baseline); `--ignore=tests/test_ball_kill.py` 214 passed, `test_ball_kill.py` alone 1 passed. New: 20 tests in `tests/test_run_scripts.py`. The baseline at 5da4bba was not run separately (inferred 195 = 215 - 20). `bash -n` and `shellcheck -x` clean; pyflakes clean.
+- Really run in the container: setup (git clone mode, system Python in place of conda); self-test with a pytest subset (C build and make test, selftest.py, peak RSS one certify worker 197 MiB on route test); route test, 2 of 8 shards, budget 20,000, foreground: 94 certified, 94 verified by the reference checker, wall 5 min 26 s; kill (SIGKILL to the process group) and resume: shards 2 and 3 of 8, 53 + 53 codes, no duplicates, sets equal, 106 verified; tmux start, status, stop and a simulated reboot through the @reboot line (fake crontab): resumed, finished, 130 of 132 verified (2 budget at budget 20,000, not verified, as expected).
+- Dry-run or faked only: Miniforge and conda env creation, gh login, the systemd unit (fake systemctl; no user manager in the container), cron (fake crontab), preflight failure parsing (stub report). Not in M1: GitHub pushes (M2), Zenodo (M3; `check-tokens` works, `zenodo-sandbox-test` refuses), macOS (M4).
+- Deviations: repair is a separate file `run_repair.py` (as Wöden named it); concurrency is P = W / (w + 1) shards (driver plus w workers), so on 64 cores 21 shards at once rather than the pilot's 40; the tmux socket stays in tmux's default directory (/tmp/tmux-UID), not under ~/kisscrit-run; the full pytest suite runs in two processes (test_ball_kill.py alone).
+- Proposed, not written: preflight v3 (the linger "alternative" sentence repeats tmux; exit non-zero when anything fails); run_shard.py v2 (write the result and its certificate as one atomic step, so a kill cannot split them); checklist line for F8 (not ticked): "F8 M1 (2026-10-22, 391d6e5): run.sh setup, preflight, selftest, start, status, stop on test and cond; kill-and-resume on route test in the container; server test pending."
+- Seeds: `test_ball_kill.py` leaks `flint.ctx.dps` into later tests -> twelve; `kisscrit/core/interval.py` results depend on the global `flint.ctx` -> twelve.
