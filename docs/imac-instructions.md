@@ -1,3 +1,5 @@
+> **Record of the old iMac run (the `cond` pilot).** This file describes how that run was done. The current procedure is `docs/setup-guide.md` and `scripts/full/run.sh`. Nothing below was changed (CLEAN-5, 2026-10-22).
+
 # Running the completeness computation on the iMac
 
 How to run the N = 12 completeness computation on the late-2015 iMac (4 cores, 3.2 GHz Intel Core i5), from Terminal only. This replaces GitHub Desktop.

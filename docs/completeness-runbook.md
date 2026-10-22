@@ -1,3 +1,5 @@
+> **Record of the old iMac run (the `cond` pilot).** This file describes how that run was done. The current procedure is `docs/setup-guide.md` and `scripts/full/run.sh`. Nothing below was changed (CLEAN-5, 2026-10-22).
+
 # Completeness above r = 1: runbook
 
 This is the operating manual for the computation that is meant to show the census of critical configurations of 12 points is complete for r ≥ r_min. It covers what the code does, how to run it on one machine, and how to spread it across several machines using only GitHub.
