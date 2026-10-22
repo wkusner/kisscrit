@@ -6,4 +6,11 @@ dist/
 results/completeness/*/*-test-*
 results/completeness/checks/checks-certificates-test-*
 results/completeness/summary-test.json
-__pycache__/
+# macOS, editor and build products (CLEAN-1)
+.DS_Store
+*.pyc
+*.so
+*.o
+.ipynb_checkpoints/
+.vscode/
+*.swp
