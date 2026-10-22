@@ -238,3 +238,9 @@ One dated entry per checkpoint of a controlled session (commit hash, what change
 
 ### 19:04 CT, correction to the E1 entry
 - The E1 heading above says 19:10 CT and the E1 report block said "As of 19:12 CT"; both were written without reading the clock and are wrong. The clock read 19:03:48 CT after E1; E1 closed at about 19:02 CT.
+
+### 19:09 CT, closing at milestone E1 (Wöden: "close out")
+- State: milestone E1, not done. E2-E5 not started; no script, data, test or doc file of the allowlist written. Tests at HEAD: unchanged code, baseline 137 passed.
+- Filed: TWELVE_CoWork/04_Compute/code-exact-1-e1-report-2026-10-21.md and code-exact-1-e1-patches-2026-10-21/ (patches 0001-0003, `git format-patch e849da0..HEAD`). Not pushed.
+- Open for Wöden: Q1 add M to E2; Q2 the r = 1 graphs and the M_5 stratum (search at c = 1/2, or "not found, no data"); Q3 report the index as dim ker - co-index; Q4 msolve for E3.
+- Seeds: none.
