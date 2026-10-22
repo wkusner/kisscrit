@@ -2,7 +2,8 @@
 
 Purpose: everything Wöden does by hand for the restarted completeness run, in order: the exact command, what success looks like, and what to do if it fails.
 
-Date: 2026-10-16. Version 2.2 (repo copy of the Project guide v2.1; this copy wins when the two differ, and the code changes it in the same commit as any code that changes a manual step).
+Date: 2026-10-16. Version 2.3 (repo copy of the Project guide v2.1; this copy wins when the two differ, and the code changes it in the same commit as any code that changes a manual step).
+- v2.3 (2026-10-22, F8 M1): Part B written for `scripts/full/run.sh` version 1 (setup, selftest, start, status, stop; no pushes or Zenodo yet); C2, C4 and D1 use its commands.
 - v2.1: the server runs Ubuntu 26.04 and Wöden has no admin rights. Step A4 uses `scripts/full/kisscrit-preflight.sh`, which tests the server and drafts the request to the sysadmin.
 - v2: the run machine is a dedicated Linux server reached by SSH. It has no scheduler, Wöden is probably its only user, and it has 32 or 64 cores. The iMac becomes the fallback. v1 (2026-10-15) assumed the iMac.
 - Written before the run script exists. Steps marked **(confirm)** depend on a website's current layout, which was not checked.
@@ -163,47 +164,85 @@ Run this on your laptop, once. After that, `ssh you@server` doesn't ask for a pa
 
 ## Part B: when the code session says `run.sh` is ready
 
-### B1. Copy the script to the server
+`scripts/full/run.sh` version 1 (F8 milestone M1, 2026-10-22). What it does now: setup, preflight, self-test, start, status and stop on routes `test` and `cond`, with resume, one run at a time, and survival by systemd or tmux. What it does not do yet: push to GitHub (milestone M2) and Zenodo (milestone M3). Until then, results are committed only locally, on the run branch `run/<route>-<run-id>` in `~/kisscrit-run/runs/<run-id>/tree`. Route `full` is refused until `results/full/F6-READY` exists (checklist F6). macOS is milestone M4. Tested in a cloud container only (Ubuntu 24.04, systemd and cron faked); the first server run is yours.
 
-The repository is private, so the simplest route is from your laptop. Download `run.sh` from the chat into `~/Downloads`, then run this on the laptop:
+### B1. Copy the scripts to the server
+
+From your laptop, inside your clone of kisscrit:
 
 ```
-scp ~/Downloads/run.sh you@server:~/
+scp scripts/full/run.sh scripts/full/kisscrit-preflight.sh you@server:~/
 ```
 
-### B2. Install and self-test
+`run.sh` needs nothing else for `setup`. Every later step runs the copy of `run.sh` inside the pinned tree.
+
+The pinned commit must be pushed to GitHub and must contain `scripts/full/run.sh`. Pin it as a tag (recommended, e.g. `git tag run-cond-1 <hash> && git push origin run-cond-1`) or as the full 40-character hash. Branch names and short hashes are refused.
+
+**Without GitHub on the server** (as for the pilot): send the tree with a COMMIT file, then use `--archive ~/kisscrit-src` in B2. No pushes are possible in this mode.
+
+```
+git archive HEAD | ssh you@server 'mkdir -p ~/kisscrit-src && tar -x -C ~/kisscrit-src' && git rev-parse HEAD | ssh you@server 'cat > ~/kisscrit-src/COMMIT'
+```
+
+### B2. Setup (once)
 
 ```
 ssh you@server
 bash ~/run.sh setup
 ```
 
-This installs a private Python and C toolchain in your home directory (no root needed), including FLINT. It then:
-- logs in to GitHub: it prints a code and a URL, which you open on your laptop and approve;
-- compiles the checker and runs the self-tests;
-- does a **sandbox Zenodo round trip**: it creates a draft on sandbox.zenodo.org, uploads a small file, checks it, and deletes it.
+It does these steps, all under your home directory, without root:
+- runs the preflight (`kisscrit-preflight.sh`) and stops if anything fails: an unreachable host, or too little disk;
+- installs Miniforge into `~/miniforge3`, downloading with curl or, if curl is missing, wget;
+- creates the conda environment `kisscrit-run` (python 3.12, numpy, scipy, numba, python-flint, libflint, c-compiler, make, networkx, mpmath, sympy, pytest, git, gh), logged to `~/kisscrit-run/logs/conda.log`;
+- logs in to GitHub. `gh` prints a one-time code. On your laptop, open https://github.com/login/device, type the code and approve. Nothing has to open a browser on the server;
+- clones `wkusner/kisscrit` into `~/kisscrit-run/repo`.
 
-**Success:** the last line says the self-test passed, including Zenodo sandbox. It also reports cores, memory, and how the run will survive logout (systemd or tmux).
+With `--archive ~/kisscrit-src` it uses the archive tree instead and skips the GitHub login.
 
-**If it fails:**
-- **"cannot reach …":** see A4 (outbound HTTPS).
-- **"Zenodo 401" or "403":** the sandbox token is wrong or lacks a scope. Redo A3 and A5 for the sandbox.
-- **"token file permissions":** run `chmod 600 ~/.config/kisscrit/*.token`.
-- **Anything else:** copy the last 30 lines into the code chat.
+**Success:** the last lines give the cores, the memory, the survival method (`systemd` when lingering is on, otherwise `tmux`) and `next: bash run.sh selftest --commit ...`.
 
-### B3. Start
+### B3. Self-test the pinned commit
 
 ```
-bash ~/run.sh start --route full
+bash ~/run.sh selftest --commit run-cond-1
 ```
+
+In a scratch copy of the commit under `~/kisscrit-run/selftest/<hash>/`, it does these steps:
+- builds `csrc/` with the environment's compiler and runs `make -C csrc test`;
+- runs the whole pytest suite. `tests/test_ball_kill.py` runs in its own process, because it changes a global Arb precision that other tests depend on;
+- runs `scripts/completeness/selftest.py`;
+- measures the peak memory of one certify worker on route test. `start` uses this to cap the number of workers.
+
+The Zenodo sandbox round trip comes with milestone M3. In the cloud container the self-test took about 2 minutes with a pytest subset; with the whole suite allow 10 minutes.
+
+**Success:** `selftest passed for <hash>`. The record is `~/kisscrit-run/selftest/<hash>.json`.
+
+### B4. Start
+
+The pilot-equivalent run on `cond`:
+
+```
+bash ~/run.sh start --route cond --commit run-cond-1 --fresh
+```
+
+- `--fresh` is needed because the repository already holds `cond` results; without them `run_shard.py` would skip every candidate. It removes them on the run branch only, in one commit, and the removed file names go to `~/kisscrit-run/runs/<run-id>/logs/fresh-removed.txt`. `main` is never touched.
+- Defaults: 40 shards, budget 300,000, workers `nproc` capped by memory, 2 workers per shard. Override with `--shards`, `--budget`, `--workers`, `--workers-per-shard`.
+- The reference checker `scripts/completeness/check_certificates.py` decides. `--checker SCRIPT` names another tracked script of the pinned tree, and the run record names whichever was used. The C kernel front end is not used (audit finding B-8).
+- Every result is labelled "checker verdict at commit X; not certified".
 
 Then log out. The run continues.
+- **Resume:** after a stop, a kill or a crash, `bash ~/run.sh start` (no options) continues. Finished shards are skipped.
+- **Damaged lines:** before each resume, `run_repair.py` moves any damaged or unpaired result lines to `~/kisscrit-run/runs/<run-id>/quarantine/`, logged in `logs/repair.jsonl`.
+- **A new run:** while a run is unfinished, a new one needs `--new`.
 
 ---
 
 ## Part C: during the run
 
 ### C1. On GitHub (from anywhere, including your phone)
+
+**Not yet:** `run.sh` version 1 commits only locally on the run branch, so nothing below appears on GitHub until milestone M2. Until then, use C2.
 
 - **`results/full/progress.json`**, updated at least hourly. It shows the phase, shards done out of total, candidates by status, boxes, CPU time and the measured rate. There is no time estimate on purpose.
 - **Commits.** One per finished shard.
@@ -212,9 +251,10 @@ Then log out. The run continues.
 ### C2. On the server
 
 ```
-bash ~/run.sh status
+bash ~/run.sh status                     # run, phase, shards, survival (systemd or tmux), last log lines
 tail -f ~/kisscrit-run/logs/run.log      # Control-C leaves tail, not the run
-tmux attach -t kisscrit                  # only in tmux mode; detach with Control-B then D
+tmux -L kisscrit attach -t kisscrit-run  # only in tmux mode; detach with Control-B then D
+bash ~/run.sh stop --reason "why"        # stops cleanly; the reason goes into the run record
 ```
 
 ### C3. The Zenodo draft
@@ -227,11 +267,11 @@ Look in your uploads on zenodo.org **(confirm the page name)**. The draft's file
 
 | Symptom | Likely cause | What to do |
 |---|---|---|
-| No new commits for hours, and `status` is stuck on one shard | a long shard, or a hang | Compare the log's last lines an hour apart. If nothing changes: `run.sh stop`, then `run.sh start --route full`. The run resumes. |
+| No new commits for hours, and `status` is stuck on one shard | a long shard, or a hang | Compare the log's last lines an hour apart. If nothing changes: `run.sh stop`, then `run.sh start` (no options). The run resumes. |
 | "push failed" in the log | expired GitHub login, or the network | `gh auth status`; if needed, `gh auth login`. The script retries. |
 | "Zenodo 401" | token expired or revoked | New token (A3), then replace the file (A5). The script retries. |
 | "No space left on device" | disk full | Free space. Delete uploaded certificate files only if `run.sh status` lists them as uploaded and verified. |
-| The server rebooted | maintenance | Nothing to do: systemd or cron restarts the run. Check `run.sh status`. |
+| The server rebooted | maintenance | Nothing to do: systemd or the @reboot cron line restarts the run (not after `run.sh stop`). Check `run.sh status`. |
 
 To stop for good: `bash ~/run.sh stop`.
 
@@ -317,7 +357,8 @@ Each line prompts you to paste a token.
 
 ## Maintenance
 
-Version 2.2, 2026-10-16. Revise:
+Version 2.3, 2026-10-22. Revise:
 - when `run.sh` exists (exact names and flags);
 - after the F5 pilot (the disk figure);
-- after the A4 server checks (anything the server lacks).
+- after the A4 server checks (anything the server lacks);
+- when run.sh milestones M2 (GitHub pushes), M3 (Zenodo) and M4 (macOS) land: C1, C3, D1 and Part E.

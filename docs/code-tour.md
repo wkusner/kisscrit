@@ -112,3 +112,25 @@ Mutation tests: `tests/test_certificates.py` (each named for its gap); `tests/te
 ## 9. Exact data of the critical configurations found so far (EXACT-1; not part of the proof)
 
 - `scripts/exact/` (all untrusted): `kfield.py` (K = Q[t]/(P), Sturm isolation, exact signs, linear algebra, inertia), `hiprec.py` (guesses only: Newton and LLL), `verify.py` (Gram checks, stress space, motions and co-index, symmetry, canonical graph, s and r), `build_e2.py` and `build_e3.py` (the eleven configurations), `elim_system.py` (symmetric-subspace KKT system for msolve), `weights_e4.py` (stress cones from the stored data), `table_md.py`. Data: `data/exact/critical-configs-n12.json` and `.md`. Description and conventions: `docs/exact-configs.md`. Test: `tests/test_exact_configs.py` (re-verifies every exact claim from the stored strings; five mutants must fail).
+
+## 10. The run scripts (checklist F8; untrusted tooling, not part of the proof)
+
+`scripts/full/run.sh` (version 1, F8 milestone M1) drives the completeness run on a Linux server without root. It runs the untrusted search (`scripts/completeness/run_shard.py`, unchanged) and then the configured checker, by default the reference checker `scripts/completeness/check_certificates.py` (unchanged). It decides nothing itself. Every verdict it reports is labelled "checker verdict at commit X; not certified", where X is the last commit at the pinned commit that touched `kisscrit/core/` or the checker script. The C kernel front end `kisscrit/ckernel.py` is not used (audit finding B-8). A different checker can be named with `start --checker SCRIPT`. It must be a tracked file of the pinned tree with the same command line, and the run record names it.
+
+- **Phases:** gen, then certify (shards run concurrently), then check (one certificate file at a time), then manifest (V5) and summary (V7).
+- **Resume:** each phase skips finished work: gen markers, the `done-*` files of `run_shard.py`, and check markers.
+- **One run at a time:** `flock` on `~/kisscrit-run/run.lock`, inherited by the shard processes, so a new copy waits until stragglers of a killed one exit.
+- **Pinned code:** the code is a tag or full hash, checked out on the branch `run/<route>-<run-id>`. A tree whose code differs from that commit (`git status` outside `results/`) is refused at start and at every resume. Commits on the run branch touch only `results/`; the certificate files are never committed.
+- **Scratch:** under `~/kisscrit-run` (`TMPDIR`, numba cache, bytecode cache). Hashes use Python `hashlib`.
+- **Survival:** a `systemd --user` unit when lingering is on, else a detached tmux session plus a tagged `@reboot` crontab line (`start --boot`; a run stopped by hand stays stopped).
+
+`scripts/full/run_state.py` is the helper for the run's JSON files: configuration, run record, progress. It also writes `results/full/progress.json` (rates only, no time estimate), computes the worker cap from the self-test's peak RSS (`workers()`), measures that peak (`rss`) and records the package versions.
+
+`scripts/full/run_repair.py` runs before every resume. It handles what a kill can leave behind:
+- a partial last line in a JSON-lines result, certificate or check file;
+- a truncated gzip member at the end of a gen file;
+- a certificate without its result line, or a result line without its certificate. `run_shard.py` writes the certificate first, so a kill between the two writes leaves this pair, and the resumed run would otherwise append a duplicate certificate.
+
+It removes those lines into a quarantine directory and logs each action. It never adds or changes a result.
+
+Tests: `tests/test_run_scripts.py` (dry runs of every subcommand, refusals, a route-test run killed and resumed, tmux start and stop, the systemd unit through a fake `systemctl`, the self-test with a pytest subset). Manual steps: `docs/setup-guide.md` Part B.
