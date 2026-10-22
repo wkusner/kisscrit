@@ -19,6 +19,8 @@ import os
 import sys
 import time
 
+sys.set_int_max_str_digits(0)  # high-precision values have more than 4300 digits
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import mpmath as mp
 import flint
