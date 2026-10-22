@@ -432,8 +432,20 @@ def faces_match(cert_faces, gen_faces):
 
 
 def structural_check(cert, code=None, gen_faces=None, r_min=R_MIN):
-    """V1-V4 on a whole certificate; `code` is the candidate's canonical code from the record that carries the
-    certificate, `gen_faces` the faces of its gen record.  Returns a list of problems (empty when all pass)."""
+    """V1, V1b, V2-V4 on a whole certificate; `code` is the candidate's canonical code from the record that
+    carries the certificate, `gen_faces` the faces of its gen record.  Returns a list of problems (empty when
+    all pass).
+    V1b (docs/lemmas.md L31-L33), on every chart's start box [lo0, hi0] (every node box lies inside it): all
+    endpoints finite; a rhombus coordinate has 0 < lo0 and hi0 <= pi, because the model's range of the corner
+    O from two corners (model.py, `ex`) is valid only for A in (0, pi] (L32); a pentagon coordinate has
+    0 <= lo0 and hi0 <= 2 pi, hygiene only, no pentagon bound is needed for soundness (L31).  The bounds on
+    hi0 are decided in Arb as "certainly <=" against pi and 2 pi enclosed at 128 bits (radius about 2^-126,
+    whatever the global precision): so hi0 = 3.141592653589793 (the double below pi) is accepted and the next
+    double up is not; lo0 is compared as the double it is.  The theta coordinate is covered by V3, the
+    straight-corner coordinate by V1 (its box contains pi)."""
+    from flint import ctx
+    with ctx.workprec(128):
+        PI = arb.pi(); TWO_PI = 2 * PI
     problems = []
     if cert.get('version') not in (1, 2): return ['unknown certificate version']
     if not theta_domain_ok(cert['theta']):
@@ -465,6 +477,16 @@ def structural_check(cert, code=None, gen_faces=None, r_min=R_MIN):
             if not (float(ch['lo0'][j]) <= lo[j] and float(ch['hi0'][j]) >= hi[j]):
                 problems.append('V1: chart %s coordinate %d box [%r, %r] does not contain the a-priori box [%r, %r]'
                                 % (ch['modes'], j, ch['lo0'][j], ch['hi0'][j], lo[j], hi[j]))
+        rhombus = {G.pidx[fi][0] for fi, k in enumerate(G.sizes) if k == 4}
+        pentagon = {i for fi, k in enumerate(G.sizes) if k == 5 for i in G.pidx[fi]}
+        for j in range(G.npar):                                             # V1b (L31-L33)
+            a, b = float(ch['lo0'][j]), float(ch['hi0'][j])
+            ok = math.isfinite(a) and math.isfinite(b)
+            if ok and j in rhombus: ok = a > 0 and bool(arb(b) <= PI)
+            elif ok and j in pentagon: ok = a >= 0 and bool(arb(b) <= TWO_PI)
+            if not ok:
+                problems.append('V1b: chart %s coordinate %d box [%r, %r] outside the model domain '
+                                '(docs/lemmas.md L32)' % (ch['modes'], j, ch['lo0'][j], ch['hi0'][j]))
     return problems
 
 
