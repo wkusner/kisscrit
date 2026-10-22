@@ -185,30 +185,30 @@ def build(label):
         elif st['uniform_is_stress']:
             st['nonnegative_witness'] = 'uniform weight (exact)'
             w_use = [F.const(fmpq(1, len(A)))] * len(A)
-        elif label == 'M':
-            # the stored stress has weight 0 on edge (5,9): the stress with w_(5,9) = 0, normalized
-            e59 = A.index((5, 9))
-            rows = V.balance_matrix(F, A, G, frame) + [[F.const(1) if e == e59 else F.const(0) for e in range(len(A))]]
-            ray = nullspace(rows, len(A))
-            assert len(ray) == 1
-            r0 = ray[0]
-            s = sum(r0[1:], r0[0])
-            w = [x / s for x in r0]
-            sg = [x.sign() for x in w]
-            st['ray_with_zero_on_(5,9)'] = {'normalized': [F.coeffs(x) for x in w],
-                                           'signs': sg, 'nonnegative': all(x >= 0 for x in sg)}
-            mp.mp.dps = 30
-            st['ray_vs_stored_sigma_max_abs_difference'] = '%.2e (numerical)' % max(
-                abs(float(F.eval_arb(x, 128).mid()) - s0) for x, s0 in zip(w, sig))
-            if all(x >= 0 for x in sg):
-                st['nonnegative_witness'] = 'the ray with w_(5,9) = 0 (exact; one zero weight)'
-                w_use = w
         elif label == 'HCP':
             eq = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (0, 5)]
             w = [F.const(1) if e in eq else F.const(0) for e in A]
             assert V.is_stress(F, A, G, frame, w)
             st['nonnegative_witness'] = 'weight 1 on the six equator edges, 0 elsewhere (exact; great-hexagon stress)'
             w_use = [x / 6 for x in w]
+    if label == 'M':
+        # the stored stress has weight 0 on edge (5,9): the stress with w_(5,9) = 0, normalized
+        e59 = A.index((5, 9))
+        rows = V.balance_matrix(F, A, G, frame) + [[F.const(1) if e == e59 else F.const(0) for e in range(len(A))]]
+        ray = nullspace(rows, len(A))
+        assert len(ray) == 1
+        r0 = ray[0]
+        s = sum(r0[1:], r0[0])
+        w = [x / s for x in r0]
+        sg = [x.sign() for x in w]
+        st['ray_with_zero_on_(5,9)'] = {'normalized': [F.coeffs(x) for x in w],
+                                       'signs': sg, 'nonnegative': all(x >= 0 for x in sg)}
+        mp.mp.dps = 30
+        st['ray_vs_stored_sigma_max_abs_difference'] = '%.2e (numerical)' % max(
+            abs(float(F.eval_arb(x, 128).mid()) - s0) for x, s0 in zip(w, sig))
+        if all(x >= 0 for x in sg) and w_use is None:
+            st['nonnegative_witness'] = 'the ray with w_(5,9) = 0 (exact; one zero weight)'
+            w_use = w
     rep['stress'] = st
     # rigidity, flexes, kernel, co-index
     unique = len(basis) == 1
