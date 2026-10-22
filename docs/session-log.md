@@ -299,3 +299,45 @@ Seed: dedicated exact search for 1.0003062547, 1.0002374095, 1.0002115891, 1.000
 - Commits: ce0b277 (probe factors and stores), 85c8000 (candidate data), f9f092b and 8ea21a0 (table), 1f27c61 (test: candidates labelled, polynomial irreducible), and this entry with the docs/exact-configs.md update.
 - Tests (computed at 1f27c61): full suite 184 passed, 3 warnings, 491 s (137 + 47).
 - Not done, by decision (a): exact data for the four values; the 1.0002111636 candidate is the starting point for the iMac search.
+
+## 2026-10-22, DOM-1 code session (Sonnet 5.5, cloud clone), prompt v1.0
+
+### 08:18 CT, start
+- The repo was not attached at session start; attached (read) and cloned fresh, depth 1. START_HEAD 5da4bba = origin/main; `git merge-base --is-ancestor 5da4bba HEAD` ok. Installed in the container: libflint-dev 3.0.1 (apt; `csrc` did not build without it), the declared Python dependencies, pytest 9.1.1. Versions: Python 3.13.16, python-flint 0.9.0, numpy 2.5.3, scipy 1.18.1, networkx 3.7, mpmath 1.3.0, gcc 13.3.0. `make -C csrc test`: all containment tests passed.
+- Read: the DES-F2 document (Project knowledge copy `claude/admin-twelve-fable-design-domain-2026-10-21.md`), c4 and c4b from the DES-F2 tgz (read through the bridge, not run in the repo tree), the files of the prompt's list. The container restarted once at about 08:29 and killed the first baseline run; the baselines were rerun in a pristine copy of 5da4bba.
+- Corrections to the prompt: the certificate file is `results/completeness/certificates/certificates-cond-11-of-40.jsonl` (not `cert/`), and DES-F2's "line 662" is 0-based index 661 (faces and modes match).
+
+### Part 1: the forgery reproduces at 5da4bba (computed; floating point, not proof)
+- Scratch re-implementation of c4b (outside the repo): chart 0 of index 661, rhombus face 2 (coordinate 1), start box hi0 = 2 pi + alpha(theta_lo) = 7.514168294844598, MAX_DEPTH = 0 oracle. 1,791 events in 34.8 s; `check_certificate` (MAX_DEPTH 40) then returned verified True, structural [], failed 0, open 0, terminal 0, counts vsum 744, invalid 126, vsum-tight 16, invalid-tight 10 (3.7 s): DES-F2's numbers. The C kernel front end `ckernel.check_certificate` accepted it too (computed, in the old-code run of the new test).
+- Fixture: the event stream is stored (zlib, 432 characters) in `tests/dom1_forgery_fixture.py` together with the generator; the test builds the certificate in milliseconds; `DOM1_REGEN=1` regenerates the stream (about 35 s) and compares: equal (computed, 63 s with the scan below).
+
+### L32, re-derived (my words)
+For A in (0, pi], A/2 in (0, pi/2], so sin(A/2) > 0, cos(A/2) >= 0 and cot(A/2) = cos/sin >= 0, strictly decreasing in A. For theta in [1.0, 1.5], cos theta > 0 (L17 D1), so 1/cos theta is positive and increasing in theta. Hence cos(A/2)/(cos theta sin(A/2)), the argument of `_beta_pt`, is decreasing in A and nondecreasing in theta, and arctan is increasing: the minimum of 2 beta over the box is at (theta_lo, A_hi), the maximum at (theta_hi, A_lo), which is `ex`. Outside, cot(A/2) has period 2 pi in A, so `_beta_pt(theta_lo, A_hi)` with A_hi > 2 pi equals the value at A_hi - 2 pi and is not a lower bound; for A in (pi, 2 pi) the theta-monotonicity reverses. I agree with DES-F2; no gap. L31 and L33 were not re-derived by me (marked "proved by DES-F2 by reading, reviewed by control chat: <not yet>").
+
+### Parts 2-5: commits (newest first; `git am` changes the hashes)
+- 926adfa part 5 (tests/test_ball_kill.py: autouse fixture saving and restoring the mpmath and flint precision, and the one-process test); the log commit follows it.
+- 1217280 part 4 (tests/dom1_forgery_fixture.py, tests/test_certificates.py additions). fd2444a part 3 (docs/lemmas.md L31-L33 and the L17 pointer, docs/certificate-format.md V1b line). a383c3a part 2 (kisscrit/core/checker.py, `structural_check` only: V1b, message `V1b: chart ... coordinate j box [lo, hi] outside the model domain (docs/lemmas.md L32)`; hi0 <= pi is "certainly <=" in Arb with pi enclosed at 128 bits, so hi0 = 3.141592653589793 passes and the next double does not).
+- `ckernel.py` line 250 calls `ck.structural_check`; `csrc/` has no start-box logic and is unchanged; `model.py` unchanged.
+- Part 5 as done: `scripts/balls/ball_kill_test.py` is NOT changed. `KrawczykAt.accepts()` runs at the precision set in `__init__`; restoring at the end of `__init__` would change the precision (hence the numerics) of `accepts()`. The fixture is numerically inert.
+
+### Tests (computed)
+- New tests at 926adfa: 25 V1b tests (18 non-finite, 3 domain, positive control, forged certificate, kernel front end, scan) pass in 26 s. With `checker.py` reverted to 5da4bba and nothing else changed (scratch copy, no `-x`): all 25 fail: no V1b message exists (`_v1b(...)` empty in the 18 non-finite, the 3 domain and the positive control's boundary assertions), the forged certificate's structural list is `[]` (the reference accepts it), `ckernel.check_certificate` returns verified True, and the scan's mutated box is not flagged. The positive control, the forged-tree control (`structural=False` still verifies) and the scan assertions about honest boxes pass on both; each of those tests also holds an assertion that fails on the old code.
+- Part 5 test: with the fixture disabled (`autouse=False`, scratch copy) the one-process run fails with 5 failures, `test_carith.py::test_unary_bit_identical[cos, sin, atan, asin, acos]`; with it, passes (16 passed with test_carith, 18 s).
+- Full suite, `python3 -m pytest -q`: 5da4bba 7 failed, 188 passed, 3 warnings, 568.93 s (5 test_carith, test_ckernel::test_differential_on_cond_sample, test_cmodel::test_corners_vertex_sums_directions_bit_exact); 926adfa 221 passed, 1 skipped (the DOM1_REGEN test), 3 warnings, 605.30 s. With `--ignore=tests/test_ball_kill.py`: 5da4bba 194 passed, 636.15 s; 926adfa 219 passed, 1 skipped, 631.22 s. The seven failures are gone. Runs overlapped, so times are not comparable. `make -C csrc test` passed; `tests/test_ckernel.py` unchanged and passing in the full runs. `py_compile`, `compileall` and `bash -n scripts/*.sh` clean.
+
+### Scan of the committed cond certificates (computed, `DOM1_FULL_SCAN=1`, 35-63 s, 926adfa)
+40 files, 45,260 lines, 70,235 run charts (1,264 `not_run` charts skipped), 678,121 coordinates: 0 non-finite; 254,874 rhombus coordinates, all in (0, pi], with the single box [1.2309829876650107, 2.513274124079959]; 353,012 pentagon coordinates, all in [1.2309829876650107, 3.141592653589793]; theta [1.047255283818003, 1.1071487191393552]. Violations of the V1b rule: 0. No committed certificate is known to be affected. (These lines still fail V1 and V3 by about one ulp, as before: checklist F1; not changed here.)
+
+### Read-only check: data/n12_above1.json, r = 1.0003062547 (entry 6), computed (networkx 3.7, numpy 2.5.3)
+The stored 20-contact graph has |Aut| = 1; the stored X satisfies its contacts to 2.8e-16 and has only the trivial isometry at Gram tolerance up to 3e-4, and `kisscrit.symmetry.group_orders(X)` at its default tol 1e-6 is (1, 1). The stored `sym: 2, sym_proper: 1` is reproduced only at tol >= 1e-3 (reflection (0 5)(2 11)(4 6)(8 10), max point residual 5.3e-4; it swaps the contact (9,11) with the non-contact (2,9), Gram gap 6.1e-4). So the stored `sym` looks wrong (a loose tolerance) and the contacts and coordinates are consistent. The other 11 entries: stored sym = group_orders at 1e-6 = |Aut| of the stored contact graph. Not decided: whether the true critical configuration at this r has a mirror symmetry (the two nearly equal 19- and 21-contact neighbours do).
+
+### Deviations
+Repo attached mid-session; libflint-dev installed; `ball_kill_test.py` not changed (above); `check_certificate` still replays after a structural problem, so a rhombus box with lo0 = -1.0 can still raise ArithmeticError after the V1b problem is recorded (the tests assert `structural_check` and "rejected", ValueError or ArithmeticError counted); `checker.py`'s module header and `docs/code-tour.md` still list V1-V4 only (outside the allowlist). The TWELVE_CoWork bridge dropped and returned during the session.
+
+### Seeds
+- `check_certificate` (and the kernel front end) should stop after a structural failure -> twelve (DOM-2).
+- `scripts/balls/ball_kill_test.py` sets mpmath and flint precision process-wide (load_census, `KrawczykAt`); make it local to the methods -> twelve.
+- Recompute `sym` for `data/n12_above1.json` entry 6 at tol 1e-6 (EXACT-1 open question 2) -> twelve.
+- Module header of `checker.py` and code-tour section 4: add V1b -> twelve.
+- Proposed checklist line (not written): "DOM-1: V1b (L31-L33): start boxes finite, rhombus in (0, pi], pentagon in [0, 2 pi]; DES-F2 forgery rejected by the reference and the kernel front end; 45,260 cond lines scanned, 0 violations."
+- Patches: `git format-patch 5da4bba..HEAD`, not pushed.
