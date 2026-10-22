@@ -10,12 +10,12 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "MIT"}
 authors = [{name = "Wöden Kusner"}]
-dependencies = ["numpy", "scipy>=1.9", "networkx>=2.8", "mpmath"]
+dependencies = ["numpy", "scipy>=1.9", "networkx>=2.8", "mpmath", "python-flint"]
 
 [project.optional-dependencies]
 exact = ["python-flint", "sympy"]
-test = ["pytest"]
+test = ["pytest", "sympy"]
 completeness = ["numba>=0.58"]
 
 [tool.setuptools]
-packages = ["kisscrit", "kisscrit.completeness"]
+packages = ["kisscrit", "kisscrit.completeness", "kisscrit.core"]
