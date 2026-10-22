@@ -134,3 +134,9 @@ Mutation tests: `tests/test_certificates.py` (each named for its gap); `tests/te
 It removes those lines into a quarantine directory and logs each action. It never adds or changes a result.
 
 Tests: `tests/test_run_scripts.py` (dry runs of every subcommand, refusals, a route-test run killed and resumed, tmux start and stop, the systemd unit through a fake `systemctl`, the self-test with a pytest subset). Manual steps: `docs/setup-guide.md` Part B.
+
+## 11. Moved to `attic/` (not part of the tour; nothing here is trusted or used)
+
+`attic/` keeps files that no code imports or runs, moved with `git mv` so their history stays. The tour does not describe them.
+
+- `attic/kisscrit/completeness/bnb.py`, `contract.py`, `ad.py` (CLEAN-6, 2026-10-22): superseded search prototypes (checklist B1 "Delete"). Before the move, an AST scan of the 96 tracked Python files found no importer of `bnb`, `contract` or `ad` except `contract.py` importing `ad.py`; the full suite passes after the move. `bnb2.py` (read by `scripts/completeness/selftest.py`) and `faces.py` (imported by `structure.py`) stay in `kisscrit/completeness/`.
