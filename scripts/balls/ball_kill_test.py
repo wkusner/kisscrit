@@ -570,8 +570,7 @@ def main():
                    'mu)) into its interior; bisection bracket [accepted, rejected], ratio 1.01'),
         terminal_totals=dict(leaves=len(leaves), codes=len({d['code'] for d in leaves})),
         codes=codes, radii=radii, verdict_table=table, boxes_covered_by_single_balls=covered,
-        boxes=[{k: v for k, v in b.items() if k not in ('lo', 'hi')} | dict(theta=[b['lo'][0], b['hi'][0]])
-               for b in boxes])
+        boxes=[b | dict(theta=[b['lo'][0], b['hi'][0]]) for b in boxes])
     path = a.out or (None if a.smoke else OUT)
     if path:
         os.makedirs(os.path.dirname(path), exist_ok=True)
