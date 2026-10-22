@@ -320,3 +320,191 @@ def test_v3_domain_boundary():
     assert ck.theta_claim_ok([h[0], am.THETA_CEIL])
     assert not ck.theta_claim_ok([h[0], float(np.nextafter(am.THETA_CEIL, INF))])
     assert not ck.theta_domain_ok([1.2, 1.2]) and not ck.theta_domain_ok([1.3, 1.2])
+
+
+# ---------------------------------------------------------------- V1b: the start box's domain (docs/lemmas.md L31-L33)
+# DOM-1 (2026-10-22).  The model's exact range of a rhombus corner from two corners is valid only for A in (0, pi]
+# (L32); a start box outside it was accepted at 5da4bba (the DES-F2 forgery, reproduced there by the DOM-1 session).
+# Numbers of the DES-F2 section 3 list: 4 (non-finite endpoints), 6 (the forged certificate), 7 (rhombus hi0 = 4.0),
+# 8 (rhombus lo0 = -1.0), 9 (pentagon hi0 = 10.0).  Fixture: tests/dom1_forgery_fixture.py.
+import glob, math
+import dom1_forgery_fixture as F
+
+
+@pytest.fixture(scope='module')
+def r1_candidate():
+    """The r1 saddle's candidate (E = 21, one chart, three pentagons, two rhombi) of the committed cond run."""
+    base = F.load_base()
+    if base is None: pytest.skip('no cond certificates in the repository')
+    return base
+
+
+def _kinds(cert0):
+    """Coordinate indices of the chart 0 of cert0 by kind: theta, rhombus, pentagon (model.Graph's layout)."""
+    from kisscrit.core import model as am
+    G = am.Graph(cert0['faces'], cert0['charts'][0]['modes'])
+    return dict(theta=[0], rhombus=[G.pidx[fi][0] for fi, k in enumerate(G.sizes) if k == 4],
+                pentagon=[i for fi, k in enumerate(G.sizes) if k == 5 for i in G.pidx[fi]])
+
+
+def _honest(cert0, events=None):
+    """cert0 with honest theta and the checker's own a-priori start box (V1 and V3 pass by construction); with
+    `events` (a uint8 array) the chart's proof tree is replaced, e.g. [2] = one excluded leaf."""
+    cert = json.loads(json.dumps(cert0)); ch = cert['charts'][0]
+    th = F.honest_theta(); lo, hi, _ = F.start_box(cert0, forged=False)
+    cert['theta'] = list(th); ch['lo0'] = list(lo); ch['hi0'] = list(hi)
+    if events is not None:
+        ch.update(events=_pack(np.array(events, np.uint8)), q=_pack(np.zeros(0, np.uint16)),
+                  mu=_pack(np.zeros(0, np.float32)), n_events=len(events))
+    return cert
+
+
+def _v1b(problems, j=None):
+    return [p for p in problems if p.startswith('V1b') and (j is None or ' coordinate %d box' % j in p)]
+
+
+def _rejected_any(cert, code):
+    """Rejected: a ValueError or ArithmeticError (disjoint enclosures) is a rejection too, as in `_rejected`."""
+    try:
+        r = check_certificate(cert, code=code)
+    except (ValueError, ArithmeticError):
+        return True
+    return not r['verified']
+
+
+def test_v1b_honest_start_boxes_pass(r1_candidate):
+    """Positive control: the checker's own a-priori start boxes, and the boxes of the committed line itself, raise
+    no V1b problem; the rhombus and pentagon boundary doubles are decided as 'certainly <=' (pi enclosed at 128
+    bits): hi0 = the double below pi passes, the next double up does not; the same for 2 pi on a pentagon."""
+    code, cert0 = r1_candidate
+    honest = _honest(cert0)
+    assert ck.structural_check(honest, code, honest['faces']) == []
+    assert not _v1b(ck.structural_check(cert0, code, cert0['faces']))          # the committed line: no V1b problem
+    kinds = _kinds(cert0); jr, jp = kinds['rhombus'][0], kinds['pentagon'][0]
+    for j, top in ((jr, math.pi), (jp, 2 * math.pi)):
+        c = json.loads(json.dumps(honest)); c['charts'][0]['hi0'][j] = top
+        assert not _v1b(ck.structural_check(c, code, c['faces']), j), (j, top)
+        c['charts'][0]['hi0'][j] = float(np.nextafter(top, 10))
+        assert _v1b(ck.structural_check(c, code, c['faces']), j), (j, top)      # the double above pi (2 pi)
+    c = json.loads(json.dumps(honest)); c['charts'][0]['lo0'][jr] = 5e-324       # smallest positive double
+    assert not _v1b(ck.structural_check(c, code, c['faces']), jr)
+    c['charts'][0]['lo0'][jr] = 0.0                                              # 0 < lo0 is strict
+    assert _v1b(ck.structural_check(c, code, c['faces']), jr)
+
+
+@pytest.mark.parametrize('end', ['lo0', 'hi0'])
+@pytest.mark.parametrize('bad', [NAN, INF, -INF], ids=['nan', 'plus-inf', 'minus-inf'])
+@pytest.mark.parametrize('kind', ['theta', 'rhombus', 'pentagon'])
+def test_v1b_non_finite_endpoints(r1_candidate, kind, bad, end):
+    """DES-F2 item 4: NaN or +-inf in lo0 or hi0 of any coordinate is a V1b problem (before the fix, only some
+    of them were a V1 problem, by accident of the comparisons)."""
+    code, cert0 = r1_candidate
+    j = _kinds(cert0)[kind][0]
+    cert = _honest(cert0); cert['charts'][0][end][j] = bad
+    probs = ck.structural_check(cert, code, cert['faces'])
+    assert _v1b(probs, j), probs
+
+
+def _one_leaf_r1(cert0, mutate):
+    cert = _honest(cert0, events=[2]); mutate(cert['charts'][0]); return cert
+
+
+@pytest.mark.parametrize('what', ['rhombus-hi0-4.0', 'rhombus-lo0-minus-1', 'pentagon-hi0-10'])
+def test_v1b_domain_violations_on_one_leaf(r1_candidate, what):
+    """DES-F2 items 7 (rhombus hi0 = 4.0), 8 (rhombus lo0 = -1.0; before the fix the replay raised an
+    ArithmeticError, a rejection by accident), 9 (pentagon hi0 = 10.0, hygiene: before the fix accepted by V1 and
+    harmless).  The structural check names the coordinate; the certificate is not verified.  Note: check_certificate
+    still replays the tree after a structural problem, so it may raise ArithmeticError on the rhombus boxes."""
+    code, cert0 = r1_candidate
+    kinds = _kinds(cert0); jr, jp = kinds['rhombus'][0], kinds['pentagon'][0]
+    j, end, val = {'rhombus-hi0-4.0': (jr, 'hi0', 4.0), 'rhombus-lo0-minus-1': (jr, 'lo0', -1.0),
+                   'pentagon-hi0-10': (jp, 'hi0', 10.0)}[what]
+    cert = _one_leaf_r1(cert0, lambda ch: ch[end].__setitem__(j, val))
+    probs = ck.structural_check(cert, code, cert['faces'])
+    assert len(_v1b(probs, j)) == 1 and 'docs/lemmas.md L32' in _v1b(probs, j)[0], probs
+    assert not [p for p in probs if p.startswith('V1:')], probs                   # V1 itself passes: only V1b speaks
+    assert _rejected_any(cert, code)
+
+
+def test_v1b_forged_rhombus_certificate_rejected(r1_candidate):
+    """DES-F2 item 6: the forged certificate (rhombus start box [alpha(theta_lo), 2 pi + alpha(theta_lo)], 1,791
+    events, every leaf closed by the checker's own direct tests).  At 5da4bba it was accepted: verified True, no
+    structural problem, 0 failed, 0 open, 0 terminal.  It is rejected now, by V1b, and only by V1b: the model is
+    unchanged, so without the structural check the replay still accepts the tree (the first assertion pins that,
+    and must be revisited if model.py's rhombus range is ever made sound on any box)."""
+    code, cert, j = F.forged_certificate()
+    assert j == 1 and cert['charts'][0]['hi0'][j] == 2 * math.pi + cert['charts'][0]['lo0'][j]
+    assert cert['charts'][0]['n_events'] == F.N_EVENTS
+    r0 = check_certificate(cert, code=code, gen_faces=cert['faces'], structural=False)
+    assert r0['verified'] and not r0['failed'] and r0['open'] == 0 and not r0['terminal'], r0['counts']
+    probs = ck.structural_check(cert, code, cert['faces'])
+    assert len(probs) == 1 and probs[0].startswith('V1b: chart') and ' coordinate 1 box [' in probs[0], probs
+    r = check_certificate(cert, code=code, gen_faces=cert['faces'])
+    assert not r['verified'] and r['structural'] == probs and r['terminal'] == []
+
+
+@pytest.mark.skipif(not __import__('kisscrit.core.carith', fromlist=['x']).available(), reason='C kernel not built')
+def test_v1b_forged_certificate_rejected_by_kernel_front_end(r1_candidate):
+    """The C kernel front end calls the same structural_check (kisscrit/ckernel.py), so it rejects the forgery too."""
+    from kisscrit import ckernel
+    code, cert, j = F.forged_certificate()
+    r = ckernel.check_certificate(cert, code=code, gen_faces=cert['faces'])
+    assert not r['verified'] and len(_v1b(r['structural'], 1)) == 1, r['structural']
+
+
+@pytest.mark.skipif(os.environ.get('DOM1_REGEN') != '1', reason='set DOM1_REGEN=1 (about 35 s)')
+def test_forgery_fixture_regenerates(r1_candidate):
+    """The stored event stream is what the checker-as-oracle forger produces (deterministic)."""
+    ok, ev = F.regenerate_events()
+    assert ok and np.array_equal(ev, np.frombuffer(zlib.decompress(base64.b64decode(F.EVENTS_B64)), np.uint8))
+
+
+def _scan_cond(files):
+    """Read-only scan of cond certificate files: counts and extremes of every chart's start box by coordinate
+    kind, and the number of coordinates violating the V1b rule (decided as the checker does, in Arb at 128 bits)."""
+    from flint import arb, ctx
+    from kisscrit.core import model as am
+    with ctx.workprec(128): PI = arb.pi(); TPI = 2 * PI
+    S = dict(lines=0, charts=0, coords=0, nonfinite=0, rh=0, pe=0, bad=0, rh_lo=math.inf, rh_hi=-math.inf)
+    first = None
+    for fn in files:
+        with open(fn) as fh:
+            for line in fh:
+                d = json.loads(line); c = d['certificate']; S['lines'] += 1
+                for ci, ch in enumerate(c['charts']):
+                    if ch.get('not_run'): continue
+                    G = am.Graph(c['faces'], ch['modes']); S['charts'] += 1
+                    rh = {G.pidx[fi][0] for fi, k in enumerate(G.sizes) if k == 4}
+                    pe = {i for fi, k in enumerate(G.sizes) if k == 5 for i in G.pidx[fi]}
+                    assert G.npar == len(ch['lo0']) == len(ch['hi0'])
+                    if first is None and rh: first = (d['code'], c, ci, sorted(rh)[0])
+                    for j in range(G.npar):
+                        a, b = float(ch['lo0'][j]), float(ch['hi0'][j]); S['coords'] += 1
+                        if not (math.isfinite(a) and math.isfinite(b)): S['nonfinite'] += 1; S['bad'] += 1; continue
+                        if j in rh:
+                            S['rh'] += 1; S['rh_lo'] = min(S['rh_lo'], a); S['rh_hi'] = max(S['rh_hi'], b)
+                            S['bad'] += not (a > 0 and bool(arb(b) <= PI))
+                        elif j in pe:
+                            S['pe'] += 1; S['bad'] += not (a >= 0 and bool(arb(b) <= TPI))
+    return S, first
+
+
+def test_v1b_cond_certificates_start_boxes_inside_domain():
+    """Every rhombus start box of the scanned cond certificates lies in (0, pi], every endpoint is finite, and
+    pentagon boxes lie in [0, 2 pi].  The suite scans every fifth file (8 of 40, about 8 s); DOM1_FULL_SCAN=1 scans
+    all 40 (45,260 lines, about 35 s; result in docs/session-log.md, 2026-10-22).  The last assertions feed one
+    scanned certificate to the checker with a rhombus box mutated to hi0 = 2 pi + lo0."""
+    allf = sorted(glob.glob('results/completeness/certificates/certificates-cond-*-of-40.jsonl'),
+                  key=lambda p: int(p.split('cond-')[1].split('-of')[0]))
+    if not allf: pytest.skip('no cond certificates in the repository')
+    files = allf if os.environ.get('DOM1_FULL_SCAN') == '1' else allf[::5]
+    S, first = _scan_cond(files)
+    assert S['lines'] > 5000 and S['rh'] > 10000 and S['pe'] > 10000, S
+    assert S['nonfinite'] == 0 and S['bad'] == 0, S
+    assert 0 < S['rh_lo'] and S['rh_hi'] <= math.pi, S
+    if os.environ.get('DOM1_FULL_SCAN') == '1': assert S['lines'] == 45260, S
+    code, cert, ci, j = first
+    cert = json.loads(json.dumps(cert)); ch = cert['charts'][ci]
+    assert not _v1b(ck.structural_check(cert, code, cert['faces']))
+    ch['hi0'][j] = 2 * math.pi + ch['lo0'][j]
+    assert _v1b(ck.structural_check(cert, code, cert['faces']), j)
