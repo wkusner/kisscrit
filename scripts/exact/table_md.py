@@ -22,7 +22,7 @@ NOT_FOUND = [
                             'trivial automorphism'),
     ('1.0002374095', 21, 1, 'no exact data'),
     ('1.0002115891', 20, 2, 'no exact data'),
-    ('1.0002111636', 19, 3, 'no exact data'),
+    ('1.0002111636', 19, 3, 'no exact data; high-precision candidate for c of degree 126 (see below)'),
 ]
 R1_NONE = [('r = 1 contact graphs with 15-23 contacts', 'not found, no data (one sentence in the 2026-10-01 note)'),
            ('KKLS M_5 4-simplex stratum at r = 1', 'not found, no data (named in docs/checklist.md C5)')]
@@ -77,6 +77,13 @@ def main():
     L.append('')
     for lab, why in R1_NONE:
         L.append('- %s: %s.' % (lab, why))
+    L.append('')
+    for lab, cd in json.load(open(JS)).get('high_precision_candidates', {}).items():
+        L.append('- %s: candidate minimal polynomial of c, degree %d, height %d digits, |f(c)| about 10^(%s) at %d '
+                 'digits (a chance relation would have height about %d digits); %s; %s. Coefficients in the JSON '
+                 'file under "high_precision_candidates".' % (
+                     lab, cd['degree'], cd['height_digits'], cd['log10_abs_value_at_c'], cd['digits'],
+                     cd['expected_height_digits_of_a_chance_relation'], cd['status'], cd['script']))
     L.append('')
     for lab in ORDER:
         d = C[lab]
