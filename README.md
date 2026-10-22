@@ -27,17 +27,19 @@ with σ > 0 and every non-contact cosine strictly below c. The system has N·d +
 | `search` | `Census` of types; random ascent; contact-graph surgery; enumeration over all graphs on n ≤ 7 vertices (`graphs_on`, `solve_graph`); rattler strata; Euler-characteristic check against M_{0,N} |
 | `symmetry` | the symmetry group in O(d) and the labeled count N!/\|G ∩ SO(d)\| |
 | `exact` | arbitrary-precision Newton on the KKT system (`refine_kkt`); LLL minimal polynomials with a height test (`minpoly`); conversion from c to r |
-| `certify` | interval (Krawczyk) certification of a nondegenerate critical configuration on S²: existence and uniqueness in a box, exact contact graph, positive stress, co-index via the bordered Hessian |
+| `certify` | interval verification (Krawczyk) of a nondegenerate critical configuration on S²: existence and uniqueness in a box, exact contact graph, positive stress, co-index via the bordered Hessian |
 | `hull` | (d = 3) enumeration of the triangulations of S² on n vertices by flips; θ*(T), the largest minimum angle of an inscribed convex realization of T (local optimization, so a lower bound) |
 | `packing` | the same toolkit for equal balls in containers (unit square/cube, flat tori, disk/ball): ascent, square KKT systems with gauge, co-index, Morse–Bott family and rattler-stratum counting, Euler checks, high-precision refinement |
 
 ## Quick start
 
 ```bash
-pip install -e .            # numpy, scipy, networkx, mpmath; python-flint for minpoly
+sudo apt install libflint-dev gcc make    # FLINT headers and a C compiler (Debian/Ubuntu names) for the C kernel
+pip install -e ".[test,completeness]"     # numpy, scipy, networkx, mpmath, python-flint; pytest, sympy; numba
+make -C csrc                              # builds build/libkisscheck.so, the C interval kernel (csrc/)
 python -m kisscrit census --N 6 --d 3 --starts 30
 python -m kisscrit analyze data/n12_above1.json
-pytest -q
+pytest -q                                 # tests that need the C kernel skip when it is not built
 ```
 
 ```python
