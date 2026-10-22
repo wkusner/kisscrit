@@ -7,15 +7,32 @@ configuration's own face parameters in the chart of its terminal boxes (cond sha
 closes and lands back on the census configuration; (2) the Krawczyk test of kisscrit/certify.py's square KKT
 system, run in Arb by the script, accepts a small radius and rejects a large one.  Under 60 s.
 """
-import json, os, sys
+import json, os, subprocess, sys
 
 import numpy as np
+import pytest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'scripts', 'balls'))
 import ball_kill_test as B  # noqa: E402
 
 SHARD, LINE, CHART = 'certificates-cond-32-of-40.jsonl', 1187, 2
+
+
+@pytest.fixture(autouse=True)
+def _restore_global_precision():
+    """The script sets the process-wide precision of mpmath (`mp.mp.dps`, in load_census and KrawczykAt) and of
+    python-flint (`flint.ctx.dps`, in KrawczykAt: scripts/balls/ball_kill_test.py, line 392) and never restores it,
+    and `accepts()` relies on it staying set, so the script itself is left as it is.  This fixture saves both
+    precisions (in bits) before each test of this module and restores them afterwards, so that tests which run
+    later in the same process (tests/test_carith.py, test_cmodel.py, test_ckernel.py, which compare the Python
+    reference with the C kernel at the default precision) are not affected (DOM-1, part 5)."""
+    import flint, mpmath
+    mp_prec, fl_prec = mpmath.mp.prec, flint.ctx.prec
+    try:
+        yield
+    finally:
+        mpmath.mp.prec = mp_prec; flint.ctx.prec = fl_prec
 
 
 def _census():
@@ -55,3 +72,18 @@ def test_ball_kill_smoke():
     K = B.KrawczykAt(*P['mid'], P['A'])
     assert K.accepts(1e-6)               # a positive radius is accepted
     assert not K.accepts(1e-2)           # and a large one is not (the measured bracket is ~2.7e-4)
+
+
+def test_ball_kill_does_not_leak_precision_into_later_tests():
+    """Run the smoke test above and then one test of tests/test_carith.py in ONE pytest process: before the
+    fixture, the carith test failed (5 parametrizations of test_unary_bit_identical, 7 failures over carith,
+    cmodel and ckernel in the F8 session) because the global precision stayed at 80 digits.  The check is made in a
+    subprocess so that it does not depend on the order of this module's tests in the running process."""
+    from kisscrit.core import carith
+    if not carith.available(): pytest.skip('C kernel not built (make -C csrc)')
+    here = os.path.join(ROOT, 'tests')
+    cmd = [sys.executable, '-m', 'pytest', '-q', '-p', 'no:cacheprovider',
+           os.path.join(here, 'test_ball_kill.py') + '::test_ball_kill_smoke',
+           os.path.join(here, 'test_carith.py') + '::test_unary_bit_identical']
+    r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, timeout=600)
+    assert r.returncode == 0 and ' passed' in r.stdout and 'failed' not in r.stdout, r.stdout[-1500:]
