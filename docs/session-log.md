@@ -273,3 +273,22 @@ msolve is not on conda-forge (micromamba 2.9.0: "msolve does not exist"); with t
 - Running at this entry: the same degree-150 probe for 1.0003062547, 1.0002115891, 1.0002111636 (about 32 min each); results to follow.
 - Finding (computed from stored data, networkx 3.7): `data/n12_above1.json` gives 1.0003062547 |Sym| = 2 (sym_proper 1), but its stored contact graph has only the trivial automorphism; an isometry of the configuration permutes the points and preserves contacts, and the points span R^3, so |Sym| <= 1. The stored symmetry and the stored contact list cannot both be right.
 - Tests: not rerun since E2 (no test or core file changed; E5 adds the tests).
+
+### 21:28 CT, decision by Wöden (verbatim)
+> lets choose a, but reserve a later search for those 4 with more powerful tools (perhaps a dedicated run on the imac?)
+
+Seed: dedicated exact search for 1.0003062547, 1.0002374095, 1.0002115891, 1.0002111636 on the iMac (elimination with more memory, or LLL at degree >= 200) -> twelve.
+
+### 21:31 CT, milestone E4: weight spaces
+- Commits: 8e20947 (`scripts/exact/weights_e4.py`), 3df6e09 (data, written by weights_e4.py at 8e20947, clean tree, 50 s). Input: the stored exact strings only; the Gram checks are re-run first.
+- Computed (exact in K): dim K(C) / extreme rays / strictly positive stress / uniform a stress: DOD 9 / 278 / yes / yes; M 2 / 2 / yes / no; antiprism 3 / 12 / yes / no; FCC 4 / 4 / yes / yes; HCP 4 / 5 / yes / no; B, r1, A, 1.0003062544, 1.0010073939, 1.0008452029 1 / 1 / yes / no. Edge-orbit sizes are stored per configuration.
+- Checks (exact, separate script run): every listed ray is extreme (its zero set has rank dim - 1), the rays are distinct, and the ray set is closed under the symmetry group; DOD's 278 rays fall into I_h-orbits 60, 60, 60, 30, 30, 20, 12, 6. That the ray lists are complete rests on the double description algorithm.
+- Reproduced independently of `scripts/r1/exact_lambda_stress_space.py`: FCC 4 rays (great hexagons, supports 6), uniform weight a stress; HCP 5 rays with supports 6, 9, 9, 9, 21 (as the 2026-10-15 r1 note says), uniform weight not a stress; the C5a witness (1/20, 11/150, 7/200) is a stress. M's two rays vanish on (0,1) and on (5,9); the stored sigma is the second.
+- r = 1 set: FCC and HCP only; the 15-23 contact graphs and the M_5 stratum: not found, no data.
+
+### 21:46 CT, milestone E5: table, tests, docs
+- Commits: 754d664 (`scripts/exact/table_md.py`, `data/exact/critical-configs-n12.md`), 4d0bd48 (`tests/test_exact_configs.py`), dda9be4 (`docs/exact-configs.md`, `docs/code-tour.md` section 9), and the commit adding this entry (with a docs correction: only two of the four degree-150 probes had finished).
+- Tests (computed at dda9be4): `tests/test_exact_configs.py` 46 passed in 162 s (exact re-verification from the stored strings; five mutants rejected: a Gram entry, P, the interval, a dropped contact, a stress sign); full `python3 -m pytest -q` 183 passed, 3 warnings, 514 s (baseline 137 + 46 new).
+- E3 probe added: 1.0003062547, 8000 digits (Newton 141 s, residual 2.3e-8021), LLL on 1, c, ..., c^150 (2005 s): no relation. Probes of 1.0002115891 and 1.0002111636 running at this entry.
+- Proposed checklist line (not ticked, not written to docs/checklist.md): "EXACT-1: exact data (minimal polynomials of c, s, r; Gram over Q(c); stress cones; co-index) for 11 critical configurations found so far, re-verified by tests/test_exact_configs.py; four values above r = 1 without exact polynomial."
+- Deviations over the session: the E1 time stamps (corrected); stress dimensions and symmetric stresses computed in E2; msolve built from source after Wöden's approval; scratch diagnostics (not committed) located the quotient form of the Gram entries before the versioned ratio guess. Seeds: r = 1 census -> twelve; iMac search for the four values -> twelve.

@@ -87,9 +87,12 @@ Findings worth noting:
 
 ## Not found
 
-- **1.0003062547, 1.0002374095, 1.0002115891, 1.0002111636**: no exact polynomial. LLL at 8000 digits
-  finds no integer relation of degree ≤ 150 with coefficients below about 10^42 (high precision, not proof;
-  details in `docs/session-log.md`). The next tier (degree 200 at 12,000 digits) is estimated at 2.7–3.4 hours
+- **1.0003062547, 1.0002374095, 1.0002115891, 1.0002111636**: no exact polynomial. For 1.0003062547 and
+  1.0002374095, LLL at 8000 digits finds no integer relation of degree ≤ 150 with coefficients below about
+  10^42 (high precision, not proof; details in `docs/session-log.md`). For 1.0002115891 and 1.0002111636 the
+  known status is that of `docs/open-questions.md` section 3 (no relation of degree ≤ 90 at 1600 digits); the
+  same degree-150 probe was still running when this page was written, and its result goes to the session log.
+  The next tier (degree 200 at 12,000 digits) is estimated at 2.7–3.4 hours
   per LLL. Elimination with msolve 0.11.0 on the symmetric-subspace KKT system exceeded 7 GB of memory even on
   saddle B (degree 13). A dedicated later search is reserved (Wöden, 2026-10-21).
 - **r = 1**: only FCC and HCP have data. The contact graphs with 15–23 contacts mentioned in the 2026-10-01
