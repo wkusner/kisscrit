@@ -191,3 +191,14 @@ def test_mutants_fail():
     m5['stress']['normalized'][3] = ['-' + x if not x.startswith('-') else x[1:] for x in m5['stress']['normalized'][3]]
     assert fails(m5, 'stress')
     assert not fails(copy.deepcopy(d0), 'stress')  # the unaltered data pass
+
+
+def test_high_precision_candidates():
+    """Stored high-precision candidates are labelled as such; the polynomial itself is irreducible (an exact
+    statement about the polynomial only; that c is its root is high precision, not proved)."""
+    for label, cd in DATA.get('high_precision_candidates', {}).items():
+        assert cd['status'].startswith('high precision only')
+        f = fmpz_poly([int(a) for a in cd['minpoly']])
+        _, fac = f.factor()
+        assert f.degree() == cd['degree'] and len(fac) == 1 and fac[0][1] == 1
+        assert label not in DATA['configs']
