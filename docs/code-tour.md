@@ -108,3 +108,7 @@ Mutation tests: `tests/test_certificates.py` (each named for its gap); `tests/te
 ## 8. What the search is for
 
 `kisscrit/completeness/fast.py` and `runner.py` find the proof trees quickly and write certificates (format v2). Their rounding (libm with ulp padding) and their LPs affect only how often the checker has to bisect. Soundness never depends on them.
+
+## 9. Exact data of the critical configurations found so far (EXACT-1; not part of the proof)
+
+- `scripts/exact/` (all untrusted): `kfield.py` (K = Q[t]/(P), Sturm isolation, exact signs, linear algebra, inertia), `hiprec.py` (guesses only: Newton and LLL), `verify.py` (Gram checks, stress space, motions and co-index, symmetry, canonical graph, s and r), `build_e2.py` and `build_e3.py` (the eleven configurations), `elim_system.py` (symmetric-subspace KKT system for msolve), `weights_e4.py` (stress cones from the stored data), `table_md.py`. Data: `data/exact/critical-configs-n12.json` and `.md`. Description and conventions: `docs/exact-configs.md`. Test: `tests/test_exact_configs.py` (re-verifies every exact claim from the stored strings; five mutants must fail).
