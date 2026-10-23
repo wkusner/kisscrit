@@ -3,8 +3,10 @@
 Status: untrusted (exploration or tooling; no part of the proof).
 
 """
-import json, numpy as np, networkx as nx, collections, itertools, sys
-sys.path.insert(0,'/home/claude/kisscrit-repo')
+import json, numpy as np, networkx as nx, collections, itertools, sys, pathlib
+# Repository root = two directories above this file (scripts/hull12/), found from __file__ so that the
+# script does not depend on where the repository is cloned.
+sys.path.insert(0,str(pathlib.Path(__file__).resolve().parents[2]))
 import warnings; warnings.filterwarnings('ignore')
 from thetastar import theta_star
 from scipy.spatial import ConvexHull

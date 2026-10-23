@@ -3,8 +3,10 @@
 Status: untrusted (exploration or tooling; no part of the proof).
 
 """
-import sys, json, collections, numpy as np, networkx as nx
-sys.path.insert(0,'/home/claude/kisscrit-repo')
+import sys, json, collections, numpy as np, networkx as nx, pathlib
+# Repository root = two directories above this file (scripts/hull12/), found from __file__ so that
+# `import kisscrit` below works from any clone, wherever the repository is.
+sys.path.insert(0,str(pathlib.Path(__file__).resolve().parents[2]))
 import warnings; warnings.filterwarnings('ignore')
 import kisscrit as kc
 from scipy.spatial import ConvexHull
