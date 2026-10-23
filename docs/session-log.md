@@ -362,3 +362,32 @@ Repo attached mid-session; libflint-dev installed; `ball_kill_test.py` not chang
 - Deviations: repair is a separate file `run_repair.py` (as Wöden named it); concurrency is P = W / (w + 1) shards (driver plus w workers), so on 64 cores 21 shards at once rather than the pilot's 40; the tmux socket stays in tmux's default directory (/tmp/tmux-UID), not under ~/kisscrit-run; the full pytest suite runs in two processes (test_ball_kill.py alone).
 - Proposed, not written: preflight v3 (the linger "alternative" sentence repeats tmux; exit non-zero when anything fails); run_shard.py v2 (write the result and its certificate as one atomic step, so a kill cannot split them); checklist line for F8 (not ticked): "F8 M1 (2026-10-22, 391d6e5): run.sh setup, preflight, selftest, start, status, stop on test and cond; kill-and-resume on route test in the container; server test pending."
 - Seeds: `test_ball_kill.py` leaks `flint.ctx.dps` into later tests -> twelve; `kisscrit/core/interval.py` results depend on the global `flint.ctx` -> twelve.
+
+
+### 2026-10-22, control note on the F3a, F3b and F4 hashes (CLEAN-A, item CLEAN-3)
+- The hashes cited in the F3a, F3b and F4 entries above are those of the sessions' clones; after `git am` and the push they are the origin hashes below. Use the origin hashes. Each pair was confirmed with `git show --stat` (files, line counts, subject, commit time) against the entry's own description, in the order the F4 entry lists its commits ("oldest first"); the session commits no longer exist, so trees were not compared.
+
+| session | session-local hash | origin hash | what git shows at the origin commit |
+|---|---|---|---|
+| F3a | f6385e9 | 9e7808f | `csrc/kc_model.{c,h}`, `csrc/Makefile`, `tests/test_cmodel.py`, checklist, code tour, session log: "the model, test and docs" |
+| F3a | f371d08 | bc67f6a | `tests/test_code_standards.py`, one line (`TRUSTED_C` gains `kc_model`) |
+| F3a | (the commit that adds the "F3a done" entry; no hash cited) | 2ef4b4c | "tick F3a; session log (suite green, 60 passed)" |
+| F3b | a975fa4 | f6e3648 | `csrc/kc_replay.{c,h}`, `csrc/Makefile`, `tests/test_code_standards.py` |
+| F3b | 4c3fc6c | 85e5fb9 | `tests/test_creplay.py` |
+| F3b | (the commit that adds the "F3b done" entry; no hash cited) | 77711f5 | "tick F3b; code tour; session log (suite green, 116 passed)" |
+| F4 | 323dbd8 | ae5ea84 | `docs/session-log.md` only: F4 start and the `kc_hull` stop |
+| F4 | 76dd5d4 | f6dd0d1 | `csrc/kc_arith.c` (7 lines, `kc_hull`), `tests/test_carith.py` (+21, `test_hull_ties_and_nan`), code tour, log; committed 12:35, as the entry's correction says |
+| F4 | 1a0ba67 | d344a19 | `csrc/kc_leaf.{c,h}`, `csrc/Makefile`, `tests/test_code_standards.py`, code tour, log; committed 12:49, as the entry's correction says |
+| F4 | c355ca5 | 8d4e419 | `kisscrit/ckernel.py`, `tests/test_ckernel.py`, `scripts/completeness/diff_kernel.py`, log (M2) |
+| F4 | c4126fb | 325557d | `scripts/completeness/bench_kernel.py` |
+| F4 | 7f0dfb8 | 30564bb | `csrc/kc_leaf.{c,h}` and code tour, comments and docs only |
+| F4 | 8027627 | b06b2f5 | `kisscrit/ckernel.py` (docstring, `raise` for `assert`) and the 13:43 log entry; the differential driver started 13:43:41, seven seconds after this commit's time 13:43:34 |
+| F4 | 4c193c6 | b3f2f8f | the M3 log entry (differential runs), committed 15:33:01; the benchmark "at 4c193c6" ran 15:33-15:49 |
+| F4 | 38c259d | 5506235 | checklist F4 line with the measured numbers, and the M4 log entry |
+| F4 | (the closing entry; no hash cited) | abef161 | "F4 closing entry (suite 123 passed at 38c259d ...)" |
+
+- `docs/checklist.md`, F4 line: `8027627` is now `b06b2f5` and `4c193c6` is now `b3f2f8f`.
+- Hash check (computed at HEAD of this session, tokens of 7 to 40 hex characters containing a letter and a digit in `docs/*.md`, `STATUS.md` and `README.md`, each tested with `git cat-file -e <hash>^{commit}`): 54 distinct unresolved hashes. The 13 session-local hashes in the table and the 4 C5a hashes (mapped in the 2026-10-20 note) are explained by those notes (13 + 4 + 1 + 36 = 54); `3f917fb` (cited in the C5a start entry) was never in the repository (seen, also board D-012). The survey expected only `3f917fb` to remain; that expectation does not hold at this HEAD: 36 further distinct hashes are cited in the entries of the P-preflight-v2 (6), V3-FIX (3), BALL-KILL (4), EXACT-1 (18), DOM-1 (3) and F8 (3) sessions, which landed after the survey and whose session-local hashes were not mapped. Not mapped here (outside CLEAN-A's item). Seed: control note for those six sessions' hashes -> twelve.
+
+### 2026-10-22, CLEAN-8 (CLEAN-A)
+- `STATUS.md`: the gen files hold 90,836 code lines, 90,840 with four end markers (computed, `zcat` over `gen-cond-*-of-4.jsonl.gz` at e4ae530); the sentence's "every code is generated twice across the four shards" was wrong and is replaced (1x 9,140, 2x 26,664, 3x 9,456 codes, once per triangulation among T0, T1, T5, T7 that produces them). Two older lines still say "90,836 gen lines including duplicates" (`docs/decisions.md` 2026-10-16, checklist F0); they are dated records and were left unchanged: 90,836 is the number of code lines, the files have 90,840 lines.
