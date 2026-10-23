@@ -17,7 +17,7 @@ Version 1, 2026-10-11. Add entries at the end, and mark resolved ones rather tha
 
 ## 2. Higher attaching maps at N = 12
 
-**Status:** the joins of the co-index-1 saddles are verified in interval arithmetic by `scripts/certify_joins.py` (untrusted). The cells of dimension 2 and 3, and so b1, b2 and b3 just above r = 1, are not determined. For 1 < r < 1.0002111 the Morse inequalities give only b2 ≥ 12!/60 − 2.
+**Status:** the joins of the co-index-1 saddles are checked in double precision with an assumed rounding margin (1e-13) by `scripts/certify_joins.py` (untrusted; not interval arithmetic). The cells of dimension 2 and 3, and so b1, b2 and b3 just above r = 1, are not determined. For 1 < r < 1.0002111 the Morse inequalities give only b2 ≥ 12!/60 − 2.
 
 ## 3. Exactness of the remaining critical values
 
@@ -45,7 +45,7 @@ Version 1, 2026-10-11. Add entries at the end, and mark resolved ones rather tha
 - *Containers:* square, disk and tori. Lists of maxima for N ≤ 10 are already in `docs/packing.md`.
 - *Quasi-1D hard disks in a channel:* below width 1 + √3/2 diameters, jammed states can be counted exactly by transfer matrices. Between 1 + √3/2 and 2, next-nearest neighbours interact and the transfer matrix is larger. At width 2 the disks can pass each other and the problem is no longer quasi-1D.
 - *Spheres in a narrow cylinder:* columnar packings.
-- *Points on the sphere:* N ≤ 8, using the complete census in `results/census_n*.json`.
+- *Points on the sphere:* N ≤ 8, using the numerical census (lower bounds, see `docs/small-n.md`) in `results/census_n*.json`.
 
 **References:**
 - Martiniani, Schrenk, Ramola, Chakraborty, Frenkel, *Numerical test of the Edwards conjecture shows that all packings are equally probable at jamming*, Nature Physics 2017 (arXiv:1610.06328).

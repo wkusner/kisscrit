@@ -1,4 +1,4 @@
-"""Certified joins: for an index-1 critical configuration s on S^2, certify which local maxima the two sides
+"""Joins (double precision with an assumed rounding margin): for an index-1 critical configuration s on S^2, find which local maxima the two sides
 of its ascending direction lie with, in the superlevel set {rho > rho(s)}.
 
 Status: untrusted (exploration or tooling; no part of the proof).
@@ -13,9 +13,9 @@ Point values are computed in double precision; the rounding error of a cosine of
 below 1e-14, and we subtract 1e-13 from every margin.
 
 The start points y_+- lie on the variety of configurations with all contacts of s equal, at distance t0 on
-either side of s along the ascending direction w, with c(y) < c_s certified the same way.  That y_+ and y_-
+either side of s along the ascending direction w, with c(y) < c_s checked the same way.  That y_+ and y_-
 lie in the two local components of {rho > rho(s)} near s is the min-type Morse lemma at a nondegenerate
-critical point (Baryshnikov-Bubenik-Kahle), using the certified Hessian; it is not checked quantitatively here.
+critical point (Baryshnikov-Bubenik-Kahle), using the computed Hessian; it is not checked quantitatively here.
 """
 import numpy as np
 from scipy.optimize import linprog

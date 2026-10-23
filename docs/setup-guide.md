@@ -12,7 +12,7 @@ Date: 2026-10-16. Version 2.3 (repo copy of the Project guide v2.1; this copy wi
 
 ## The plan in one paragraph
 
-A Claude Code session rebuilds the pipeline: a fast certified checker in C on FLINT/Arb, faster candidate generation, and certificates with witnesses. It then hands you one script, `run.sh`. You copy that script to the server, run `setup` once, then `start`. The run survives logging out and reboots. While it runs:
+A Claude Code session rebuilds the pipeline: a fast checker in C on FLINT/Arb (every error bound from Arb), faster candidate generation, and certificates with witnesses. It then hands you one script, `run.sh`. You copy that script to the server, run `setup` once, then `start`. The run survives logging out and reboots. While it runs:
 - every finished piece is committed to GitHub;
 - a progress file there is updated at least hourly;
 - the certificate files are uploaded to a private Zenodo **draft**.
@@ -72,7 +72,7 @@ From your Mac:
 
 ```
 scp ~/Meta_Inbox/kisscrit-preflight.sh you@server:~/
-# for --try-install only (the repository is private): from your laptop, inside your clone of kisscrit; about 360 MB, mostly the certificates
+# for --try-install only (needed while the repository is private; once it is public a plain `git clone` works): from your laptop, inside your clone of kisscrit; about 360 MB, mostly the certificates
 git archive HEAD csrc kisscrit tests scripts/completeness pyproject.toml results/completeness/certificates | ssh you@server 'mkdir -p ~/kisscrit-src && tar -x -C ~/kisscrit-src'
 ssh you@server
 bash kisscrit-preflight.sh                  # quick checks, about a minute
