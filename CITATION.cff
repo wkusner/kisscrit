@@ -11,6 +11,11 @@ authors:
   - family-names: Kusner
     given-names: Wöden
 version: 0.1.0
+doi: 10.5281/zenodo.23603268
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.23603269
+    description: "Version DOI of release v0.1.0 (the concept DOI in the doi field covers all versions)."
 license: MIT
 repository-code: "https://github.com/wkusner/kisscrit"
 keywords:

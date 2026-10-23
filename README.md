@@ -1,6 +1,6 @@
 # kisscrit
 
-> **Research snapshot v0.1** (package version 0.1.0): completeness of the N = 12 census above r = 1 **not established**; see `STATUS.md`. Citation metadata: `CITATION.cff`.
+> **Research snapshot v0.1** (package version 0.1.0): completeness of the N = 12 census above r = 1 **not established**; see `STATUS.md`. Archive on Zenodo: all versions [doi:10.5281/zenodo.23603268](https://doi.org/10.5281/zenodo.23603268); release v0.1.0 [doi:10.5281/zenodo.23603269](https://doi.org/10.5281/zenodo.23603269). Citation metadata: `CITATION.cff`.
 
 Critical configurations of the min-distance (kissing / Tammes) function for N points on the sphere S^{d-1}.
 
