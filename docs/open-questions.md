@@ -17,7 +17,7 @@ Version 1, 2026-10-11. Add entries at the end, and mark resolved ones rather tha
 
 ## 2. Higher attaching maps at N = 12
 
-**Status:** the joins of the co-index-1 saddles are certified (`scripts/certify_joins.py`). The cells of dimension 2 and 3, and so b1, b2 and b3 just above r = 1, are not determined. For 1 < r < 1.0002111 the Morse inequalities give only b2 ≥ 12!/60 − 2.
+**Status:** the joins of the co-index-1 saddles are verified in interval arithmetic by `scripts/certify_joins.py` (untrusted). The cells of dimension 2 and 3, and so b1, b2 and b3 just above r = 1, are not determined. For 1 < r < 1.0002111 the Morse inequalities give only b2 ≥ 12!/60 − 2.
 
 ## 3. Exactness of the remaining critical values
 

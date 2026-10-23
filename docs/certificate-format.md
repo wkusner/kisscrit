@@ -12,7 +12,7 @@ For a candidate stressed graph G (a plane graph with 3-, 4- and 5-gon faces) and
 - **terminal:** a small box left for identification with a known critical configuration;
 - **open:** not examined, because the box budget ran out.
 
-The certificate is a proof for G exactly when every chart is complete and there are no open leaves. Terminal leaves then still need identification (checklist item C4).
+The certificate is a proof for G exactly when every chart is complete and there are no open leaves; "a proof for G" means: no critical configuration with stressed graph G has parameters outside the terminal leaves. Terminal leaves then still need identification (checklist item C4).
 
 ## 2. File layout
 

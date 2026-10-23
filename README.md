@@ -4,6 +4,8 @@ Critical configurations of the min-distance (kissing / Tammes) function for N po
 
 This is the code that supports W. Kusner, *Critical radii of kissing configurations: algebraicity, and twelve spheres above r = 1* (in preparation). It is research code, written with Claude (Anthropic) as an assistant, and it is numerical unless a function says otherwise.
 
+**The completeness of the N = 12 census above r = 1 is not established.** `STATUS.md` says what is proved, what is computed and what is assumed.
+
 ## The problem
 
 For X = (x_1, …, x_N) in (S^{d-1})^N, let c(X) = max_{i<j} ⟨x_i, x_j⟩. The kissing radius r(X) = s/(1−s), with s = sin(θ/2), increases exactly when c decreases. r is a min-type function (Baryshnikov–Bubenik–Kahle). Its critical configurations are the Clarke-critical points of c.
@@ -57,8 +59,8 @@ for t in C.sorted():
 ## Status of results (numerical unless stated)
 
 - **N = 3 … 6, d = 3.** Every graph with minimum degree ≥ 2 was solved from random starts. Counted with rattler strata, the signed counts give χ(M_{0,N}) for N = 4 and 6. N = 5 has a degenerate two-dimensional maximum set at r = 1 + √2: twenty triangles glued at thirty square pyramids, with χ = −10. With it, N = 5 checks as well. See `docs/small-n.md`.
-- **N = 12, d = 3, above r = 1.** There are twelve critical types. Contact graphs and data are in `data/`. The local maximum M at r = 1.0010121… is certified exactly elsewhere (paper, §6).
-- **N = 12 certification.** `scripts/certify_n12.py` certifies the ten saddles above r = 1 in about 10 s each (results/certified_n12.json).
+- **N = 12, d = 3, above r = 1.** There are twelve critical types found so far (not a completeness claim). Contact graphs and data are in `data/`: exact minimal polynomials for eight of them (`data/exact/`, `docs/exact-configs.md`), high-precision values only for the other four. The local maximum M at r = 1.0010121… is verified exactly in Q(c) (`data/exact/critical-configs-n12.json`, EXACT-1).
+- **N = 12, interval verification.** `scripts/certify_n12.py` (untrusted) encloses each of the ten saddles above r = 1 in a Krawczyk box: existence and uniqueness, the contact graph and a positive stress, verified in interval arithmetic; the co-index comes from a midpoint eigensolver with an assumed error bound (not proved). About 10 s each; output `results/certified_n12.json` (the file name is historical). Six of the ten saddles are also verified exactly, co-index included, in `data/exact/`.
 - **Containers.** `scripts/pack_explore.py`, `scripts/pack_maxima.py`, `scripts/pack_euler.py`; see `docs/packing.md`.
 - **Hull triangulations for N = 12.** All 7595 types were enumerated. The critical configurations above r = 1 have hulls T0 (DOD only), T1, T5 and T7. See `docs/hull.md`.
 
