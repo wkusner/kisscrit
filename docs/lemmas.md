@@ -279,4 +279,4 @@ Only these necessary conditions are used to exclude boxes. Realizability, which 
 
 ## Still to do
 
-Nothing for the lemmas themselves. For the appendix (D3), write L6, L8 and the uniqueness argument of L9 in LaTeX, and add the references Fejes Tóth 1943 (Jber. Deutsch. Math.-Verein. 53, 66–68) and Schütte–van der Waerden 1953 (Math. Ann. 125, 325–334).
+Nothing for the lemmas themselves. For the appendix (D3), write L6, L8 and the uniqueness argument of L9 in LaTeX, and add the references Fejes Tóth 1943 and Schütte–van der Waerden 1953 (volume and page numbers to be checked against the originals before they enter a bibliography; not verified here).
