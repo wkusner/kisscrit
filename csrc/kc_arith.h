@@ -1,4 +1,4 @@
-/* kc_arith.h: certified interval arithmetic for the C checker kernel.
+/* kc_arith.h: outward-rounded interval arithmetic for the C checker kernel (containment tested against Arb by csrc/test_arith.c).
  *
  * Status: trusted.  Part of the trusted base (listed in docs/code-tour.md section 0; code standards in docs/decisions.md, 2026-10-16; spec v0.3 section 1.2).
  * Implements: the arithmetic contract of docs/code-tour.md section 0.1, as a bit-for-bit reimplementation of
