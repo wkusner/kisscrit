@@ -40,7 +40,7 @@ The long run on the iMac should produce data that can be checked independently. 
   - **Measure:** certificate size, time, and the fraction of candidates that are excluded, left terminal, or out of budget.
   - **Done when:** the checker (A2) verifies the pilot, and the run settings — budget, number of shards, where certificates are stored (GitHub, or Zenodo at the end) — are fixed from the measurements.
 - [ ] **A5. Freeze and start the run.**
-  - **Steps:** tag the run version and start `scripts/full/run.sh` from the tag on the run server (checklist F8). The iMac runner `scripts/completeness/mac_run.sh` and its instructions are a record of the old run. (2026-10-23, S-04: the text said "rebuild `kisscrit-imac-run.sh`", a file that does not exist.)
+  - **Steps:** tag the run version and start `scripts/full/run.sh` from the tag on the run server (checklist F8). The iMac runner `scripts/completeness/mac_run.sh` and its instructions are a record of the old run. (2026-10-23, S-04: the text said "rebuild `kisscrit-imac-run.sh`", an iMac run script kept outside this repository, in the maintainer's Downloads; the server and `run.sh` replaced it. The first wording, "a file that does not exist", was wrong and is corrected here.)
   - **Done when:** the run is under way on the server and pushes its progress and check results (F8 M2).
 
 ## B. Repository and first dissemination
