@@ -5,7 +5,7 @@ Implements: paper Appendix B, Proposition B.5 (exact second-order data at FCC an
 
 For a balanced configuration C at r = 1 with contact graph G, let Q_w = (cD - W) (x) I_3 restricted to the tangent
 space (the stress Laplacian of L17, the Hessian of -sum_ij w_ij <u_i, u_j> in the exponential chart).  The
-second-order isolation theorem (paper, Appendix B; Project doc research-r1-second-order-isolation-2026-10-15)
+second-order isolation theorem (paper, Appendix B; the maintainer's working notes, 2026-10-15)
 needs a lower bound lambda for v^T Q_w v on the critical cone, uniformly over normalized stresses w.  When G
 carries a full-support stress the critical cone is the space of nontrivial infinitesimal flexes of G on S^2.
 
@@ -13,12 +13,17 @@ This script computes, in exact arithmetic (sympy over Q(sqrt 2) and Q(sqrt 2, sq
   - the contact graph, the rank of the spherical rigidity matrix, and the nontrivial flex space;
   - for each edge e, the value f^T Q_e f along the unit flex f, so that f^T Q_w f = sum_e w_e (f^T Q_e f) for
     every normalized w, balanced or not;
-  - the eigenvalue of Q_w on the flex space for the hexagon stresses and the uniform stress.
+  - the eigenvalue of Q_w on the flex space for the hexagon stresses and for the uniform weight w_e = 1/|E|.
+    The uniform weight is a stress at FCC but not at HCP, where its tangential force does not vanish, for example
+    at vertex 0 (exact; tests/test_r1_stress_space.py, test_uniform_weight_is_a_stress_at_fcc_but_not_at_hcp and
+    test_hcp_vertex_0_is_not_in_equilibrium_under_the_uniform_weight; docs/session-log.md, 2026-10-20,
+    "C5a done").  At HCP its eigenvalue, 3/22, is the average of the per-edge values,
+    (6 x 3/22 + 12 x 1/12 + 6 x 8/33)/24, not the value of a stress.
 
 Results (exact): FCC: rank 20, one nontrivial flex (the jitterbug), per-edge value 1/6 on all 24 edges, so
 lambda = 1/6.  HCP: rank 20, one nontrivial flex, per-edge values {1/12, 8/33, 3/22}, so lambda >= 1/12.
 
-Ported into the repository on 2026-10-16 from the Project doc code-r1-exact-lambda-2026-10-15.py, because the
+Ported into the repository on 2026-10-16 from the maintainer's working notes (2026-10-15), because the
 v4.1 commits that first carried it were never pushed.  Status: exact.
 """
 import itertools
@@ -129,7 +134,11 @@ def hcp():
 
 
 def hcp_stresses(E, U):
-    """The equatorial-hexagon stress of HCP and the uniform stress, normalized."""
+    """The equatorial-hexagon stress of HCP and the uniform weight 1/|E|, both normalized.
+
+    The uniform weight is not a stress at HCP (not in equilibrium, for example at vertex 0; see the module
+    docstring); its eigenvalue on the flex, 3/22, is the average of the per-edge values.  The label 'uniform'
+    names the weight, not a stress."""
     w = [1 if (U[i][2] == 0 and U[j][2] == 0) else 0 for (i, j) in E]
     assert sum(w) == 6
     return [('equator-hexagon', [sp.Rational(x, 6) for x in w]), ('uniform', [sp.Rational(1, len(E))] * len(E))]

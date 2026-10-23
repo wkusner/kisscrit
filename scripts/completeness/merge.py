@@ -4,7 +4,8 @@
 Status: untrusted (exploration or tooling; no part of the proof).
 
   python scripts/completeness/merge.py --route cond [--of 40]
-Prints: candidates generated, certified by status, missing shards, and the codes that need attention
+Prints: candidates generated, certificates written by the search (not a checker verdict) by status,
+missing shards, and the codes that need attention
 (status 'terminal' = boxes left near a possible critical point, to be identified against the census;
 status 'budget' = not resolved within the box budget).  Writes results/completeness/summary-<route>.json.
 """
@@ -33,7 +34,10 @@ def main():
     secs = sum(d['seconds'] for d in best.values())
     missing = len(cands - set(best))
     print('candidates generated: %d' % len(cands))
-    print('certified: %d  %s   (CPU time %.1f h)' % (len(best), dict(st), secs / 3600))
+    # Counts candidates for which the search wrote a certificate (cert-*.jsonl); no checker has run here, so the
+    # number is not a verdict (the checker is scripts/completeness/check_certificates.py).  JSON key `certified` stays.
+    print('certificates written by the search (not a checker verdict): %d  %s   (CPU time %.1f h)'
+          % (len(best), dict(st), secs / 3600))
     print('not yet run: %d' % missing)
     att = [dict(code=c, status=d['status'], E=d['E'], sizes=d['sizes'], n_terminal=d.get('n_terminal', 0), boxes=d['stats']['boxes'])
            for c, d in best.items() if d['status'] != 'excluded']

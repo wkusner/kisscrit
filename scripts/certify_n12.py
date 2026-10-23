@@ -24,7 +24,10 @@ for t in D['types']:
     try:
         R = certify(x, cc, sig, mu, A, dps=80)
         R['time'] = round(time.time() - t0, 1); R['k'] = len(A)
-        print('r=%.10f k=%d coindex(certified)=%d (numerical %d)  %.0fs' % (t['r'], len(A), R['coindex'], t['coindex'], R['time']), flush=True)
+        # The co-index comes from kisscrit/certify.py:certify: interval enclosures (mpmath iv) plus an ASSUMED,
+        # unproved bound on the error of the eigensolver mp.eigsy (see that docstring, item (4)); it is not a
+        # certificate accepted by a checker, hence the label.  File name certified_n12.json and its keys stay.
+        print('r=%.10f k=%d coindex(interval-verified)=%d (numerical %d)  %.0fs' % (t['r'], len(A), R['coindex'], t['coindex'], R['time']), flush=True)
         out['%.10f' % t['r']] = R
     except (AssertionError, ZeroDivisionError) as e:
         print('r=%.10f FAILED: %s' % (t['r'], e), flush=True)
