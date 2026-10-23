@@ -14,3 +14,6 @@ results/completeness/summary-test.json
 .ipynb_checkpoints/
 .vscode/
 *.swp
+# A developer's own host, user and path settings (KISSCRIT_* variables; docs/setup-guide.md,
+# "Machine-specific settings"). Never committed; local.env.example holds placeholders only.
+local.env

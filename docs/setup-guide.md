@@ -345,6 +345,36 @@ Each line prompts you to paste a token.
 
 ---
 
+## Machine-specific settings
+
+Scripts take host names, user names and paths from command-line flags or from environment variables named `KISSCRIT_*`; nothing machine-specific belongs in a tracked file. The tables list every `KISSCRIT_*` variable the code reads (from `git grep -n KISSCRIT_`; defaults copied from the code). Each has a default, so none has to be set.
+
+Run settings, read by `scripts/full/run.sh`:
+
+| variable | default | purpose |
+|---|---|---|
+| `KISSCRIT_RUN_HOME` | `$HOME/kisscrit-run` | the run directory: logs, run records, the clone and the run trees |
+| `KISSCRIT_MINIFORGE` | `$HOME/miniforge3` | where `setup` installs Miniforge; the conda environment `kisscrit-run` is created under it |
+| `KISSCRIT_PREFLIGHT` | unset: the first `kisscrit-preflight.sh` found next to `run.sh`, in `scripts/full/` of the source tree (the `--archive` directory or the clone in the run directory), or in `~` | the preflight script that `setup` and `preflight` run |
+| `KISSCRIT_REPO_URL` | unset: `gh repo clone` of `--repo` (default `wkusner/kisscrit`) | clone with plain `git` from this URL instead of `gh`; the same as `--repo-url`, which takes precedence |
+
+`run.sh` writes `KISSCRIT_RUN_HOME` into the systemd unit and the @reboot cron line; it writes no other variable there, so the background run started by systemd or cron does not see the others.
+
+Test hooks (set by the tests or for a test run; not needed on a run machine):
+
+| variable | default | read by | purpose |
+|---|---|---|---|
+| `KISSCRIT_PYTHON` | unset: the conda environment's Python | `run.sh` | test mode: use this Python, with no Miniforge and no conda environment |
+| `KISSCRIT_HIDE` | unset | `run.sh` | command names, separated by spaces, that `run.sh` treats as not installed |
+| `KISSCRIT_CRONTAB`, `KISSCRIT_SYSTEMCTL`, `KISSCRIT_LOGINCTL` | `crontab`, `systemctl`, `loginctl` | `run.sh` | the programs called in their place (the tests use fakes) |
+| `KISSCRIT_TMUX_SOCKET` | `kisscrit` | `run.sh` | the tmux socket name (`tmux -L`) |
+| `KISSCRIT_REQUIRE_ALL` | unset | `tests/conftest.py`; set to `1` by `run.sh selftest` | `1` turns a skipped test into a failure, except the allowed skips (B3) |
+| `KISSCRIT_CKERNEL_CERTS`, `KISSCRIT_CKERNEL_SEED`, `KISSCRIT_CKERNEL_MAXEV` | 120, 20261023, 3000 | `tests/test_ckernel.py` | sample size, seed and event bound of the differential test |
+| `KISSCRIT_CMODEL_BOXES`, `KISSCRIT_CMODEL_SEED` | 1200, 20261017 | `tests/test_cmodel.py` | number of boxes and seed |
+| `KISSCRIT_CREPLAY_CERTS`, `KISSCRIT_CREPLAY_SEED` | 1000, 20261020 | `tests/test_creplay.py` | number of certificates and seed |
+
+A developer may keep personal values in an untracked file `local.env` at the repository root; `.gitignore` lists it. `local.env.example` lists the run settings above as commented-out placeholders. No script reads `local.env`: load it by hand in the shell that runs a script, with `set -a; . ./local.env; set +a`. The file is a convenience, not a feature.
+
 ## Reference
 
 - **Zenodo** (help.zenodo.org and developers.zenodo.org, checked 2026-10-15):
