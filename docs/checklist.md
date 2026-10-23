@@ -1,4 +1,4 @@
-# Project checklist: completeness of the N = 12 census and the Experimental Mathematics paper
+# Project checklist: completeness of the N = 12 census and the paper
 
 Purpose: the working checklist for this project, in the order we intend to do the items. Each item says what "done" means. After an item is closed, Claude gives a short progress report and review, and asks before starting the next one.
 
@@ -83,16 +83,16 @@ The long run on the iMac should produce data that can be checked independently. 
   - **Needed:** an argument covering this range.
 - [ ] **C6. (Optional for the paper.) Higher attaching maps.** The cells at the co-index-2 and co-index-3 saddles, and b1, b2 and b3 just above r = 1.
 
-## D. The paper (Experimental Mathematics)
+## D. The paper
 
 - [ ] **D1. Mathematical fixes in Sections 3–5.**
   - SO(3) acts freely on labelled configurations (N ≥ 3), so the deformation lemma is applied on the manifold BConf(N) instead of claiming equivariance.
   - "The largest r with BConf connected" becomes a supremum, with a proof that it is a critical radius.
   - Precise theorem numbers from Bochnak–Coste–Roy for the components, semialgebraic arcs, piecewise C¹ arcs, and algebraic points.
-- [ ] **D2. References.** Check the CGKM journal version, the Holmes-Cerfon–Theran–Gortler volume and pages, the Musin–Tarasov volume and pages, and that `tfs` is the style the journal requires.
+- [ ] **D2. References.** Check the CGKM journal version, the Holmes-Cerfon–Theran–Gortler volume and pages, the Musin–Tarasov volume and pages, and that the bibliography style (`tfs`) matches the target publication's requirements.
 - [ ] **D3. Certification appendix.** Written from the checker (A2): the model, the exclusion tests, the certificate format, and how to re-verify.
 - [ ] **D4. Completeness section.** Rewrite it from the results of A and C: the theorem if everything closes, otherwise a precise statement of what is proved and what remains.
-- [ ] **D5. Final pass.** Read-through, the paragraph on authorship and AI use, the cover letter, and submission. No submission before D4 is settled.
+- [ ] **D5. Final pass.** Read-through and the paragraph on authorship and AI use. The text is not released before D4 is settled.
 
 ## E. Future projects (not blocking; see `open-questions.md`)
 
