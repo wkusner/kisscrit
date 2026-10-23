@@ -48,9 +48,9 @@ Version 1, 2026-10-11. Add entries at the end, and mark resolved ones rather tha
 - *Points on the sphere:* N ≤ 8, using the numerical census (lower bounds, see `docs/small-n.md`) in `results/census_n*.json`.
 
 **References:**
-- Martiniani, Schrenk, Ramola, Chakraborty, Frenkel, *Numerical test of the Edwards conjecture shows that all packings are equally probable at jamming*, Nature Physics 2017 (arXiv:1610.06328).
-- Bowles and Ashwin on quasi-1D channels (arXiv:1102.0352).
-- *Marginally jammed states of hard disks in a one-dimensional channel* (arXiv:2005.02901).
+- Martiniani, Schrenk, Ramola, Chakraborty, Frenkel, *Numerical test of the Edwards conjecture shows that all packings are equally probable at jamming*, Nature Physics (DOI 10.1038/nphys4168; arXiv:1610.06328). Title and authors checked against the arXiv page 2026-10-23; volume and year not confirmed.
+- R. K. Bowles and S. S. Ashwin, *Edwards entropy and compactivity in a model of granular matter* (arXiv:1102.0352; DOI 10.1103/PhysRevE.83.031302). Title and authors checked against the arXiv page 2026-10-23. The abstract describes hard discs between hard walls and does not mention a channel; the earlier description "on quasi-1D channels" was not supported.
+- Y. Zhang, M. J. Godfrey and M. A. Moore, *Marginally jammed states of hard disks in a one-dimensional channel* (arXiv:2005.02901; DOI 10.1103/PhysRevE.102.042614). Title and authors checked against the arXiv page 2026-10-23.
 
 ## 5. Sticky growth in flat geometry
 
