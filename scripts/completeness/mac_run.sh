@@ -2,6 +2,10 @@
 # =====================================================================================================
 #  kisscrit completeness run: one-command setup and run for a Mac (Intel or Apple Silicon), from Terminal
 #
+#  RECORD OF THE OLD RUN (2026-10-23, S8c-7): this script and its machine-specific instructions describe how
+#  the `cond` pilot was run on the iMac, with git-based shard claiming. It is kept as that record and is not
+#  maintained. The current procedure is scripts/full/run.sh (docs/setup-guide.md).
+#
 #  Usage (one line, from Terminal):
 #      bash ~/Downloads/mac_run.sh
 #
