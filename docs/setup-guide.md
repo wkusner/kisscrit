@@ -1,13 +1,14 @@
 # Setup guide: the kisscrit `full` run (Linux server over SSH, GitHub progress, Zenodo)
 
-Purpose: everything Wöden does by hand for the restarted completeness run, in order: the exact command, what success looks like, and what to do if it fails.
+Purpose: everything the maintainer does by hand for the restarted completeness run, in order: the exact command, what success looks like, and what to do if it fails.
 
-This is the maintainer's runbook, written for one person and one server; it is kept in the repository as the record of the manual steps. "The Project guide" below is an internal document, available on request.
+This is the maintainer's runbook, written for one person and one server; it is kept in the repository as the record of the manual steps. "The internal guide" below is the document it was copied from, available on request.
 
-Date: 2026-10-16. Version 2.3 (repo copy of the Project guide v2.1; this copy wins when the two differ, and the code changes it in the same commit as any code that changes a manual step).
+Date: 2026-10-16. Version 2.4 (repo copy of the internal guide v2.1; this copy wins when the two differ, and the code changes it in the same commit as any code that changes a manual step).
+- v2.4 (2026-10-23, CLEAN-C): the section "Machine-specific settings" (the `KISSCRIT_*` variables, `local.env`); a placeholder instead of a private path in A4; the server's access requirements worded as technical requirements.
 - v2.3 (2026-10-22, F8 M1): Part B written for `scripts/full/run.sh` version 1 (setup, selftest, start, status, stop; no pushes or Zenodo yet); C2, C4 and D1 use its commands.
-- v2.1: the server runs Ubuntu 26.04 and Wöden has no admin rights. Step A4 uses `scripts/full/kisscrit-preflight.sh`, which tests the server and drafts the request to the sysadmin.
-- v2: the run machine is a dedicated Linux server reached by SSH. It has no scheduler, Wöden is probably its only user, and it has 32 or 64 cores. The iMac becomes the fallback. v1 (2026-10-15) assumed the iMac.
+- v2.1: the server runs Ubuntu 26.04, and the run account has no root access. Step A4 uses `scripts/full/kisscrit-preflight.sh`, which tests the server and drafts the request to the sysadmin.
+- v2: the run machine is a dedicated Linux server reached by SSH. It has no scheduler, probably no other regular user, and 32 or 64 cores. The iMac becomes the fallback. v1 (2026-10-15) assumed the iMac.
 - Written before the run script exists. Steps marked **(confirm)** depend on a website's current layout, which was not checked.
 
 ## The plan in one paragraph
@@ -60,7 +61,7 @@ The sandbox is a separate test copy of Zenodo. Its DOIs are fake (prefix 10.5072
 
 ### A4. Server checks (over SSH): run the preflight script
 
-The server runs Ubuntu 26.04 and you have no admin rights. So the first step is to find out what the sysadmin must do. `scripts/full/kisscrit-preflight.sh` (also in the Meta inbox and the Project) does that:
+The server runs Ubuntu 26.04, and the run account has no root access. So the first step is to find out what the sysadmin must do. `scripts/full/kisscrit-preflight.sh` does that:
 - it tests everything the run needs, without sudo;
 - it saves a report;
 - it ends with a ready-to-send email to the sysadmin that lists only what is missing;
@@ -121,7 +122,7 @@ What you want to see:
   - If one hangs or errors, ask IT to allow outbound HTTPS to github.com, zenodo.org and sandbox.zenodo.org.
   - This is the one thing that would block the run.
 - **`Linger=yes`:** lets the run continue as a background service after you log out.
-  - If it says `no`: you have no root, so this goes in the sysadmin request (`sudo loginctl enable-linger <you>`).
+  - If it says `no`: enabling it needs root, so this goes in the sysadmin request (`sudo loginctl enable-linger <you>`).
   - The alternative is a `tmux` session plus a restart-on-reboot cron line, which needs tmux and cron installed and cron allowed for your account. That works just as well; the sysadmin can choose.
 
 Send the code chat the output of these commands, with nothing secret in it.
@@ -391,7 +392,7 @@ A developer may keep personal values in an untracked file `local.env` at the rep
 
 ## Maintenance
 
-Version 2.3, 2026-10-22. Revise:
+Version 2.4, 2026-10-23. Revise:
 - when `run.sh` exists (exact names and flags);
 - after the F5 pilot (the disk figure);
 - after the A4 server checks (anything the server lacks);
