@@ -183,6 +183,9 @@ How to read it: this log is written by the sessions that produced the commits (A
 - Seeds: `tests/test_cmodel.py` raises ZeroDivisionError instead of skipping when `results/completeness/certificates` is absent (3 tests, `tests/test_cmodel.py:138`; seen) -> twelve (off the allowlist); `--try-install` downloads Miniforge with curl only and does not check its checksum -> twelve; the F2 line says the server path "is settled by the preflight": the preflight ran only here, with FLINT 3.3.1, so it is still open -> twelve (Wöden, control chat).
 - Patches: `git format-patch 712b1a0..HEAD`, not pushed.
 
+### 2026-10-23, control note on the commits after 712b1a0 (DOCS-1, AUD-2 sync item S-15)
+- The EXACT-1 start entry below says the eight commits after 712b1a0 are this session's. Seven are (e79947e, e61c5aa, 1f4d16b, 5419003, 756918d, 3a39718, 322f8bc; git author "Claude (code session)"). The eighth, e849da0 ("preflight: install test downloads Miniforge with wget when curl is missing", trailer `Control: P-preflight-v2.1`), is the control chat's v2.1 fix: git author "Claude", the same session link as the control-authored 111ca4b (seen in `git log`). It had no entry of its own until this note.
+
 ## 2026-10-21, V3-FIX code session (Opus 5.5, cloud clone), prompt v1.0
 
 ### 16:08 CT, start
@@ -423,3 +426,14 @@ Repo attached mid-session; libflint-dev installed; `ball_kill_test.py` not chang
 - Commit 111ca4b, authored by the control chat, not by a code session: `tests/conftest.py` adds 'shellcheck not installed' to `ALLOWED_SKIP_MARKERS`, so under `KISSCRIT_REQUIRE_ALL=1` the shellcheck lint of `run.sh` may skip (the server's conda environment has no shellcheck); new `tests/test_require_all.py` (3 tests), which fails on the old conftest and passes on the new one (commit message).
 - The comment in `scripts/full/run.sh` (selftest, the `KISSCRIT_REQUIRE_ALL=1` line) and `docs/setup-guide.md` (B3) named only DOM1_REGEN as an allowed skip; they were brought in line with the conftest in DOCS-1-4 (AUD-2 sync item S-10).
 - Tests at 111ca4b: the DOCS-1 session ran both suites there as its baseline; the counts are in the DOCS-1 entry below.
+
+### 2026-10-23, control note on the unresolved-hash counts (DOCS-1-8; the DOCS-1 prompt files it as S-15, the AUD-2 sync item is S-11)
+- Status: **unsettled, patterns differ.** The number of hashes in this log that do not resolve in the repository depends on the token pattern. AUD-2 (2026-10-23) counts 72 unresolved of 120 tokens with pattern P (7–10 hex characters delimited by non-hex characters, excluding digits-only fragments of r-values, the RNG seeds `2026101x` and the English fragment `cceeded`): 70 session-local commit hashes, `3f917fb` (never in the repository) and `2ec27fb` (an msolve upstream commit). The control chat counted 67 (7–10 hex, no exclusions, perhaps on a different file set), and AUD-2's pattern B (7–40 hex with a letter and a digit) gives 68 at 111ca4b, including a SHA-256 prefix. The CLEAN-A note above gives 54 with yet another pattern, before the CLEAN-A/B commits added theirs. Not recounted in DOCS-1. The mapping of the session-local hashes of P-preflight-v2, V3-FIX, BALL-KILL, EXACT-1, DOM-1, F8 and CLEAN-A/B is still to do (control chat; state the pattern with the count).
+
+## 2026-10-23, DOCS-1 code session (Opus 5.5, cloud clone), prompt as filed by the control chat
+
+### 01:49 CT start to close
+- The repo was not attached when the session began; it was attached (read access) and cloned in full. `git rev-parse origin/main` = 111ca4b85e24 after the clone (= START_HEAD). Inputs read from Project knowledge: the AUD-2 sync and review documents and the decisions draft of 2026-10-23.
+- Installed here: libflint-dev 3.0.1 (apt), shellcheck 0.11.0 (pip `shellcheck-py`), python-flint 0.9.0, mpmath 1.3.0, sympy 1.14.0, numba 0.68.0, pytest 9.1.1; Python 3.13.17, numpy 2.5.3, scipy 1.18.1, networkx 3.7; gcc 13.3.0.
+- Baseline at 111ca4b (computed, separate worktree, C kernel built): `python -m pytest -q --ignore=tests/test_run_scripts.py` 228 passed, 1 skipped (DOM1_REGEN), 668 s; `tests/test_run_scripts.py` 20 passed, 505 s (shellcheck installed).
+- Commits DOCS-1-1 … DOCS-1-9 (docs, docstrings with an AST-identity proof, one data correction); each commit message names the AUD-2 item ids. Results, items not applied and the final test counts: the DOCS-1 report (`code-kisscrit-docs1-report-2026-10-23.md`, available on request). Patches: `git format-patch 111ca4b..HEAD`, one tarball, not pushed.
