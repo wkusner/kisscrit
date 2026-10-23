@@ -57,3 +57,18 @@ Version 1, 2026-10-11. Add entries at the end, and mark resolved ones rather tha
 **Observation:** a free cluster in the plane can always grow by homothety, v_i = x_i / r. So σ·b = 0 for every self-stress σ, and sticky growth never breaks down inside a free flat cluster. In flat containers and on tori, every breakdown involves the boundary or a cluster that wraps around.
 
 **Next:** check this numerically with the container code, counting the release events that touch the boundary.
+
+## 6. Stored symmetry of `data/n12_above1.json`, entry 6 (r = 1.0003062547) (added 2026-10-22, CLEAN-A)
+
+**Question for Wöden:** the stored symmetry of entry 6 looks wrong. Is it, and should the data file be corrected (the file was not edited)?
+
+**Evidence (computed by the DOM-1 session, `docs/session-log.md`, networkx 3.7, numpy 2.5.3; first noticed by the EXACT-1 session, open question 2; neither reproduced in the CLEAN-A session):**
+- The entry stores `sym: 2, sym_proper: 1`, but its stored 20-contact graph has |Aut| = 1.
+- `kisscrit.symmetry.group_orders(X)` at its default tolerance 1e-6 gives (1, 1). The stored X satisfies its contacts to 2.8e-16 and has only the trivial isometry at Gram tolerances up to 3e-4.
+- The stored `sym: 2, sym_proper: 1` appears only at tolerance 1e-3 or more: a reflection (0 5)(2 11)(4 6)(8 10) with maximal point residual 5.3e-4. It swaps the contact (9, 11) with the non-contact (2, 9), whose Gram gap is 6.1e-4.
+- The other 11 entries: stored `sym` equals `group_orders` at 1e-6 and equals |Aut| of the stored contact graph.
+
+**Reading (inferred):** a loose tolerance produced the stored value; contacts and coordinates are consistent. Not decided: whether the true critical configuration at this r has a mirror symmetry (the two nearly equal 19- and 21-contact neighbours do).
+
+**Why it matters:** the paper's table of the twelve configurations, `data/n12_above1.json`, and any symmetric-subspace method applied to this value.
+**Next:** recompute `sym` for this entry at tolerance 1e-6 and decide; a code session if the file changes (Seed in the DOM-1 log: recompute `sym` -> twelve).
