@@ -416,3 +416,8 @@ Repo attached mid-session; libflint-dev installed; `ball_kill_test.py` not chang
 - Computed: `tests/test_run_scripts.py` 20 passed in 482 s at 8fd8181, including `test_real_selftest_with_a_pytest_subset` (the real self-test with the new variable set); `bash -n` and `shellcheck -x` clean on `run.sh`. The first attempt at this run was killed by the environment before it reported; the passing run is the second.
 - Not done: the 54 unresolved hashes are not mapped (git in this clone cannot confirm them; two are not session hashes: `2ec27fb` is an msolve commit, `3f917fb` was never in the repository). Left to the control chat; steps in the handoff.
 - Not done: the patches were not applied on marple (no folder connected to the session).
+
+### 2026-10-22, CLEAN-B2 (control chat, 111ca4b; entry added 2026-10-23 by the DOCS-1 session)
+- Commit 111ca4b, authored by the control chat, not by a code session: `tests/conftest.py` adds 'shellcheck not installed' to `ALLOWED_SKIP_MARKERS`, so under `KISSCRIT_REQUIRE_ALL=1` the shellcheck lint of `run.sh` may skip (the server's conda environment has no shellcheck); new `tests/test_require_all.py` (3 tests), which fails on the old conftest and passes on the new one (commit message).
+- The comment in `scripts/full/run.sh` (selftest, the `KISSCRIT_REQUIRE_ALL=1` line) and `docs/setup-guide.md` (B3) named only DOM1_REGEN as an allowed skip; they were brought in line with the conftest in DOCS-1-4 (AUD-2 sync item S-10).
+- Tests at 111ca4b: the DOCS-1 session ran both suites there as its baseline; the counts are in the DOCS-1 entry below.
