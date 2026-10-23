@@ -1,0 +1,4 @@
+candidates generated: 45260
+certified: 45260  {'excluded': 44737, 'budget': 56, 'terminal': 467}   (CPU time 3.3 h)
+not yet run: 0
+needs attention: 523 (listed in results/completeness/summary-cond.json)

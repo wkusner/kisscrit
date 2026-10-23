@@ -1,0 +1,103 @@
+2026-10-22 08:17:15 CDT  [    0s]  PHASE 0 start: pilot v1, route cond, commit 322f8bc3700a757f091f6aa21e901293ddb52064, host <server>, 64 cores
+2026-10-22 08:17:15 CDT  [    0s]  PHASE 0 ok: work tree <run-home>/kisscrit-run/tree-322f8bc, 1684 GB free
+2026-10-22 08:17:15 CDT  [    0s]  PHASE 1: installing Miniforge into <run-home>/miniforge3
+2026-10-22 08:17:19 CDT  [    4s]  PHASE 1: creating the conda environment (a few minutes)
+2026-10-22 08:17:30 CDT  [   15s]  PHASE 1 ok: Python 3.12.15, numpy 2.5.4, numba 0.68.0
+2026-10-22 08:17:30 CDT  [   15s]  PHASE 2: selftest (1-3 minutes)
+2026-10-22 08:17:46 CDT  [   31s]  PHASE 2 ok: selftest OK (16s)
+2026-10-22 08:17:46 CDT  [   31s]  PHASE 3: candidate generation, 4 processes
+2026-10-22 08:25:56 CDT  [  521s]  PHASE 3 ok: 90840 gen lines in 4 files (for cond the old run had 90,836 lines = 45,260 distinct codes, each generated twice)
+2026-10-22 08:25:56 CDT  [  521s]  PHASE 4: certify, 40 shards of 40, 40 at a time, 2 workers each, budget 300000
+2026-10-22 08:27:56 CDT  [  641s]  PHASE 4 progress: 7 of 40 shards done, load 63.63
+2026-10-22 08:29:56 CDT  [  761s]  PHASE 4 progress: 39 of 40 shards done, load 21.80
+2026-10-22 08:31:56 CDT  [  881s]  PHASE 4 progress: 40 of 40 shards done, load 3.02
+2026-10-22 08:31:56 CDT  [  881s]  PHASE 4 ok: 40 of 40 shards finished
+2026-10-22 08:31:57 CDT  [  882s]  PHASE 5: generated 45260, certified 45260, missing 0, excluded 44737, terminal 467, budget 56, cpu_hours 3.29
+2026-10-22 08:31:57 CDT  [  882s]  PHASE 5 reference (old cond run, STATUS.md 2026-10-15): generated 45260, certified 45260, excluded 44740, terminal 466, budget 54, cpu_hours 9.28
+2026-10-22 08:31:57 CDT  [  882s]  PHASE 5 interim report (before the checker): <run-home>/kisscrit-run/PILOT-REPORT-interim.txt
+2026-10-22 08:31:57 CDT  [  882s]  PHASE 6: reference checker on every certificate file, 64 processes (can take about 2 hours on 64 cores)
+2026-10-22 08:53:17 CDT  [ 2162s]  PHASE 6 progress: 1 of 40 files checked (certificates-cond-0-of-40)
+2026-10-22 09:07:30 CDT  [ 3015s]  PHASE 6 progress: 2 of 40 files checked (certificates-cond-10-of-40)
+2026-10-22 09:30:08 CDT  [ 4373s]  PHASE 6 progress: 3 of 40 files checked (certificates-cond-11-of-40)
+2026-10-22 09:59:30 CDT  [ 6135s]  PHASE 6 progress: 4 of 40 files checked (certificates-cond-12-of-40)
+2026-10-22 10:25:30 CDT  [ 7695s]  PHASE 6 progress: 5 of 40 files checked (certificates-cond-13-of-40)
+2026-10-22 10:32:55 CDT  [    0s]  PHASE 0 start: pilot v1, route cond, commit 322f8bc3700a757f091f6aa21e901293ddb52064, host <server>, 64 cores
+2026-10-22 10:32:55 CDT  [    0s]  PHASE 0 ok: work tree <run-home>/kisscrit-run/tree-322f8bc, 1682 GB free
+2026-10-22 10:32:55 CDT  [    0s]  PHASE 1 ok: Python 3.12.15, numpy 2.5.4, numba 0.68.0
+2026-10-22 10:32:55 CDT  [    0s]  PHASE 2 ok: selftest OK (16s)
+2026-10-22 10:32:55 CDT  [    0s]  PHASE 3 ok: 90840 gen lines in 4 files (for cond the old run had 90,836 lines = 45,260 distinct codes, each generated twice)
+2026-10-22 10:32:55 CDT  [    0s]  PHASE 4 ok: 40 of 40 shards finished
+2026-10-22 10:32:57 CDT  [    2s]  PHASE 5: generated 45260, certified 45260, missing 0, excluded 44737, terminal 467, budget 56, cpu_hours 3.29
+2026-10-22 10:32:57 CDT  [    2s]  PHASE 5 reference (old cond run, STATUS.md 2026-10-15): generated 45260, certified 45260, excluded 44740, terminal 466, budget 54, cpu_hours 9.28
+2026-10-22 10:32:57 CDT  [    2s]  PHASE 5 interim report (before the checker): <run-home>/kisscrit-run/PILOT-REPORT-interim.txt
+2026-10-22 10:32:57 CDT  [    2s]  PHASE 6: reference checker on every certificate file, 64 processes (can take about 2 hours on 64 cores)
+2026-10-22 10:34:57 CDT  [  122s]  PHASE 6 progress: 5 of 40 files checked, load 61.13
+2026-10-22 10:36:57 CDT  [  242s]  PHASE 6 progress: 5 of 40 files checked, load 68.81
+2026-10-22 10:38:57 CDT  [  362s]  PHASE 6 progress: 5 of 40 files checked, load 70.05
+2026-10-22 10:40:57 CDT  [  482s]  PHASE 6 progress: 5 of 40 files checked, load 70.00
+2026-10-22 10:42:57 CDT  [  602s]  PHASE 6 progress: 5 of 40 files checked, load 70.00
+2026-10-22 10:44:57 CDT  [  722s]  PHASE 6 progress: 5 of 40 files checked, load 70.06
+2026-10-22 10:46:57 CDT  [  842s]  PHASE 6 progress: 5 of 40 files checked, load 69.19
+2026-10-22 10:48:57 CDT  [  962s]  PHASE 6 progress: 5 of 40 files checked, load 69.02
+2026-10-22 10:50:57 CDT  [ 1082s]  PHASE 6 progress: 5 of 40 files checked, load 69.05
+2026-10-22 10:52:57 CDT  [ 1202s]  PHASE 6 progress: 5 of 40 files checked, load 69.00
+2026-10-22 10:54:57 CDT  [ 1322s]  PHASE 6 progress: 5 of 40 files checked, load 68.34
+2026-10-22 10:56:57 CDT  [ 1442s]  PHASE 6 progress: 5 of 40 files checked, load 68.04
+2026-10-22 10:58:57 CDT  [ 1563s]  PHASE 6 progress: 6 of 40 files checked, load 67.40
+2026-10-22 11:00:58 CDT  [ 1683s]  PHASE 6 progress: 6 of 40 files checked, load 67.07
+2026-10-22 11:02:58 CDT  [ 1803s]  PHASE 6 progress: 6 of 40 files checked, load 66.49
+2026-10-22 11:04:58 CDT  [ 1923s]  PHASE 6 progress: 6 of 40 files checked, load 66.06
+2026-10-22 11:06:58 CDT  [ 2043s]  PHASE 6 progress: 6 of 40 files checked, load 65.43
+2026-10-22 11:08:58 CDT  [ 2163s]  PHASE 6 progress: 6 of 40 files checked, load 64.77
+2026-10-22 11:10:58 CDT  [ 2283s]  PHASE 6 progress: 6 of 40 files checked, load 63.25
+2026-10-22 11:12:58 CDT  [ 2403s]  PHASE 6 progress: 6 of 40 files checked, load 62.91
+2026-10-22 11:14:58 CDT  [ 2523s]  PHASE 6 progress: 6 of 40 files checked, load 60.38
+2026-10-22 11:16:58 CDT  [ 2643s]  PHASE 6 progress: 6 of 40 files checked, load 59.27
+2026-10-22 11:18:58 CDT  [ 2763s]  PHASE 6 progress: 6 of 40 files checked, load 59.07
+2026-10-22 11:20:58 CDT  [ 2883s]  PHASE 6 progress: 6 of 40 files checked, load 58.47
+2026-10-22 11:22:58 CDT  [ 3003s]  PHASE 6 progress: 7 of 40 files checked, load 56.98
+2026-10-22 11:24:58 CDT  [ 3123s]  PHASE 6 progress: 7 of 40 files checked, load 55.45
+2026-10-22 11:26:58 CDT  [ 3243s]  PHASE 6 progress: 8 of 40 files checked, load 54.45
+2026-10-22 11:28:58 CDT  [ 3363s]  PHASE 6 progress: 10 of 40 files checked, load 52.33
+2026-10-22 11:30:58 CDT  [ 3483s]  PHASE 6 progress: 10 of 40 files checked, load 50.16
+2026-10-22 11:32:58 CDT  [ 3603s]  PHASE 6 progress: 10 of 40 files checked, load 48.38
+2026-10-22 11:34:58 CDT  [ 3723s]  PHASE 6 progress: 11 of 40 files checked, load 46.86
+2026-10-22 11:36:58 CDT  [ 3843s]  PHASE 6 progress: 12 of 40 files checked, load 43.50
+2026-10-22 11:38:58 CDT  [ 3963s]  PHASE 6 progress: 14 of 40 files checked, load 40.68
+2026-10-22 11:40:58 CDT  [ 4083s]  PHASE 6 progress: 15 of 40 files checked, load 38.52
+2026-10-22 11:42:58 CDT  [ 4203s]  PHASE 6 progress: 18 of 40 files checked, load 36.49
+2026-10-22 11:44:58 CDT  [ 4323s]  PHASE 6 progress: 19 of 40 files checked, load 33.88
+2026-10-22 11:46:58 CDT  [ 4443s]  PHASE 6 progress: 21 of 40 files checked, load 32.03
+2026-10-22 11:48:58 CDT  [ 4563s]  PHASE 6 progress: 22 of 40 files checked, load 29.42
+2026-10-22 11:50:58 CDT  [ 4683s]  PHASE 6 progress: 23 of 40 files checked, load 28.79
+2026-10-22 11:52:58 CDT  [ 4803s]  PHASE 6 progress: 23 of 40 files checked, load 25.57
+2026-10-22 11:54:58 CDT  [ 4923s]  PHASE 6 progress: 29 of 40 files checked, load 20.83
+2026-10-22 11:56:58 CDT  [ 5043s]  PHASE 6 progress: 29 of 40 files checked, load 16.65
+2026-10-22 11:58:58 CDT  [ 5163s]  PHASE 6 progress: 30 of 40 files checked, load 15.59
+2026-10-22 12:00:58 CDT  [ 5283s]  PHASE 6 progress: 30 of 40 files checked, load 15.15
+2026-10-22 12:02:58 CDT  [ 5403s]  PHASE 6 progress: 30 of 40 files checked, load 15.02
+2026-10-22 12:04:58 CDT  [ 5523s]  PHASE 6 progress: 32 of 40 files checked, load 13.41
+2026-10-22 12:06:58 CDT  [ 5643s]  PHASE 6 progress: 34 of 40 files checked, load 11.35
+2026-10-22 12:08:58 CDT  [ 5763s]  PHASE 6 progress: 34 of 40 files checked, load 9.42
+2026-10-22 12:10:58 CDT  [ 5883s]  PHASE 6 progress: 34 of 40 files checked, load 8.23
+2026-10-22 12:12:58 CDT  [ 6003s]  PHASE 6 progress: 35 of 40 files checked, load 6.56
+2026-10-22 12:14:58 CDT  [ 6123s]  PHASE 6 progress: 37 of 40 files checked, load 4.68
+2026-10-22 12:16:58 CDT  [ 6243s]  PHASE 6 progress: 37 of 40 files checked, load 4.09
+2026-10-22 12:18:58 CDT  [ 6363s]  PHASE 6 progress: 37 of 40 files checked, load 4.08
+2026-10-22 12:20:58 CDT  [ 6483s]  PHASE 6 progress: 37 of 40 files checked, load 4.04
+2026-10-22 12:22:58 CDT  [ 6603s]  PHASE 6 progress: 39 of 40 files checked, load 2.58
+2026-10-22 12:24:58 CDT  [ 6723s]  PHASE 6 progress: 39 of 40 files checked, load 2.08
+2026-10-22 12:26:58 CDT  [ 6843s]  PHASE 6 progress: 39 of 40 files checked, load 2.08
+2026-10-22 12:28:58 CDT  [ 6963s]  PHASE 6 progress: 39 of 40 files checked, load 2.06
+2026-10-22 12:30:58 CDT  [ 7083s]  PHASE 6 progress: 39 of 40 files checked, load 2.09
+2026-10-22 12:32:58 CDT  [ 7203s]  PHASE 6 progress: 39 of 40 files checked, load 2.09
+2026-10-22 12:34:58 CDT  [ 7323s]  PHASE 6 progress: 39 of 40 files checked, load 2.06
+2026-10-22 12:36:58 CDT  [ 7443s]  PHASE 6 progress: 39 of 40 files checked, load 1.35
+2026-10-22 12:38:58 CDT  [ 7563s]  PHASE 6 progress: 39 of 40 files checked, load 1.04
+2026-10-22 12:40:59 CDT  [ 7684s]  PHASE 6 progress: 39 of 40 files checked, load 1.00
+2026-10-22 12:42:59 CDT  [ 7804s]  PHASE 6 progress: 39 of 40 files checked, load 1.08
+2026-10-22 12:44:59 CDT  [ 7924s]  PHASE 6 progress: 39 of 40 files checked, load 1.01
+2026-10-22 12:46:59 CDT  [ 8044s]  PHASE 6 progress: 40 of 40 files checked, load 0.14
+2026-10-22 12:47:01 CDT  [ 8046s]  PHASE 6 summary: {"certificates": 45260, "checked": 45260, "verified": 45204, "structural_failures": 56, "failed_boxes": 0, "terminal_boxes": 6079, "open_leaves": 740, "bisected": ["3.1.2.3.3.0.3.4.3.0.4.5.4.0.6.7.1.4.1.8.9.2.3.2.10.6.4.3.5.11.7.4.3.6.11.8.3.4.7.9.4.4.8.11.10.3.5.9.11.4.6.10.9.7", "3.1.2.3.3.0.3.4.4.0.4.5.6.4.0.7.8.1.4.1.9.5.2.4.2.4.9.10.3.2.10.7.3.3.6.10.3.3.11.9.4.4.8.11.5.4.5.11.7.6.3.8.10.9", "3.1.2.3.3.0.4.5.4.0.6.7.3.4.0.2.7.8.4.1.8.9.5.4.1.4.10.6.3.2.5.10.3.2.11.3.3.3.9.4.4.4.8.11.10.4.5.9.11.6.3.7.10.9", "3.1.2.3.3.0.3.4.3.0.5.6.4.0.7.8.1.4.1.9.10.5.3.2.4.10.3.2.10.7.3.3.6.8.4.3.7.11.9.3.4.8.11.4.4.11.6.5.3.8.10.9", "3.1.2.3.3.0.3.4.3.0.5.6.4.0.7.8.1.4.1.8.9.5.3.2.4.9.3.2.10.7.3.3.6.8.4.3.7.11.4.4.4.11.10.5.3.6.9.11.3.8.10.9", "2.1.2.3.0.3.4.4.0.5.6.7.3.1.7.8.3.1.9.5.3.2.4.10.3.2.10.11.3.2.11.3.3.3.11.9.3.4.8.10.4.5.9.11.6.4.6.10.8.7", "2.1.2.3.0.3.4.4.0.5.6.7.3.1.7.8.4.1.8.9.5.2.2.4.3.2.9.10.3.2.10.3.3.3.11.4.3.4.11.6.3.6.11.7.3.8.10.9", "3.1.2.3.3.0.3.4.3.0.5.6.4.0.7.8.1.3.1.9.5.3.2.4.10.4.2.10.11.7.4.3.6.11.8.4.3.7.11.9.4.4.8.11.10.3.5.9.6.4.6.9.8.7", "3.1.2.3.4.0.3.4.5.4.0.5.6.7.4.0.7.8.1.4.1.8.9.10.3.1.6.2.4.2.5.10.11.3.2.11.3.4.3.11.9.4.4.4.8.11.10.3.4.9.6.4.6.9.8.7", "2.1.2.3.0.3.4.4.0.5.6.7.3.1.7.8.4.1.9.10.5.3.2.4.10.3.2.10.7.4.2.6.11.3.3.3.11.9.3.4.8.10.5.4.9.11.6.5.3.7.10.8", "3.1.2.3.3.0.3.4.3.0.5.6.4.0.7.8.1.3.1.9.5.3.2.4.10.3.2.10.7.4.3.6.11.8.3.3.7.9.4.4.8.11.10.4.5.9.11.6.3.7.10.9", "3.1.2.3.3.0.3.4.3.0.5.6.4.0.6.7.1.3.1.7.5.3.2.4.8.4.2.9.10.3.4.3.10.11.4.3.5.11.9.3.6.8.10.4.6.9.11.7.3.7.10.8", "3.1.2.3.3.0.4.5.3.0.5.6.3.0.6.7.3.1.7.8.4.1.8.9.2.3.2.10.3.4.3.10.11.4.3.4.11.5.3.5.11.10.3.6.9.7.3.7.9.8", "3.1.2.3.3.0.3.4.3.0.5.6.4.0.7.8.1.3.1.9.5.4.2.4.9.10.3.2.10.7.3.3.6.11.3.3.11.9.4.4.8.10.5.4.5.9.11.6.3.7.10.8", "2.1.2.3.0.3.4.4.0.5.6.7.3.1.7.8.3.1.9.5.4.2.4.10.6.4.2.5.10.7.4.2.6.11.3.3.3.11.9.3.4.8.10.4.5.9.11.6.3.7.10.8", "3.1.2.3.3.0.4.5.3.0.5.6.4.0.6.7.8.4.1.8.9.5.4.1.4.10.2.4.2.11.7.3.4.3.6.11.9.3.3.9.4.4.4.8.7.10.3.5.9.11.3.6.10.7", "2.1.2.3.0.3.4.4.0.5.6.7.3.1.7.8.4.1.8.9.5.2.2.4.3.2.9.10.3.2.10.3.4.3.11.9.4.4.4.8.11.6.3.6.11.7.3.8.10.9", "3.1.2.3.3.0.3.4.4.0.4.5.6.4.0.7.8.1.4.1.9.5.2.5.2.4.9.10.6.3.2.5.7.3.3.6.11.3.3.11.9.4.4.8.10.5.3.5.9.11.3.7.10.8", "3.1.2.3.3.0.3.4.3.0.5.6.5.0.7.8.9.1.3.1.10.5.4.2.4.10.6.4.2.5.11.7.3.3.6.8.4.3.7.11.9.3.3.8.10.4.4.9.11.5.3.6.10.8", "3.1.2.3.3.0.3.4.3.0.4.5.4.0.6.7.1.4.1.8.9.2.3.2.10.6.3.3.5.11.3.3.11.8.4.4.7.11.9.3.4.8.10.3.5.9.11.4.6.10.8.7"], "counts": {"vsum": 12493608, "linear-hint": 42794745, "invalid": 2816240, "vsum-tight": 3650181, "linear-bound": 27996, "invalid-tight": 855038, "linear": 257169, "linear-parent": 9089, "gordan": 23103, "bisect": 11365}, "seconds": 315184.0200000667, "n_not_verified": 56, "n_bisected": 198} 
+2026-10-22 12:47:01 CDT  [ 8046s]  PHASE 6 manifest:  "complete": false,  "note": "gen lines count duplicates across shards; the distinct count is the candidate count. Completeness requires sets_equal_no_duplicates, not_verified == 0 and every terminal box identified (checklist C4); terminal identification is not yet implemented, so terminal_unidentified counts candidates with terminal boxes." } 
+2026-10-22 12:47:01 CDT  [ 8046s]  PHASE 7 DONE: report in <run-home>/kisscrit-run/PILOT-REPORT.txt (total 8046 s in this run)

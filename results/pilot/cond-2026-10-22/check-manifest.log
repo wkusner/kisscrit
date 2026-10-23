@@ -1,0 +1,41 @@
+{
+ "route": "cond",
+ "checker": "checker-2-reference",
+ "status": {
+  "excluded": 44737,
+  "terminal": 467,
+  "budget": 56
+ },
+ "gen": {
+  "lines": 90836,
+  "distinct": 45260,
+  "duplicates": 45576
+ },
+ "cert": {
+  "lines": 45260,
+  "distinct": 45260,
+  "duplicates": 0
+ },
+ "certificates": {
+  "lines": 45260,
+  "distinct": 45260,
+  "duplicates": 0
+ },
+ "checks": {
+  "lines": 45260,
+  "distinct": 45260,
+  "duplicates": 0
+ },
+ "missing_from_cert": 0,
+ "extra_in_cert": 0,
+ "missing_from_certificates": 0,
+ "extra_in_certificates": 0,
+ "missing_from_checks": 0,
+ "extra_in_checks": 0,
+ "verified": 45204,
+ "not_verified": 56,
+ "terminal_unidentified": 468,
+ "sets_equal_no_duplicates": true,
+ "complete": false,
+ "note": "gen lines count duplicates across shards; the distinct count is the candidate count. Completeness requires sets_equal_no_duplicates, not_verified == 0 and every terminal box identified (checklist C4); terminal identification is not yet implemented, so terminal_unidentified counts candidates with terminal boxes."
+}

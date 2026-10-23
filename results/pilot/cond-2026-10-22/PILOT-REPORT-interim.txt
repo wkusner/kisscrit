@@ -1,0 +1,10 @@
+kisscrit pilot v1.2 (A4), route cond -- written 2026-10-22 10:32:57 CDT
+commit: 322f8bc3700a757f091f6aa21e901293ddb52064   host: <server>   cores: 64
+versions: Python 3.12.15; numpy 2.5.4; numba 0.68.0; python-flint 0.8.0
+settings: shards 40, gen shards 4, budget 300000, shards at once 40, workers per shard 2, checker processes 64
+wall seconds: gen 490, certify 360, check n/a
+sizes: gen 1.5M, cert 36M, certificates 369M, checks 2.2M
+counts: generated 45260, certified 45260, missing 0, excluded 44737, terminal 467, budget 56, cpu_hours 3.29
+checker summary:
+manifest:
+shard exits that were not 0:
