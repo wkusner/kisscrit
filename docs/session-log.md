@@ -447,3 +447,11 @@ Repo attached mid-session; libflint-dev installed; `ball_kill_test.py` not chang
 - DOCS-2-2: `scripts/completeness/mac_run.sh` header banner: record of the old iMac run, not maintained (S8c-7). The file had no "transfer prompt" wording. `bash -n` clean; `shellcheck -x` has the same two pre-existing findings before and after (SC2034 warning, SC2086 info), in code not touched.
 - DOCS-2-3: `scripts/exact/table_md.py` status text for 1.0003062547 follows the sym correction; `data/exact/critical-configs-n12.md` regenerated (byte-identical before the edit; after it only that row's status cell differs); `docs/exact-configs.md` sentence put in the past tense with the correction. The "2 (numerical)" in that row is the co-index column and stays. Dated records that still describe the old stored value, not changed: `docs/open-questions.md` §6 evidence lines (its resolution line follows them) and the EXACT-1 and DOM-1 entries of this log.
 - Patches: `git format-patch 7c10ebb..HEAD`, a second tarball, not pushed. Results and final test counts: `code-kisscrit-docs2-report-2026-10-23.md` (available on request).
+
+## 2026-10-23, control chat: pilot branch and release steps (no code session)
+
+- 07:00-07:50 CT: DOCS-1, DOCS-2 and DOCS-3-1 (14 commits) verified by the control chat on a scratch branch (tree c81a8cd3...) and pushed to origin/main on Wöden's "push": 111ca4b -> 15cf729.
+- The remote branch `pilot/cond-2026-10-22` (5 snapshot commits forked from f3e8d0d, text files naming the server user path and host) was saved as a git bundle and a tarball of its nine files in the maintainer's folder `04_Compute` (bundle verified with `git bundle verify` against f3e8d0d), and removed from the public remote by Wöden. A redacted copy of the nine files is in `results/pilot/cond-2026-10-22/` (commit PILOT-SNAP-1, pushed: 8c708e2; `<run-home>` and `<server>` replace the path and host name; JSON and data files byte-identical). PILOT-SNAP-2 adds the README paragraph on the word "certified" in the verbatim logs.
+- Final control scan of all refs (234 commits, computed with `git grep` patterns, not a proof): no credential-pattern hits; tags `run-v3`, `run-v3.1` are in main's history; no blob over 20 MB.
+- Not done here: the visibility switch, the Zenodo link and the release tag (Wöden's).
+
