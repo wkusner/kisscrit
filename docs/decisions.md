@@ -2,6 +2,8 @@
 
 One line each, dated. Newest last. Only decisions Wöden stated or accepted; proposals go in `docs/open-questions.md`.
 
+Documents named below and not in this repository (the transfer prompt v1.2, the checker specification v0.2, the pipeline specification v0.3, the control board with its decision ids D-0nn) are internal working documents, available on request; they are not copied into the repository.
+
 - 2026-10-15 — Run the `full` route (all 7,595 triangulations). Hypothesis H is removed by it; `cond` becomes a pilot and a regression set.
 - 2026-10-15 — Drop the hull lemma (checklist C1, C2) from the proof path; keep it in the paper as a conjecture with the survey, marked unused.
 - 2026-10-15 — Rebuild the checker as a C kernel on FLINT/Arb, with every error bound from a certified source (spec v0.3); the Python reference checker, patched with V1–V5, stays as the oracle.

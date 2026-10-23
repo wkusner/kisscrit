@@ -2,6 +2,8 @@
 
 One dated entry per checkpoint of a controlled session (commit hash, what changed, tests and results, deviations, seeds). Times are US Central.
 
+How to read it: this log is written by the sessions that produced the commits (AI-assisted code sessions, each started from a written prompt, and the maintainer's control session, "control chat"). It is the provenance record of the work, not a description of the repository as it is now: for that, read `STATUS.md` and `docs/checklist.md`. A session's commits were applied to the repository with `git am`, which gives them new hashes, so a hash cited inside a session's own entry is often session-local and resolves nowhere; the control notes below map them where git can confirm the pair, and the rest are labelled as session-local there. Paths such as `/home/claude/...` are the sessions' cloud clones. Documents cited by file name and not in the repository (session prompts, design and audit documents, specifications) are internal working documents, available on request.
+
 ## 2026-10-17, F3 code session (Opus 5.5, cloud clone), prompt v1.3
 
 ### 20:02 CT, start

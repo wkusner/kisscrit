@@ -2,6 +2,8 @@
 
 Purpose: everything Wöden does by hand for the restarted completeness run, in order: the exact command, what success looks like, and what to do if it fails.
 
+This is the maintainer's runbook, written for one person and one server; it is kept in the repository as the record of the manual steps. "The Project guide" below is an internal document, available on request.
+
 Date: 2026-10-16. Version 2.3 (repo copy of the Project guide v2.1; this copy wins when the two differ, and the code changes it in the same commit as any code that changes a manual step).
 - v2.3 (2026-10-22, F8 M1): Part B written for `scripts/full/run.sh` version 1 (setup, selftest, start, status, stop; no pushes or Zenodo yet); C2, C4 and D1 use its commands.
 - v2.1: the server runs Ubuntu 26.04 and Wöden has no admin rights. Step A4 uses `scripts/full/kisscrit-preflight.sh`, which tests the server and drafts the request to the sysadmin.

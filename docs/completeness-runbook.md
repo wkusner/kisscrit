@@ -101,6 +101,8 @@ For `full`, distribute gen exactly like certify below, using `--phase gen` and `
 
 ### Phase B (certify): the loop to run on each machine
 
+> Record of the old run: the git-based shard claiming and the machine names below (`mac_run.sh`, `claim.py`, `--name lawrence-laptop`) describe how the `cond` pilot was run on the iMac. The current procedure is `scripts/full/run.sh` (`docs/setup-guide.md`).
+
 ```
 NAME=lawrence-laptop          # any unique name per machine
 K=40
