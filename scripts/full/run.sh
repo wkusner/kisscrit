@@ -294,7 +294,7 @@ cmd_selftest() {
   # 2. unit tests: tests/test_ball_kill.py in its own process (it sets flint.ctx.dps globally, which changes the
   #    bits of later C/Arb comparisons in the same process; seen 2026-10-21 at cc375bc)
   [ "$DRY" = 0 ] && { mkdir -p "$RUN_HOME/bin"; printf '#!/bin/sh\nexec "%s" "$@"\n' "$CC" > "$RUN_HOME/bin/cc"; cp "$RUN_HOME/bin/cc" "$RUN_HOME/bin/gcc"; chmod +x "$RUN_HOME/bin/cc" "$RUN_HOME/bin/gcc"; }
-  local -a ev=("PATH=$RUN_HOME/bin:$(dirname "$py"):$PATH")
+  local -a ev=("PATH=$RUN_HOME/bin:$(dirname "$py"):$PATH" "KISSCRIT_REQUIRE_ALL=1")   # tests/conftest.py: a skipped test (except DOM1_REGEN) fails the self-test
   [ -n "$FLINT_PREFIX" ] && ev+=("CPATH=$FLINT_PREFIX/include" "LIBRARY_PATH=$FLINT_PREFIX/lib" "LD_LIBRARY_PATH=$FLINT_PREFIX/lib")
   # pytest groups, one process each: "a b c" is split into arguments on spaces
   local -a groups

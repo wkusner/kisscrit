@@ -218,7 +218,7 @@ The Zenodo sandbox round trip comes with milestone M3. In the cloud container th
 
 **Success:** `selftest passed for <hash>`. The record is `~/kisscrit-run/selftest/<hash>.json`.
 
-For a manual `pytest -q` on the server, set `KISSCRIT_REQUIRE_ALL=1`: `tests/conftest.py` then turns every skipped test (C kernel not built, libflint, certificates or gen files absent) into a failure, except the opt-in `DOM1_REGEN` test. `run.sh selftest` does not set it yet (a change to `scripts/full/`, seed for F8).
+For a manual `pytest -q` on the server, set `KISSCRIT_REQUIRE_ALL=1`: `tests/conftest.py` then turns every skipped test (C kernel not built, libflint, certificates or gen files absent) into a failure, except the opt-in `DOM1_REGEN` test. `run.sh selftest` sets it for its pytest step, so on the server a missing tool (tmux, shellcheck, flock, libflint) makes the self-test fail instead of skipping (CLEAN-B).
 
 ### B4. Start
 

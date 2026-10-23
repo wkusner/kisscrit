@@ -50,7 +50,7 @@ The long run on the iMac should produce data that can be checked independently. 
     - `core/`: interval model, certificate checker, lemma scripts — the audited part;
     - `search/`: candidate generation, fast branch and bound, runners;
     - `explore/`: census, containers, Edwards work — no rigour claims.
-  - **Delete:** superseded prototypes (`bnb.py`, `contract.py`, the old `ad.py`, `faces.py` once nothing uses them).
+  - **Delete:** superseded prototypes (`bnb.py`, `contract.py`, the old `ad.py`, `faces.py` once nothing uses them).  *Status 2026-10-22 (CLEAN-A, CLEAN-B): `bnb.py`, `contract.py`, `ad.py`, `lpfilter.py` and `rattler_check.py` moved to `attic/` (not deleted; nothing imports them); `faces.py` stays: `structure.py` imports it.*
   - **Done when:** there is no dead code and the tests pass.
 - [ ] **B2. `STATUS.md`.** Say what is certified (the twelve configurations, their co-indices, the index-1 joins), what is numerical (the census, the hull survey, the containers, the Edwards pilot), and what is in progress (completeness). Each claim links to the script that supports it.
 - [ ] **B3. Reproducibility.**
