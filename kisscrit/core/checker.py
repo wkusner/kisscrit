@@ -1,7 +1,7 @@
 """Independent checker for completeness certificates (format: docs/certificate-format.md).
 
 Status: trusted. Part of the trusted base (transfer prompt v1.2, code standards).
-Implements: the exclusion tests of docs/lemmas.md L15-L16 (necessary conditions, Gordan and Motzkin alternatives, mean-value inclusion) and the structural checks V1-V4 of the checker spec v0.2; paper Appendix A (candidate list) and Appendix D (certification).
+Implements: the exclusion tests of docs/lemmas.md L15-L16 (necessary conditions, Gordan and Motzkin alternatives, mean-value inclusion) and the structural checks V1-V4 of the checker spec v0.2 and V1b (docs/lemmas.md L31-L33); paper Appendix A (candidate list) and Appendix D (certification).
 
 For each chart of a certificate the checker replays the proof tree (kisscrit.core.certificate.replay) and proves,
 with its own interval evaluation of the model (kisscrit.core.model), that every excluded leaf and every region
@@ -28,9 +28,11 @@ strictly positive balanced stress):
 Floating point enters only through linear programs that choose mu and y; the inequalities themselves are
 checked in ball arithmetic.
 
-Structural checks (spec v0.2, V1-V4), done before any box is examined:
+Structural checks (spec v0.2, V1-V4, and V1b of docs/lemmas.md L31-L33), done before any box is examined:
   V1  the checker derives its own a-priori starting box per chart (Arb, outward rounded) from the lemmas and
       requires the certificate's box to contain it;
+  V1b every coordinate of a chart's start box is finite; a rhombus coordinate lies in (0, pi] and a pentagon
+      coordinate in [0, 2 pi] (the model's range enclosure of a rhombus corner is false outside (0, pi]: L32);
   V2  the checker recomputes which pentagon regions are required (Lemma P and L11) and requires each to be
       present and complete;
   V3  the theta range is tied to the claim: theta_lo <= 2 asin(r_min / (1 + r_min)), theta_hi >= arctan 2;

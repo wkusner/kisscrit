@@ -28,7 +28,7 @@ Arithmetic: `+ − × ÷ √` on doubles are IEEE correctly rounded and are step
 
 Order of the leaf tests of the C kernel (pipeline spec v0.3 §4.2, a Project document, restated): per leaf or slab, (1) the witness test without tightening, (2) invalid and vertex sums on all vertices without tightening, (3) the linear inclusion with the parent's context and the hint, (4) the tests of (2) with monotonicity tightening, (5) Gordan or Motzkin with a witness y, (6) bisection to the reference's depth and piece limits, (7) if still open, a fallback box. In certificate format v2 the only witness is the multiplier hint, so (1) and (3) are the one hint test, run where `check_certificate` runs it; (5) has no witness until format v3 (checklist F5) and is left to the fallback, as is the linear test with an LP-chosen μ.
 
-Structural checks V1–V5 are listed in `docs/certificate-format.md` §4; V6 (the checker imports search code only as an untrusted oracle) is `tests/test_checker_imports.py`; V7 (the checker reports its own bisections and fallbacks) is `check_certificates.py --summary`; V8 (check results are pushed incrementally) is `scripts/completeness/mac_run.sh` phase C.
+Structural checks V1–V5 and V1b (L31–L33) are listed in `docs/certificate-format.md` §4; V6 (the checker imports search code only as an untrusted oracle) is `tests/test_checker_imports.py`; V7 (the checker reports its own bisections and fallbacks) is `check_certificates.py --summary`; V8 (check results are pushed incrementally) is `scripts/completeness/mac_run.sh` phase C.
 
 ## 1. Arithmetic (paper Appendix D)
 
@@ -58,7 +58,7 @@ Two implementations, bit-for-bit identical on every tested input (`tests/test_ca
 - `kisscrit/core/certificate.py:replay`: rebuilds every box of the proof tree from the event stream, bit for bit (midpoint splits, grid contractions). It uses no other floating-point computation.
 - `csrc/kc_replay.c`, `csrc/kc_replay.h` (checklist F3b): the same replay in C11, as an iterator: `kc_replay_init` takes one chart's decoded streams (events, q, mu), its starting box and caller-owned workspace (`kc_replay_stack_need`, `kc_replay_work_doubles`); each `kc_replay_next` returns the next node in preorder (leaf, split, or a contraction round with its new box, removed slabs and hints), then `KC_REPLAY_DONE` or an error code at the point where the reference raises (each ValueError message, and IndexError for a q read past the end or a coordinate k ≥ n). No globals, no allocation, no elementary functions: `grid_value` and `midpoint` are the format's two IEEE expressions, written as separate statements (built with `-ffp-contract=off`). `tests/test_creplay.py` compares node kinds, the IEEE bit patterns of every box, slab coordinates and sides, hints and the way the replay ends, against `certificate.replay`: on 1,000 sampled `cond` certificates, on hand-made charts for every raise site, on truncated, extended and randomly edited real streams, and with compiled mutants of `kc_replay.c` (an `fma()` grid value, another grid formula, two other midpoints, the upper slab first), each of which the comparison detects.
 
-## 4. The checker (paper Appendix D; `docs/lemmas.md` L15–L16; checker spec v0.2 V1–V7)
+## 4. The checker (paper Appendix D; `docs/lemmas.md` L15–L16, L31–L33; checker spec v0.2 V1–V7, and V1b)
 
 `kisscrit/core/checker.py`, in the order of a check:
 
@@ -67,6 +67,7 @@ Two implementations, bit-for-bit identical on every tested input (`tests/test_ca
    - V4 `canonical_code` (an independent reimplementation of the canonical code) and `faces_match`;
    - V2 `required_modes`: the pentagon regions that L10′ and L11′ require (the region definitions and the cover proof are L10′);
    - V1 `apriori_box`: the a-priori box of each chart from L3, L4, L7 and L10′, rounded outward; the certificate's box must contain it.
+   - V1b (`docs/lemmas.md` L31–L33): every start-box coordinate is finite, a rhombus coordinate lies in (0, π] and a pentagon coordinate in [0, 2π] (hygiene). For a rhombus box outside (0, π] the model's range `ex` of the corner O is false (L32), which let a forged certificate verify at cc375bc (reported by DES-F2, reproduced by the DOM-1 session). L31 and L33 are proved by DES-F2 by reading and are not yet reviewed by the control chat.
 2. `check_certificate`: replays each chart; every excluded leaf and every contraction slab goes to `Checker.exclude` / `exclude_slab`; terminal leaves are collected; an open leaf fails the certificate.
 3. `Checker.exclude`: cheap pass without tightening (`test_invalid_vsum`, `test_linear`), then with tightening, then `test_gordan`, `test_motzkin`, then bisection (bounded by `MAX_DEPTH`, `MAX_PIECES`). A box no test excludes is reported, never accepted.
    - `test_invalid_vsum`: the model's validity flag (L3, L6–L8, L10′) and the vertex-sum intervals (L15);
