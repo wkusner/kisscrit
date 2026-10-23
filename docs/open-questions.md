@@ -72,5 +72,7 @@ Version 1, 2026-10-11. Add entries at the end, and mark resolved ones rather tha
 
 **AUD-2 (2026-10-23, sync document S-07 and review R6; scratch computation, floating point with stated tolerances, networkx 3.7):** reproduced DOM-1's numbers (|Aut| = 1; `group_orders` (1, 1) at 1e-6, 1e-4 and 3e-4; (2, 1) only at tolerance ≥ 1e-3; smallest non-contact gap 6.07e-4 at pair (2, 9)) and adds: by the Krawczyk enclosure of `results/certified_n12.json` (radius 1e-40; untrusted script `scripts/certify_n12.py`, interval arithmetic) no configuration in the box has a reflection symmetry, since a reflection would move points by about 5e-4. So |Sym| = 1 for the true configuration as well (computed with an untrusted interval script; not proof).
 
+**Resolved 2026-10-23 (decision D-033, Wöden accepted the AUD-2 fixes):** `data/n12_above1.json` entry 6 now stores `sym: 1, sym_proper: 1` (commit DOCS-1-9). Still to follow: the paper's table row (|Sym| = 1) and the generated text of `data/exact/critical-configs-n12.md` and `scripts/exact/table_md.py`, which still say the data file gives order 2.
+
 **Why it matters:** the paper's table of the twelve configurations, `data/n12_above1.json`, and any symmetric-subspace method applied to this value.
 **Next:** recompute `sym` for this entry at tolerance 1e-6 and decide; a code session if the file changes (Seed in the DOM-1 log: recompute `sym` -> twelve).
