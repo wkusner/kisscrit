@@ -1,6 +1,6 @@
 """Exact second-order data at the two kissing configurations FCC and HCP (r = 1).
 
-Status: trusted. Part of the trusted base (transfer prompt v1.2, code standards).
+Status: trusted. Part of the trusted base (listed in docs/code-tour.md section 0; code standards in docs/decisions.md, 2026-10-16).
 Implements: paper Appendix B, Proposition B.5 (exact second-order data at FCC and HCP), in exact arithmetic.
 
 For a balanced configuration C at r = 1 with contact graph G, let Q_w = (cD - W) (x) I_3 restricted to the tangent

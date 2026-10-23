@@ -3,7 +3,7 @@ triangulation T of the sphere by merging adjacent triangles (a quadrilateral = 2
 path of 3 triangles).  Every plane graph with faces of size 3..5 arises from some T (triangulate its faces by
 diagonals), so running over all 7595 triangulations with 12 vertices enumerates every candidate.
 
-Status: trusted. Part of the trusted base (transfer prompt v1.2, code standards).
+Status: trusted. Part of the trusted base (listed in docs/code-tour.md section 0; code standards in docs/decisions.md, 2026-10-16).
 Implements: candidate generation (tilings of the 7,595 triangulations, L12-L14 of docs/lemmas.md; paper Appendix A, proof of Corollary 6.3). Known gap G1: the LP discard is floating point until exact Farkas certificates are logged (checklist F6).
 
 Pruning used during enumeration (each is a necessary condition for a critical configuration with

@@ -1,6 +1,6 @@
 """Inf-sup interval arithmetic with float endpoints and rigorous rounding through Arb (python-flint).
 
-Status: trusted. Part of the trusted base (transfer prompt v1.2, code standards).
+Status: trusted. Part of the trusted base (listed in docs/code-tour.md section 0; code standards in docs/decisions.md, 2026-10-16).
 Implements: the interval arithmetic of the checker: IEEE basic operations stepped outward and Arb for the elementary functions (spec v0.3 section 1.2; paper Appendix D, certification).
 
 An interval is a pair of doubles [lo, hi] (possibly infinite).  The basic operations (+, -, *, /) use IEEE 754

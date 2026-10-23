@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Independent check of completeness certificates (kisscrit/core/checker.py), with the manifest step.
 
-Status: trusted. Part of the trusted base (transfer prompt v1.2, code standards).
+Status: trusted. Part of the trusted base (listed in docs/code-tour.md section 0; code standards in docs/decisions.md, 2026-10-16).
 Implements: the checker front end: V5 (manifest) and V7 (summary counters) of the checker spec v0.2; paper Appendix D.
 
 Checks every certificate in the given files (default: all of results/completeness/certificates/), in parallel,

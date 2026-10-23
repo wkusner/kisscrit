@@ -1,7 +1,7 @@
 """Face-angle model of a candidate stressed graph, for the checker: inf-sup intervals with rounding through Arb
 (kisscrit/core/interval.py).
 
-Status: trusted. Part of the trusted base (transfer prompt v1.2, code standards).
+Status: trusted. Part of the trusted base (listed in docs/code-tour.md section 0; code standards in docs/decisions.md, 2026-10-16).
 Implements: the face-angle model the checker evaluates: lemmas L3 (corners in [alpha, pi]), L6 (faces are convex equilateral 3-, 4-, 5-gons), L7 (rhombus corners), L8 (pentagon formulas), L10/L11 (pentagon regions); paper Appendix A, Lemmas A.2 and A.6-A.8.
 
 This is the checker's own implementation of the model.  It shares no numerical code with the search

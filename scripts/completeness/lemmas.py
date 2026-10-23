@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Computer-assisted lemmas used by the completeness computation (statements in docs/lemmas.md).
 
-Status: trusted. Part of the trusted base (transfer prompt v1.2, code standards).
+Status: trusted. Part of the trusted base (listed in docs/code-tour.md section 0; code standards in docs/decisions.md, 2026-10-16).
 Implements: the computer-assisted lemmas P, R and U of docs/lemmas.md (L9, L10); paper Appendix A, Lemmas A.8 and A.9.
 
 All computations use the checker's interval arithmetic (kisscrit/core/interval.py: IEEE-rounded basic

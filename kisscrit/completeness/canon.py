@@ -1,7 +1,7 @@
 """Canonical codes of embedded plane graphs (rotation systems), up to orientation-preserving and -reversing
 isomorphism.
 
-Status: trusted. Part of the trusted base (transfer prompt v1.2, code standards).
+Status: trusted. Part of the trusted base (listed in docs/code-tour.md section 0; code standards in docs/decisions.md, 2026-10-16).
 Implements: the canonical code of an embedded plane graph (L12: deduplication of candidates); the checker reimplements it independently in kisscrit/core/checker.py (V4).
 
 For every directed edge (u, w) and both orientations, number the vertices in breadth-first order, visiting the

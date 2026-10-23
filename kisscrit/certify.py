@@ -14,9 +14,15 @@ Given a contact graph A and a numerical solution of the KKT system, we certify:
   (4) the co-index: the bordered Hessian
             [ H   J^T ]      H = Hessian in (X, c) of  L = sum sigma_e <x_i,x_j> - sum mu_i/2 (|x_i|^2-1)
             [ J   0   ]      J = Jacobian of (sphere, contact, gauge) constraints
-      is enclosed over the box; Weyl's inequality applied to an enclosure of its spectrum shows it is
-      nonsingular with exactly (rank J) + coindex negative eigenvalues.  Since sum sigma = 1, c agrees with L
-      on the contact-preserving variety, so the coindex counts the directions in which r increases.
+      is enclosed over the box; the eigenvalues of its midpoint are computed by mp.eigsy at dps digits, and
+      Weyl's inequality with the Frobenius radius of the interval matrix, plus an ASSUMED bound
+      10^-(dps-10) on the eigensolver's error (not proved), gives a nonsingular matrix with exactly
+      (rank J) + coindex negative eigenvalues.  So the co-index rests on that assumed bound.  Since
+      sum sigma = 1, c agrees with L on the contact-preserving variety, so the coindex counts the directions
+      in which r increases.  For six of the ten N = 12 saddles above r = 1 (B, r1, A, 1.0003062544,
+      1.0010073939, 1.0008452029) the co-index is also decided exactly by scripts/exact/verify.py (inertia
+      over K = Q(c), data/exact/); for the other four (1.0003062547, 1.0002374095, 1.0002115891,
+      1.0002111636) it rests on mp.eigsy and the assumed bound only.
 
 All enclosures use mpmath interval arithmetic (mp.iv); the midpoint linear algebra is non-rigorous but only
 used to build the preconditioner and the box (as Krawczyk's theorem allows).

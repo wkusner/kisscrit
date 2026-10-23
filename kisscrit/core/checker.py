@@ -1,6 +1,6 @@
 """Independent checker for completeness certificates (format: docs/certificate-format.md).
 
-Status: trusted. Part of the trusted base (transfer prompt v1.2, code standards).
+Status: trusted. Part of the trusted base (listed in docs/code-tour.md section 0; code standards in docs/decisions.md, 2026-10-16).
 Implements: the exclusion tests of docs/lemmas.md L15-L16 (necessary conditions, Gordan and Motzkin alternatives, mean-value inclusion) and the structural checks V1-V4 of the checker spec v0.2 and V1b (docs/lemmas.md L31-L33); paper Appendix A (candidate list) and Appendix D (certification).
 
 For each chart of a certificate the checker replays the proof tree (kisscrit.core.certificate.replay) and proves,

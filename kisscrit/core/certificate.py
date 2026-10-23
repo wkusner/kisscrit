@@ -1,6 +1,6 @@
 """Reading certificates written by the completeness branch and bound (format: docs/certificate-format.md).
 
-Status: trusted. Part of the trusted base (transfer prompt v1.2, code standards).
+Status: trusted. Part of the trusted base (listed in docs/code-tour.md section 0; code standards in docs/decisions.md, 2026-10-16).
 Implements: the certificate replay of docs/certificate-format.md section 3 (bisection and grid contraction, reproduced bit for bit).
 
 This module only decodes and replays the proof tree; it uses no floating-point computation except the two
