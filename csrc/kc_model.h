@@ -1,6 +1,6 @@
 /* kc_model.h: the face-angle model of a candidate stressed graph, for the C checker kernel.
  *
- * Status: trusted.  Part of the trusted base (transfer prompt v1.2, code standards; spec v0.3 sections 4.1-4.2).
+ * Status: trusted.  Part of the trusted base (listed in docs/code-tour.md section 0; code standards in docs/decisions.md, 2026-10-16; spec v0.3 sections 4.1-4.2).
  * Implements: checklist item F3a, a bit-for-bit reimplementation of kisscrit/core/model.py (the Python reference):
  * lemmas L3 (corners in [alpha, pi]), L6 (faces are convex equilateral 3-, 4-, 5-gons), L7 (rhombus corners),
  * L8 (pentagon formulas), L10'/L11' (pentagon regions), L15 (vertex sums), the monotonicity tightening of L16;

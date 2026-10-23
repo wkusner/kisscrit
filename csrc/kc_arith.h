@@ -1,6 +1,6 @@
 /* kc_arith.h: certified interval arithmetic for the C checker kernel.
  *
- * Status: trusted.  Part of the trusted base (transfer prompt v1.2, code standards; spec v0.3 section 1.2).
+ * Status: trusted.  Part of the trusted base (listed in docs/code-tour.md section 0; code standards in docs/decisions.md, 2026-10-16; spec v0.3 section 1.2).
  * Implements: the arithmetic contract of docs/code-tour.md section 0.1, as a bit-for-bit reimplementation of
  * kisscrit/core/interval.py (the Python reference): an interval is a pair of doubles [lo, hi]; the IEEE
  * operations + - * / sqrt are correctly rounded and stepped one ulp outward; sin, cos, atan, asin, acos and pi

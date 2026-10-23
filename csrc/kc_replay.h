@@ -1,6 +1,6 @@
 /* kc_replay.h: the replay of one chart's proof tree, for the C checker kernel.
  *
- * Status: trusted.  Part of the trusted base (transfer prompt v1.2, code standards; spec v0.3 sections 4.1-4.2).
+ * Status: trusted.  Part of the trusted base (listed in docs/code-tour.md section 0; code standards in docs/decisions.md, 2026-10-16; spec v0.3 sections 4.1-4.2).
  * Implements: checklist item F3b, docs/certificate-format.md section 3 (the proof tree: contraction rounds with
  * grid values and multiplier hints, the removed slabs, the leaf events, the midpoint split and the order of the
  * children), as a bit-for-bit reimplementation of kisscrit/core/certificate.py:replay (the Python reference).

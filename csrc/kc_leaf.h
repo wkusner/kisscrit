@@ -1,7 +1,7 @@
 /* kc_leaf.h: the leaf tests of the C checker kernel, and the per-chart driver that applies them to every leaf
  * and every contraction slab of a chart's proof tree.
  *
- * Status: trusted.  Part of the trusted base (transfer prompt v1.2, code standards; spec v0.3 sections 4.1-4.2).
+ * Status: trusted.  Part of the trusted base (listed in docs/code-tour.md section 0; code standards in docs/decisions.md, 2026-10-16; spec v0.3 sections 4.1-4.2).
  * Implements: checklist item F4 (the kernel's leaf tests): the exclusion tests of docs/lemmas.md L15 (vertex
  * sums equal 2 pi at a realization) and L16 (mean-value inclusion with given multipliers), the model's validity
  * flag (L3, L6-L8, L10'), the monotonicity tightening of L16 (through kc_corners), and bisection; paper
