@@ -1,5 +1,7 @@
 # kisscrit
 
+> **Research snapshot v0.1** (package version 0.1.0): completeness of the N = 12 census above r = 1 **not established**; see `STATUS.md`. Citation metadata: `CITATION.cff`.
+
 Critical configurations of the min-distance (kissing / Tammes) function for N points on the sphere S^{d-1}.
 
 This is the code that supports W. Kusner, *Critical radii of kissing configurations: algebraicity, and twelve spheres above r = 1* (in preparation). It is research code, written with Claude (Anthropic) as an assistant, and it is numerical unless a function says otherwise.

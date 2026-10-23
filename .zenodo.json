@@ -1,0 +1,12 @@
+{
+  "title": "kisscrit: critical configurations of the min-distance (kissing / Tammes) function on spheres",
+  "upload_type": "software",
+  "creators": [
+    {"name": "Kusner, Wöden"}
+  ],
+  "description": "Research code for the critical configurations of the kissing / Tammes function of N points on the sphere, and for the computation towards completeness of the N = 12 census above r = 1. Research snapshot: the completeness of the N = 12 census above r = 1 is not established; STATUS.md in the repository says what is proved, computed and assumed. Source repository: https://github.com/wkusner/kisscrit",
+  "license": "MIT",
+  "version": "0.1.0",
+  "keywords": ["kissing configurations", "Tammes problem", "critical points", "interval arithmetic"],
+  "notes": "Repository: https://github.com/wkusner/kisscrit"
+}
