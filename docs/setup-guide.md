@@ -71,7 +71,7 @@ This version was tested only in a cloud container (Ubuntu 24.04), not on the ser
 From your Mac:
 
 ```
-scp ~/Meta_Inbox/kisscrit-preflight.sh you@server:~/
+scp <path-to>/kisscrit-preflight.sh you@server:~/
 # for --try-install only (needed while the repository is private; once it is public a plain `git clone` works): from your laptop, inside your clone of kisscrit; about 360 MB, mostly the certificates
 git archive HEAD csrc kisscrit tests scripts/completeness pyproject.toml results/completeness/certificates | ssh you@server 'mkdir -p ~/kisscrit-src && tar -x -C ~/kisscrit-src'
 ssh you@server

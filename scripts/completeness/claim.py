@@ -7,7 +7,7 @@ A claim is a small file results/completeness/claims/<phase>-<route>-<k>-of-<K>.t
 commits and pushes that file; if the push is rejected (someone else pushed first), we pull, and if the shard
 was taken in the meantime we try the next one.
 
-  python scripts/completeness/claim.py --phase certify --route cond --of 40 --name lawrence-laptop
+  python scripts/completeness/claim.py --phase certify --route cond --of 40 --name <machine-name>
 prints the claimed shard number (and nothing else on stdout); exits with status 1 if none are free, 3 if git
 fails.
 """
