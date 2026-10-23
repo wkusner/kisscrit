@@ -82,8 +82,10 @@ Findings worth noting:
 - **FCC, HCP**: four-dimensional stress spaces with 4 and 5 extreme rays; the uniform weight is a stress at FCC
   and not at HCP; the HCP witness of control item C5a (1/20, 11/150, 7/200) is a stress. This agrees with
   `scripts/r1/exact_lambda_stress_space.py`, by an independent code path.
-- `data/n12_above1.json` gives **1.0003062547** a symmetry group of order 2, but its stored contact graph has
-  only the trivial automorphism, so the stored symmetry and the stored contacts cannot both be right.
+- `data/n12_above1.json` gave **1.0003062547** a symmetry group of order 2, but its stored contact graph has
+  only the trivial automorphism, so the stored symmetry and the stored contacts could not both be right.
+  Corrected 2026-10-23 (DOCS-1-9, decision D-033): the entry now stores `sym: 1` (computed, floating point:
+  |Aut| = 1 and `group_orders` (1, 1) at tolerances 1e-6 to 3e-4; `docs/open-questions.md` §6).
 
 ## Not found
 

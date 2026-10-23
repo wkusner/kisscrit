@@ -18,8 +18,8 @@ MD = os.path.join(ROOT, 'data', 'exact', 'critical-configs-n12.md')
 
 ORDER = ['DOD', 'M', '1.0010073939', '1.0008452029', 'B', 'r1', '1.0003062544', 'A', 'antiprism', 'FCC', 'HCP']
 NOT_FOUND = [
-    ('1.0003062547', 20, 2, 'no exact data; data/n12_above1.json gives a symmetry group of order 2, but the stored contact graph has only the '
-                            'trivial automorphism'),
+    ('1.0003062547', 20, 2, 'no exact data; data/n12_above1.json gives the trivial symmetry group (sym 1; it stored 2 until 2026-10-23, '
+                            'corrected because the stored contact graph has only the trivial automorphism)'),
     ('1.0002374095', 21, 1, 'no exact data'),
     ('1.0002115891', 20, 2, 'no exact data'),
     ('1.0002111636', 19, 3, 'no exact data; high-precision candidate for c of degree 126 (see below)'),
