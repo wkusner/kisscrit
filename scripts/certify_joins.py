@@ -1,7 +1,14 @@
-"""Certify the joins of the index-1 saddles of N=12 above r=1 (results/joins_n12.json).
+"""Check the joins of the index-1 saddles of N=12 above r=1 in double precision (results/joins_n12.json).
 
 Status: untrusted (exploration or tooling; no part of the proof).
 
+For each saddle of co-index 1, a start point on each side of the ascending direction is pushed onto the variety
+of equal contacts, followed by an ascent path to a local maximum, and checked by kisscrit/joins.py:certify_side:
+every segment keeps the max cosine below the level lo, by a Lipschitz bound in double precision with the
+assumed rounding margin 1e-13 (not interval arithmetic).  The start point itself must have max cosine + 1e-13
+below lo.  lo is the lower end of the interval enclosure of c in results/certified_n12.json, less 1e-15.  That
+the two start points lie in the two local components near the saddle is the Morse-lemma step of the joins.py
+docstring and is not checked here.  Not a certificate accepted by a checker.
 """
 import sys, os, json, time
 import numpy as np

@@ -1,7 +1,12 @@
-"""Interval-certify the critical configurations of 12 points above r=1 (data/n12_above1.json).
+"""Verify in interval arithmetic the critical configurations of 12 points above r=1 (data/n12_above1.json).
 
 Status: untrusted (exploration or tooling; no part of the proof).
 
+Each configuration is refined at 90 digits (kisscrit.exact.refine_kkt) and passed to kisscrit/certify.py:certify
+at 80 digits.  Existence and uniqueness in a box, the contact graph and the positive stress are shown by interval
+enclosures (mpmath iv); the co-index also rests on an ASSUMED, unproved bound on the error of the eigensolver
+mp.eigsy (certify.py, item (4)).  None of this is a certificate accepted by a checker.  Results, or the message
+of the failed check as `failed`, go to results/certified_n12.json (file name and keys kept).
 """
 import sys, os, json, time
 import numpy as np, mpmath as mp
