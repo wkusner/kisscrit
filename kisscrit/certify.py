@@ -1,14 +1,16 @@
-"""Interval certification of a nondegenerate critical configuration on S^2 (Krawczyk operator).
+"""Interval verification (Krawczyk operator) of a nondegenerate critical configuration on S^2.
 
 Status: untrusted (exploration or tooling; no part of the proof).
 
-Given a contact graph A and a numerical solution of the KKT system, we certify:
+Given a contact graph A and a numerical solution of the KKT system, we verify in interval arithmetic
+(mpmath iv; item (4) also rests on an assumed bound on the eigensolver's error):
 
   (1) existence and uniqueness, in an explicit box, of a solution z* = (X, c, sigma, mu) of the
       square system  S(z) = 0  obtained from the KKT system by adding the rotation gauge
       sum_i x0_i x x_i = 0 and dropping three balance rows (two at vertex i0, one at vertex i1);
   (2) that z* solves the full KKT system: by the torque identity sum_i x_i x B_i = 0, the dropped
-      balance components satisfy a 3x3 linear system whose matrix is certified nonsingular;
+      balance components satisfy a 3x3 linear system whose determinant, enclosed over the Krawczyk image
+      K, excludes 0, so the matrix is nonsingular and the dropped components vanish;
   (3) sigma_e > 0 for all e, and c - <x_i,x_j> > 0 for all non-contacts (so the contact graph is exactly
       A and X is Clarke critical for the max-cosine function);
   (4) the co-index: the bordered Hessian
@@ -123,8 +125,12 @@ def _choose_dropped(xm, N, A):
 
 
 def certify(Xmid, cmid, smid, mumid, A, dps=60, rad=None, verbose=False):
-    """Certify a critical configuration. Inputs: high-precision midpoint (mp numbers or strings).
-    Returns a dict of certified facts (interval enclosures as strings) or raises AssertionError."""
+    """Verify a critical configuration in interval arithmetic: items (1)-(4) of the module docstring.
+    Inputs: high-precision midpoint (mp numbers or strings).  Returns a dict: interval enclosures (as strings)
+    of c, r, the smallest stress and the smallest gap; the co-index with the numbers it rests on (midpoint
+    eigenvalues by mp.eigsy, Weyl radius including the ASSUMED eigensolver error bound of item (4)).  Raises
+    AssertionError naming the check that failed; mpmath raises ZeroDivisionError if the midpoint Jacobian is
+    numerically singular.  scripts/certify_n12.py stores either message as `failed`."""
     mp.mp.dps = dps; iv.dps = dps
     N = len(Xmid); k = len(A); n = 3 * N + 1 + k + N
     zm = [mp.mpf(v) for row in Xmid for v in row] + [mp.mpf(cmid)] + [mp.mpf(v) for v in smid] + [mp.mpf(v) for v in mumid]
@@ -172,16 +178,16 @@ def certify(Xmid, cmid, smid, mumid, A, dps=60, rad=None, verbose=False):
     det = (cols[0][0] * (cols[1][1] * cols[2][2] - cols[1][2] * cols[2][1])
            - cols[1][0] * (cols[0][1] * cols[2][2] - cols[0][2] * cols[2][1])
            + cols[2][0] * (cols[0][1] * cols[1][2] - cols[0][2] * cols[1][1]))
-    assert not (det.a <= 0 <= det.b), 'torque determinant not certified nonzero'
+    assert not (det.a <= 0 <= det.b), 'torque determinant not shown nonzero by its interval enclosure'
     # (3) positivity of stress and gaps
     c = Z[3 * N]; sig = Z[3 * N + 1:3 * N + 1 + k]; mu = Z[3 * N + 1 + k:]
-    assert all(se.a > 0 for se in sig), 'stress not certified positive'
+    assert all(se.a > 0 for se in sig), 'stress not shown positive by its interval enclosure'
     Aset = set(A); mingap = None
     for i in range(N):
         for j in range(i + 1, N):
             if (i, j) in Aset: continue
             g = c - (x[i][0] * x[j][0] + x[i][1] * x[j][1] + x[i][2] * x[j][2])
-            assert g.a > 0, 'gap not certified positive for %s' % ((i, j),)
+            assert g.a > 0, 'gap not shown positive by its interval enclosure for %s' % ((i, j),)
             mingap = g if mingap is None or g.a < mingap.a else mingap
     # (4) co-index from the bordered Hessian
     nv = 3 * N + 1
@@ -222,10 +228,11 @@ def certify(Xmid, cmid, smid, mumid, A, dps=60, rad=None, verbose=False):
             radF += (hi - lo) ** 2          # (2 * radius)^2: a safe overestimate of the radius^2
     ev = mp.eigsy(Bmid, eigvals_only=True)
     ev = sorted([ev[a] for a in range(nb)])
-    # error of the midpoint eigen-solver at this precision is far below 10^-(dps-10); add it
+    # ASSUMED, not proved (item (4) of the module docstring): the midpoint eigensolver's error at this
+    # precision is below 10^-(dps-10).  It is added to the Weyl radius, so the co-index rests on it.
     tol = mp.sqrt(radF) + mp.mpf(10) ** (-(dps - 10))
     gap0 = min(abs(e) for e in ev)
-    assert gap0 > tol, 'bordered Hessian not certified nonsingular'
+    assert gap0 > tol, 'bordered Hessian not shown nonsingular (Weyl bound with the assumed eigensolver error)'
     nneg = sum(1 for e in ev if e < 0)
     coindex = nneg - m
     r_iv = (1 - c) / 2
