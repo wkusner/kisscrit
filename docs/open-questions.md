@@ -6,7 +6,7 @@ Version 1, 2026-10-11. Add entries at the end, and mark resolved ones rather tha
 
 ## 1. Completeness of the N = 12 census above r = 1
 
-**Status:** open. The certifier and the sharded runner exist: `kisscrit/completeness/`, `docs/completeness-runbook.md`. In pilots it excludes about 98% of candidates. It does not yet resolve:
+**Status:** open. The search, which writes a certificate per candidate for the checker, and the sharded runner exist: `kisscrit/completeness/`, `docs/completeness-runbook.md`. In pilots the search marks about 98% of candidates excluded (its own status, not a checker verdict). It does not yet resolve:
 - low-edge graphs (E = 17–19), whose realization spaces have dimension 22 − E = 3–5;
 - the range 1 < r < 1.0001, where many graphs are nearly realizable because of the kissing configurations at r = 1.
 
