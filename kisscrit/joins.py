@@ -129,7 +129,10 @@ def align(Y, Ref, tol=1e-4):
 
 
 def certify_side(Path, c_s, Ref_list):
-    """Certify a path (list of configurations) and close it at an aligned copy of one of the references.
+    """Check a path (list of configurations) and close it at an aligned copy of one of the references:
+    segment_ok must show, for every segment including the closing one, that the max cosine stays below c_s.
+    That test is a Lipschitz bound evaluated in double precision with the assumed rounding margin FP_ERR
+    (module docstring); it is not interval arithmetic.
     Ref_list: list of (name, Ref configuration). Returns dict or raises AssertionError."""
     end = Path[-1]
     hit = None
@@ -144,7 +147,7 @@ def certify_side(Path, c_s, Ref_list):
     tot = 0; worst = -1
     for P, Q in zip(pts[:-1], pts[1:]):
         r = segment_ok(P, Q, c_s)
-        assert r, 'segment not certified'
+        assert r, 'segment not shown below c_s (double-precision Lipschitz bound, assumed margin FP_ERR)'
         tot += r
         worst = max(worst, max_cos(P))
     return dict(end=name, perm=p.tolist(), segments=len(pts) - 1, checks=tot, max_cos_on_vertices=float(worst))

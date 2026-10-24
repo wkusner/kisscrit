@@ -5,7 +5,8 @@ Status: untrusted (the sharded driver of the search; it writes certificates the 
 
 Phase A (gen):      enumerate candidates from triangulations, shard = triangulation indices i with i % K == k.
                     Output: results/completeness/gen/gen-<route>-<k>-of-<K>.jsonl.gz  (one candidate per line)
-Phase B (certify):  certify deduplicated candidates, shard = candidates whose code hashes to k mod K.
+Phase B (certify):  run the search on each deduplicated candidate and write its certificate (verified later
+                    by the checker, not here), shard = candidates whose code hashes to k mod K.
                     Output: results/completeness/cert/cert-<route>-<k>-of-<K>.jsonl  (one result per line)
 
 Both phases append and skip work already recorded, so a killed run is resumed by running the same command.
@@ -24,13 +25,15 @@ GEN = os.path.join(ROOT, 'results', 'completeness', 'gen')
 CERT = os.path.join(ROOT, 'results', 'completeness', 'cert')
 PROOF = os.path.join(ROOT, 'results', 'completeness', 'certificates')
 ROUTES = {'cond': [0, 1, 5, 7], 'test': [3000]}
-R_MIN_DEFAULT = 1.0001          # certify configurations with r >= R_MIN (theta >= theta(R_MIN))
+R_MIN_DEFAULT = 1.0001          # the search covers configurations with r >= R_MIN (theta >= theta_of_r(R_MIN))
 
 
 def theta_of_r(r):
-    """theta_lo = 2 asin(r / (1 + r)), rounded DOWN to a double, so that the certified range theta >= theta_lo
-    contains the claimed range r >= r_min (spec v0.2, V3).  r is taken as the exact decimal written on the
-    command line (a float such as 1.0001 is first converted back to its shortest decimal)."""
+    """theta_lo = 2 asin(r / (1 + r)), rounded DOWN to a double, so that the range the search covers,
+    theta >= theta_lo, contains the stated range r >= r_min (spec v0.2, V3).  r is taken as the exact decimal
+    written on the command line (a float such as 1.0001 is first converted back to its shortest decimal).
+    The rounding compares the double exactly with a 60-digit mpmath value of the asin, not with an enclosure:
+    a double closer to the true theta than that value's error (of order 1e-60) would not be detected."""
     import math
     from fractions import Fraction
     import mpmath
