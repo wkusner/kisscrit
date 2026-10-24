@@ -76,3 +76,15 @@ Version 1, 2026-10-11. Add entries at the end, and mark resolved ones rather tha
 
 **Why it matters:** the paper's table of the twelve configurations, `data/n12_above1.json`, and any symmetric-subspace method applied to this value.
 **Next:** recompute `sym` for this entry at tolerance 1e-6 and decide; a code session if the file changes (Seed in the DOM-1 log: recompute `sym` -> twelve).
+
+## 7. `scripts/hull12`: inputs that a clean clone does not have (added 2026-10-23, deferred by the maintainer)
+
+**Status: deferred.** The maintainer decided on 2026-10-23 to leave this as it is until a deeper review of `scripts/hull12`; no fix is planned before that review.
+
+**What was seen (read from the code and the tracked file list in the CLEAN-C session, 2026-10-23; the scripts were not run):**
+- `flipwalk.py`, `sample_hulls.py`, `seeded.py`, `survey.py` and `thetastar.py` open `tri12.json` by a path relative to the working directory. No file of that name is tracked. `scripts/hull12/README.md` says it is `data/triangulations_n12.json`; `cmp` shows that file is byte-identical to `data/completeness/triangulations12.json` (computed here, 2026-10-23).
+- `flipwalk.py` also opens `seeded.json` (tracked as `results/seeded.json`) and `ts_a.json` (survey output, not tracked); `survey.py` reads `ts_a.json` and `ts_b.json`.
+- These scripts are marked untrusted (exploration, no part of the proof). As they stand they do not run from a clean clone; `sample_hulls.py` would after `tri12.json` is placed in the working directory (not tested).
+- CLEAN-C-1 only changed how the two scripts find the repository root; it did not touch these file names.
+
+**To decide after the review:** whether the scripts take the paths as arguments, read the tracked data file directly, or are moved to `attic/`.
